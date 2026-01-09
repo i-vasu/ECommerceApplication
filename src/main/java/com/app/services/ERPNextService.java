@@ -23,6 +23,9 @@ public class ERPNextService {
     @Autowired
     private CategoryRepo categoryRepo;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     @Value("${erpnext.api.url:http://localhost:8000/api/resource/Item}")
     private String erpNextUrl;
 
@@ -31,8 +34,6 @@ public class ERPNextService {
 
     @Value("${erpnext.api.secret:}")
     private String apiSecret;
-
-    private final RestTemplate restTemplate = new RestTemplate();
 
     @Scheduled(fixedRate = 60000) // Poll every 60 seconds
     public void syncItems() {
