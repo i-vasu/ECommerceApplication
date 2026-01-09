@@ -9,12 +9,27 @@ This repository is part of a **Fashion Store** platform with a headless architec
 
 ## Working with this project
 - **ERPNext Integration**: Logic is in `ERPNextService.java`. It polls ERPNext every 60s.
-- **Port Mapping**:
+- **Port Mapping**: DO NOT CHANGE
   - ERPNext: 8000
   - Java: 8080
   - Next.js: 3000
 - **Git Strategy**: Follow `.agent/workflows/branching_strategy.md`. Use `develop` for daily work.
 - **CI/CD**: GitHub Actions are configured in `.github/workflows/`.
+
+## Critical Pillars (SOPs)
+
+### 1. Visual Integrity & Premium Design
+- **Fashion First**: This is a premium brand. Design MUST be elegant.
+- **Rules**: Use Inter/Outfit fonts, generous whitespace, and smooth transitions (Framer Motion).
+- **No Defaults**: Never use default browser styles for buttons, inputs, or headers.
+
+### 2. "Don't Break the Loop" Rule
+- **End-to-End Testing**: Before pushing any change to Java or ERPNext config, verify that the data loop (ERPNext -> Java -> Storefront) is still functional.
+- **Validation**: Ensure `GET /api/public/products` returns the expected DTO structure with images.
+
+### 3. API Contract & Type Safety
+- **Sync Changes**: If you modify a Java Entity or DTO that is exposed via API, you MUST immediately update the corresponding TypeScript interface in the storefront (`lib/types.ts` or similar).
+- **Stability**: Avoid breaking shifts in the JSON response structure to prevent storefront crashes.
 
 ## Change Tracking & Commits
 - **Change Log**: For every push to Git, the agent MUST update `CHANGELOG.md` in the root directory.
