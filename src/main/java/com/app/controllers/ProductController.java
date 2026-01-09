@@ -1,10 +1,13 @@
 package com.app.controllers;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +26,7 @@ import com.app.payloads.ProductResponse;
 import com.app.services.ProductService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -77,6 +81,13 @@ public class ProductController {
 				sortOrder);
 
 		return new ResponseEntity<ProductResponse>(productResponse, HttpStatus.OK);
+	}
+
+	@GetMapping(value = "/public/products/image/{imageName}", produces = MediaType.IMAGE_JPEG_VALUE)
+	public void serveImage(@PathVariable("imageName") String imageName, HttpServletResponse response)
+			throws IOException {
+		InputStream resource = productService.getProductImage(imageName);
+		StreamUtils.copy(resource, response.getOutputStream());
 	}
 
 	@PutMapping("/admin/products/{productId}")

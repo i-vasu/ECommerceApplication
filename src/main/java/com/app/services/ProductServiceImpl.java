@@ -1,6 +1,8 @@
 package com.app.services;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -151,7 +153,8 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+	public ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy,
+			String sortOrder) {
 		Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
 				: Sort.by(sortBy).descending();
 
@@ -160,7 +163,7 @@ public class ProductServiceImpl implements ProductService {
 		Page<Product> pageProducts = productRepo.findByProductNameLike(keyword, pageDetails);
 
 		List<Product> products = pageProducts.getContent();
-		
+
 		if (products.size() == 0) {
 			throw new APIException("Products not found with keyword: " + keyword);
 		}
@@ -225,16 +228,21 @@ public class ProductServiceImpl implements ProductService {
 		if (productFromDB == null) {
 			throw new APIException("Product not found with productId: " + productId);
 		}
-		
+
 		String fileName = fileService.uploadImage(path, image);
-		
+
 		productFromDB.setImage(fileName);
-		
+
 		Product updatedProduct = productRepo.save(productFromDB);
-		
+
 		return modelMapper.map(updatedProduct, ProductDTO.class);
 	}
-	
+
+	@Override
+	public InputStream getProductImage(String fileName) throws FileNotFoundException {
+		return fileService.getResource(path, fileName);
+	}
+
 	@Override
 	public String deleteProduct(Long productId) {
 

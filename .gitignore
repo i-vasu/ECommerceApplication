@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### ERPNext ###
+# Keep the configuration (docker-compose.yml) but ignore the heavy data volumes
+erpnext/sites/
+erpnext/logs/
+erpnext/db-data/
+erpnext/redis-queue-data/

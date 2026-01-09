@@ -36,11 +36,15 @@ public class ERPNextService {
 
     @Scheduled(fixedRate = 60000) // Poll every 60 seconds
     public void syncItems() {
-        if (apiKey.isEmpty() || apiSecret.isEmpty()) {
+        System.out.println(">>> Starting ERPNext sync...");
+
+        if (apiKey == null || apiKey.isEmpty() || apiSecret == null || apiSecret.isEmpty()) {
+            System.out.println(">>> ERPNext API keys are missing. Skipping sync.");
             return;
         }
 
         try {
+            System.out.println(">>> Connecting to ERPNext at: " + erpNextUrl);
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "token " + apiKey + ":" + apiSecret);
             HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -51,17 +55,24 @@ public class ERPNextService {
 
             if (response.getStatusCode() == HttpStatus.OK) {
                 List<Map<String, Object>> items = (List<Map<String, Object>>) response.getBody().get("data");
-                for (Map<String, Object> item : items) {
-                    saveOrUpdateProduct(item);
+                System.out.println(">>> Found " + (items != null ? items.size() : 0) + " items in ERPNext.");
+                if (items != null) {
+                    for (Map<String, Object> item : items) {
+                        saveOrUpdateProduct(item);
+                    }
                 }
+            } else {
+                System.out.println(">>> Failed to fetch items. Status: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            System.err.println("Error syncing with ERPNext: " + e.getMessage());
+            System.err.println(">>> Error syncing with ERPNext: " + e.getMessage());
         }
     }
 
     private void saveOrUpdateProduct(Map<String, Object> itemData) {
         String itemName = (String) itemData.get("item_name");
+        System.out.println(">>> Syncing product: " + itemName);
+
         String description = (String) itemData.get("description");
         if (description == null || description.isEmpty())
             description = itemName;
@@ -88,6 +99,11 @@ public class ERPNextService {
 
         product.setDescription(description);
         product.setPrice(price);
+
+        // Fix: Set specialPrice to ensure frontend displays the cost
+        product.setSpecialPrice(price);
+        product.setDiscount(0.0);
+
         product.setCategory(category);
         product.setQuantity(100); // Default quantity
         product.setImage((String) itemData.get("image"));
