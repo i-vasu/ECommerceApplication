@@ -31,6 +31,11 @@ This repository is part of a **Fashion Store** platform with a headless architec
 - **Sync Changes**: If you modify a Java Entity or DTO that is exposed via API, you MUST immediately update the corresponding TypeScript interface in the storefront (`lib/types.ts` or similar).
 - **Stability**: Avoid breaking shifts in the JSON response structure to prevent storefront crashes.
 
+### 4. Automated Quality Gates
+- **Local Testing**: Agents MUST run `mvn test` (Backend) or `npm test` (Frontend) locally and ensure they pass before pushing.
+- **CI/CD Alignment**: Every push triggers a GitHub Action that spins up a PostgreSQL container. Code that fails tests will NOT be merged to `main`.
+- **Timezone Note**: If tests fail with "TimeZone" errors on Windows, ensure `pom.xml` has the `Asia/Kolkata` force-fix in the Surefire plugin.
+
 ## Change Tracking & Commits
 - **Change Log**: For every push to Git, the agent MUST update `CHANGELOG.md` in the root directory.
 - **Format**: Include the Date, Branch Name, and a clear bulleted list of changed files/logic.

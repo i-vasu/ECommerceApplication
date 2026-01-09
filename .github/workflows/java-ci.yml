@@ -9,6 +9,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: dev
+          POSTGRES_PASSWORD: 123Vasu456
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - uses: actions/checkout@v4
@@ -20,10 +34,19 @@ jobs:
         distribution: 'temurin'
         cache: maven
         
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml -DskipTests
+    - name: Run Tests
+      run: mvn -B test
+      env:
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/dev
+        JAVA_DB_USERNAME: postgres
+        JAVA_DB_PASSWORD: 123Vasu456
+        JAVA_JWT_SECRET: ci_test_secret
+        ERPNEXT_API_KEY: mock_key
+        ERPNEXT_API_SECRET: mock_secret
 
-    # Optional: Build Docker image for verification
+    - name: Build Package
+      run: mvn -B package -DskipTests
+
     - name: Build Docker image
       run: |
         docker build -t ecommerce-middleware:latest .
