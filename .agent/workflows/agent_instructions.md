@@ -16,7 +16,13 @@ This repository is part of a **Fashion Store** platform with a headless architec
 - **Git Strategy**: Follow `.agent/workflows/branching_strategy.md`. Use `develop` for daily work.
 - **CI/CD**: GitHub Actions are configured in `.github/workflows/`.
 
+## Change Tracking & Commits
+- **Change Log**: For every push to Git, the agent MUST update `CHANGELOG.md` in the root directory.
+- **Format**: Include the Date, Branch Name, and a clear bulleted list of changed files/logic.
+- **Commit Messages**: Use descriptive conventional commit prefixes (e.g., `feat:`, `fix:`, `refactor:`).
+
 ## Important Files
 - `TODO.md`: Current project roadmap and status.
-- `src/main/resources/application.properties`: Contains ERPNext API keys and DB config.
+- `CHANGELOG.md`: History of all changes pushed by agents.
+- `src/main/resources/application.properties`: Configuration and Env variable mapping.
 - `.agent/workflows/fashion_ecommerce_poc.md`: Original setup instructions.
