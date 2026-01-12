@@ -5,7 +5,7 @@ description: Fashion e‑Commerce PoC – ERPNext, Java middleware, Next.js stor
 # Overview
 This workflow walks you through setting up a **Proof‑of‑Concept** fashion e‑commerce platform consisting of:
 - **ERPNext** (Docker Desktop) – handles inventory, orders, accounting.
-- **Java Spring Boot middleware** – custom business logic, exposes REST APIs.
+- **Java Spring Boot middleware** – custom business logic, exposes REST APIs, razorpay payment, shiprocket integration
 - **Next.js storefront** – modern React‑based UI for customers.
 
 The steps assume you have the two active workspaces open:
@@ -34,10 +34,10 @@ services:
   mariadb:
     image: mariadb:10.6
     environment:
-      MYSQL_ROOT_PASSWORD: example_root_pw
+      MYSQL_ROOT_PASSWORD: alway
       MYSQL_DATABASE: erpnext
       MYSQL_USER: erpnext
-      MYSQL_PASSWORD: example_pw
+      MYSQL_PASSWORD: alway
     volumes:
       - mariadb-data:/var/lib/mysql
     restart: unless-stopped
@@ -45,9 +45,9 @@ services:
     image: frappe/erpnext-worker:version-15
     command: new
     environment:
-      SITE_NAME: demo.local
+      SITE_NAME: vaabhi.local
       DB_ROOT_USER: root
-      MYSQL_ROOT_PASSWORD: example_root_pw
+      MYSQL_ROOT_PASSWORD: alway
       ADMIN_PASSWORD: admin
       INSTALL_APPS: erpnext
     depends_on:
@@ -58,9 +58,9 @@ services:
   erpnext:
     image: frappe/erpnext-worker:version-15
     environment:
-      SITE_NAME: demo.local
+      SITE_NAME: vaabhi.local
       DB_ROOT_USER: root
-      MYSQL_ROOT_PASSWORD: example_root_pw
+      MYSQL_ROOT_PASSWORD: alway
       ADMIN_PASSWORD: admin
     depends_on:
       - mariadb

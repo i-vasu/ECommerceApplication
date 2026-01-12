@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -52,10 +54,14 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private ModelMapper modelMapper;
 
+	@Autowired
+	private MinioService minioService;
+
 	@Value("${project.image}")
 	private String path;
 
 	@Override
+	@CacheEvict(value = "products", allEntries = true)
 	public ProductDTO addProduct(Long categoryId, Product product) {
 
 		Category category = categoryRepo.findById(categoryId)
@@ -91,6 +97,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	@Cacheable(value = "products", key = "#pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
 
 		Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -102,7 +109,8 @@ public class ProductServiceImpl implements ProductService {
 
 		List<Product> products = pageProducts.getContent();
 
-		List<ProductDTO> productDTOs = products.stream().map(product -> modelMapper.map(product, ProductDTO.class))
+		List<ProductDTO> productDTOs = products.stream()
+				.map(this::convertToDTO)
 				.collect(Collectors.toList());
 
 		ProductResponse productResponse = new ProductResponse();
@@ -118,6 +126,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	@Cacheable(value = "products", key = "'cat-' + #categoryId + '-' + #pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse searchByCategory(Long categoryId, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder) {
 
@@ -137,7 +146,8 @@ public class ProductServiceImpl implements ProductService {
 			throw new APIException(category.getCategoryName() + " category doesn't contain any products !!!");
 		}
 
-		List<ProductDTO> productDTOs = products.stream().map(p -> modelMapper.map(p, ProductDTO.class))
+		List<ProductDTO> productDTOs = products.stream()
+				.map(this::convertToDTO)
 				.collect(Collectors.toList());
 
 		ProductResponse productResponse = new ProductResponse();
@@ -153,6 +163,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	@Cacheable(value = "products", key = "'search-' + #keyword + '-' + #pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder) {
 		Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -168,7 +179,8 @@ public class ProductServiceImpl implements ProductService {
 			throw new APIException("Products not found with keyword: " + keyword);
 		}
 
-		List<ProductDTO> productDTOs = products.stream().map(p -> modelMapper.map(p, ProductDTO.class))
+		List<ProductDTO> productDTOs = products.stream()
+				.map(this::convertToDTO)
 				.collect(Collectors.toList());
 
 		ProductResponse productResponse = new ProductResponse();
@@ -184,6 +196,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	@CacheEvict(value = "products", allEntries = true)
 	public ProductDTO updateProduct(Long productId, Product product) {
 		Product productFromDB = productRepo.findById(productId)
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
@@ -207,7 +220,7 @@ public class ProductServiceImpl implements ProductService {
 			CartDTO cartDTO = modelMapper.map(cart, CartDTO.class);
 
 			List<ProductDTO> products = cart.getCartItems().stream()
-					.map(p -> modelMapper.map(p.getProduct(), ProductDTO.class)).collect(Collectors.toList());
+					.map(p -> convertToDTO(p.getProduct())).collect(Collectors.toList());
 
 			cartDTO.setProducts(products);
 
@@ -217,10 +230,11 @@ public class ProductServiceImpl implements ProductService {
 
 		cartDTOs.forEach(cart -> cartService.updateProductInCarts(cart.getCartId(), productId));
 
-		return modelMapper.map(savedProduct, ProductDTO.class);
+		return convertToDTO(savedProduct);
 	}
 
 	@Override
+	@CacheEvict(value = "products", allEntries = true)
 	public ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException {
 		Product productFromDB = productRepo.findById(productId)
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
@@ -229,13 +243,29 @@ public class ProductServiceImpl implements ProductService {
 			throw new APIException("Product not found with productId: " + productId);
 		}
 
-		String fileName = fileService.uploadImage(path, image);
+		String fileName = minioService.uploadFile(image);
 
 		productFromDB.setImage(fileName);
 
 		Product updatedProduct = productRepo.save(productFromDB);
 
-		return modelMapper.map(updatedProduct, ProductDTO.class);
+		return convertToDTO(updatedProduct);
+	}
+
+	private ProductDTO convertToDTO(Product product) {
+		ProductDTO productDTO = modelMapper.map(product, ProductDTO.class);
+
+		// If the image is a MinIO key (contains a timestamp prefix like
+		// 1700000000000_), generate a presigned URL
+		if (product.getImage() != null && product.getImage().contains("_") && !product.getImage().startsWith("http")) {
+			try {
+				productDTO.setImage(minioService.getFileUrl(product.getImage()));
+			} catch (Exception e) {
+				System.err.println(">>> Error generating presigned URL: " + e.getMessage());
+			}
+		}
+
+		return productDTO;
 	}
 
 	@Override
@@ -244,6 +274,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	@CacheEvict(value = "products", allEntries = true)
 	public String deleteProduct(Long productId) {
 
 		Product product = productRepo.findById(productId)

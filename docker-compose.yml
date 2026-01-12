@@ -9,8 +9,10 @@ services:
       POSTGRES_DB: ${postgres_db:-dev}
       POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      POSTGRES_MULTIPLE_DATABASES: keycloak
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - ${DATA_ROOT:-../ecommerce-data}/postgres:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     ports:
       - "5432:5432"
     healthcheck:
@@ -24,8 +26,7 @@ services:
     container_name: ecommerce-backend
     restart: always
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     ports:
       - "8080:8080"
     environment:
@@ -36,28 +37,49 @@ services:
       ERPNEXT_API_URL: ${ERPNEXT_API_URL}
       ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
       ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
-      REDIS_HOST: redis
+      REDIS_HOST: ${REDIS_HOST_DOCKER:-redis}
       REDIS_PORT: 6379
-      SW_AGENT_NAME: ecommerce-backend
-      SW_AGENT_COLLECTOR_BACKEND_SERVICES: skywalking-oap:11800
-      MINIO_ENDPOINT: http://minio:9000
+      SW_AGENT_NAME: ${SW_AGENT_NAME:-ecommerce-backend}
+      SW_AGENT_COLLECTOR_BACKEND_SERVICES: ${SW_OAP_ADDRESS_DOCKER:-skywalking-oap:11800}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT_DOCKER:-http://minio:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-fashion-store}
+      KC_ISSUER_URI: http://keycloak:8080/realms/fashion-store
 
   minio:
-    image: minio/minio:RELEASE.2024-01-11T06-46-16Z
+    image: minio/minio:latest
     container_name: java-minio
     restart: always
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
-      - ./data/minio:/data
+      - ${DATA_ROOT:-../ecommerce-data}/minio:/data
     ports:
       - "9000:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: java-keycloak
+    restart: always
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
+      KC_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+      KC_DEBUG: "true"
+      KC_LOG_LEVEL: "INFO"
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: start-dev
 
 volumes:
   postgres_data:

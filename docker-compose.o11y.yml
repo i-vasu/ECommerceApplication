@@ -8,7 +8,7 @@ services:
     environment:
       - BYDB_LOG_LEVEL=info
     volumes:
-      - ./data/banyandb:/data
+      - ${DATA_ROOT:-../ecommerce-data}/banyandb:/data
     deploy:
       resources:
         limits:
@@ -50,7 +50,7 @@ services:
     container_name: java-middleware-redis
     command: redis-server --appendonly yes
     volumes:
-      - ./data/redis:/data
+      - ${DATA_ROOT:-../ecommerce-data}/redis:/data
     ports:
       - "6380:6379"
     deploy:

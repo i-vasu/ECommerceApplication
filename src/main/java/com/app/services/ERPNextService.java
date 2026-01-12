@@ -6,6 +6,7 @@ import com.app.repositories.CategoryRepo;
 import com.app.repositories.ProductRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,9 @@ public class ERPNextService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private MinioService minioService;
+
     @Value("${erpnext.api.url:http://localhost:8000/api/resource/Item}")
     private String erpNextUrl;
 
@@ -36,6 +40,7 @@ public class ERPNextService {
     private String apiSecret;
 
     @Scheduled(fixedRate = 60000) // Poll every 60 seconds
+    @CacheEvict(value = "products", allEntries = true)
     public void syncItems() {
         System.out.println(">>> Starting ERPNext sync...");
 
@@ -107,9 +112,32 @@ public class ERPNextService {
 
         product.setCategory(category);
         product.setQuantity(100); // Default quantity
-        product.setImage((String) itemData.get("image"));
-        if (product.getImage() == null)
+
+        String remoteImage = (String) itemData.get("image");
+        if (remoteImage != null && !remoteImage.isEmpty()) {
+            // Check if we need to mirror this image
+            if (product.getImage() == null || !product.getImage().contains("_")) {
+                try {
+                    String fullImageUrl = remoteImage;
+                    if (remoteImage.startsWith("/files/")) {
+                        // Extract base URL from erpNextUrl (assuming it's
+                        // http://host:port/api/resource/Item)
+                        String baseUrl = erpNextUrl.split("/api/")[0];
+                        fullImageUrl = baseUrl + remoteImage;
+                    }
+
+                    String minioKey = minioService.uploadFromUrl(fullImageUrl,
+                            itemName.replaceAll("\\s+", "_") + ".png");
+                    product.setImage(minioKey);
+                    System.out.println(">>> Mirrored image to MinIO: " + minioKey);
+                } catch (Exception e) {
+                    System.err.println(">>> Failed to mirror image: " + e.getMessage());
+                    product.setImage(remoteImage);
+                }
+            }
+        } else if (product.getImage() == null) {
             product.setImage("default.png");
+        }
 
         productRepo.save(product);
     }
