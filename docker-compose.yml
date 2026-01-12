@@ -40,3 +40,24 @@ services:
       REDIS_PORT: 6379
       SW_AGENT_NAME: ecommerce-backend
       SW_AGENT_COLLECTOR_BACKEND_SERVICES: skywalking-oap:11800
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-fashion-store}
+
+  minio:
+    image: minio/minio:RELEASE.2024-01-11T06-46-16Z
+    container_name: java-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - ./data/minio:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres_data:
