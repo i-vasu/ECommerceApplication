@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: java-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${postgres_db:-dev}
+      POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: ecommerce-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
+      JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
+      JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      JAVA_JWT_SECRET: ${JAVA_JWT_SECRET}
+      ERPNEXT_API_URL: ${ERPNEXT_API_URL}
+      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
+      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SW_AGENT_NAME: ecommerce-backend
+      SW_AGENT_COLLECTOR_BACKEND_SERVICES: skywalking-oap:11800

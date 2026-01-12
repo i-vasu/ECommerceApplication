@@ -7,6 +7,8 @@ services:
     command: standalone
     environment:
       - BYDB_LOG_LEVEL=info
+    volumes:
+      - ./data/banyandb:/data
     deploy:
       resources:
         limits:
@@ -46,6 +48,9 @@ services:
   redis:
     image: redis:7-alpine
     container_name: java-middleware-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data/redis:/data
     ports:
       - "6380:6379"
     deploy:
