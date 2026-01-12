@@ -2,6 +2,14 @@
 
 All notable changes to the **Java Middleware** will be documented in this file.
 
+## [2026-01-12] - Scaling & Observability Onboarding
+### Branch: `develop`
+- **Infrastructure**: Added `docker-compose.o11y.yml` with **BanyanDB** (v0.5.0), SkyWalking OAP (v9.5.0), and SkyWalking UI.
+- **Optimization**: Swapped Elasticsearch for BanyanDB to reduce RAM footprint by ~60% (calculated saving of 6GB-8GB).
+- **Performance**: Integrated Redis for Java Middleware on port 6380 via `spring-boot-starter-data-redis`.
+- **UI/UX**: Onboarded `framer-motion` in the Storefront and created `PremiumHover` and `FadeIn` motion components.
+- **Analysis**: Created `PLAN_OBSERVABILITY.md` with detailed RAM analysis for 100 RPS peak load.
+
 ## [2026-01-09] - PoC Integration, Security, and Testing Hardening
 ### Branch: `develop`
 - **Infrastructure**: Set up Docker-based ERPNext v15 with official production-ready configuration.
