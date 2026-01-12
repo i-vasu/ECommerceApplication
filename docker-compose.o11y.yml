@@ -4,6 +4,7 @@ services:
   banyandb:
     image: apache/skywalking-banyandb:0.5.0
     container_name: skywalking-banyandb
+    command: standalone
     environment:
       - BYDB_LOG_LEVEL=info
     deploy:
@@ -19,6 +20,7 @@ services:
     container_name: skywalking-oap
     depends_on:
       - banyandb
+    restart: on-failure
     environment:
       SW_STORAGE: banyandb
       SW_STORAGE_BANYANDB_TARGETS: banyandb:17912
