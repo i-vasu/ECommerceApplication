@@ -44,3 +44,11 @@ erpnext/redis-queue-data/
 .env.local
 .env.development
 .env.production
+
+# Application Data & Media
+data/
+images/
+bin/
+logs/
+*.log
+*.tmp
