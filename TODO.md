@@ -14,11 +14,16 @@ Build a modern, premium fashion e-commerce store using a headless architecture.
 *Goal: Establish a functional data loop between all three systems.*
 
 ### 1.1 Infrastructure & Setup
-- [x] **PostgreSQL**: Hardened with Volume Persistence.
-- [x] **Java Middleware**: Containerized with Dockerfile.
-- [x] **Observability**: SkyWalking + BanyanDB + Redis stack initialized.
-- [x] **Next.js Storefront**: Running on port 3000 with Framer Motion.
-- [x] **ERPNext**: Deployed and serving assets.
+
+- [x] **Virtual Threads**: Implement virtual threads.
+- [ ] **Crowdsec**: Implement firewall,fail-open,autorstart. (Implemented Agent)
+- [ ] **Mautic**: Implement mautic for campaign and user behaviour tracking. (Implemented Container)
+- [-] **ProtoBuf**: Skipped.
+
+### 1.2 Data Loop
+- [] **Item Sync**: Polling ERPNext for new items.
+- [] **User Sync**: Polling ERPNext for new users.
+- [] **Order Sync**: Polling ERPNext for new orders.
 
 ---
 
@@ -27,16 +32,25 @@ Build a modern, premium fashion e-commerce store using a headless architecture.
 
 ### 2.1 Logic & Backend (Java)
 - [ ] **Item Variants**: Support for sizes/colors (Attributes in ERPNext).
-- [ ] **Authentication**: Implement JWT Auth (sync users with ERPNext Customers).
+- [ ] **Authentication**: Implement Keycloak (sync users with ERPNext Customers).
 - [ ] **Cart Management**: Handle cart state (Redis or Database).
-- [ ] **Search & Filter**: Implement category/price/size filters.
+- [ ] **Image Compression**: Thumbnail library for converison into webp or AVIV.
+- [ ] **Search & Filter**: Implement category/price/size filters with redis.
 - [ ] **Real-time Sync**: Replace Polling with ERPNext Webhooks.
+- [ ] **Payment Gateway**: Implement payment gateway (Razorpay).
+- [ ] **Shipping Gateway**: Implement Shipping gateway (Shiprocket).
+- [ ] **Channel Management**: Implement channel management (sync orders with Amazon,myntra,nykaa,ajio,flipkart,ONDC,website).
+- [ ] **Order Management**: Implement order management (sync orders with ERPNext).  
+- [ ] **Inventory Management**: Implement inventory management (sync inventory with ERPNext).
+- [ ] **User Management**: Implement user management (sync users with ERPNext Customers).
 
 ### 2.2 Frontend Experience (Next.js)
 - [ ] **Product Details**: Dedicated page (`/product/[slug]`) with variant selectors.
 - [ ] **Checkout Flow**: Address input, Payment method selection.
 - [ ] **User Profile**: Order history view.
 - [ ] **Aesthetics**: Premium typography (Inter/Outfit) and Framer Motion animations.
+- [ ] **Performance**: Implement lazy loading for product images.
+- [ ] **Admin Board**: For admin realted tasks.
 
 ---
 
@@ -44,11 +58,9 @@ Build a modern, premium fashion e-commerce store using a headless architecture.
 *Goal: Secure, scale, and deploy the platform.*
 
 ### 3.1 Security & DevOps
-- [x] **CI Pipeline**: GitHub Actions for Java and Next.js (Implemented).
-- [x] **Persistence**: All databases (Postgres, BanyanDB, Redis) use persistent volumes.
-- [x] **Containerization**: Full `docker-compose.yml` and `Dockerfile` created for backend.
 - [ ] **Production Config**: Switch ERPNext to production mode.
 - [ ] **HTTPS/SSL**: Setup Reverse Proxy (Nginx) with Let's Encrypt.
+- [ ] **CDN**: Setup CDN (Cloudflare).
 
 ### 3.2 Deployment
 - [ ] **Frontend**: Deploy to Vercel/Netlify.

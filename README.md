@@ -2,6 +2,8 @@
 
 This repository contains the Java Spring Boot middleware for a headless fashion e-commerce platform. It acts as an API Gateway and business logic adapter between **ERPNext (Backend)** and **Next.js (Storefront)**.
 
+Detailed project documentation can be found in the [**/docs**](./docs/README.md) directory.
+
 ## 🚀 Quick Start (Dockerized)
 
 ### 1. Prerequisites

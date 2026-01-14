@@ -21,14 +21,43 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build: .
-    container_name: ecommerce-backend
+  discovery-server:
+    image: eclipse-temurin:21-jdk-alpine
+    container_name: discovery-server
+    working_dir: /app
+    volumes:
+      - ./discovery-server/target:/app/target
+    command: java -jar target/discovery-server-0.0.1-SNAPSHOT.jar
+    ports:
+      - "8761:8761"
+
+  api-gateway:
+    image: eclipse-temurin:21-jdk-alpine
+    container_name: api-gateway
+    working_dir: /app
+    volumes:
+      - ./api-gateway/target:/app/target
+    depends_on:
+      - discovery-server
+    command: java -jar target/api-gateway-0.0.1-SNAPSHOT.jar
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+
+  order-service:
+    image: eclipse-temurin:21-jdk-alpine
+    container_name: order-service
+    working_dir: /app
+    volumes:
+      - ./order-service/target:/app/target
+    command: java -jar target/order-service-0.0.1-SNAPSHOT.jar
     restart: always
     depends_on:
       - db
+      - discovery-server
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
       JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
@@ -39,27 +68,34 @@ services:
       ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
       REDIS_HOST: ${REDIS_HOST_DOCKER:-redis}
       REDIS_PORT: 6379
-      SW_AGENT_NAME: ${SW_AGENT_NAME:-ecommerce-backend}
+      SW_AGENT_NAME: ${SW_AGENT_NAME:-order-service}
       SW_AGENT_COLLECTOR_BACKEND_SERVICES: ${SW_OAP_ADDRESS_DOCKER:-skywalking-oap:11800}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT_DOCKER:-http://minio:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-fashion-store}
       KC_ISSUER_URI: http://keycloak:8080/realms/fashion-store
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      PRODUCT_SERVICE_URL: http://product-service:8082
 
-  minio:
-    image: minio/minio:latest
-    container_name: java-minio
-    restart: always
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+  product-service:
+    image: eclipse-temurin:21-jdk-alpine
+    container_name: product-service
+    working_dir: /app
     volumes:
-      - ${DATA_ROOT:-../ecommerce-data}/minio:/data
+      - ./product-service/target:/app/target
+    command: java -jar target/product-service-0.0.1-SNAPSHOT.jar
+    restart: always
+    depends_on:
+      - db
+      - discovery-server
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    command: server /data --console-address ":9001"
+      - "8083:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
+      JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
+      JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
@@ -75,11 +111,53 @@ services:
       KC_DEBUG: "true"
       KC_LOG_LEVEL: "INFO"
     ports:
-      - "8082:8080"
+      - "8084:8080"
     depends_on:
       db:
         condition: service_healthy
     command: start-dev
+
+  mariadb:
+    image: mariadb:10.11
+    container_name: mautic-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MAUTIC_DB_ROOT_PASSWORD:-mauticroot}
+      MYSQL_DATABASE: mautic
+      MYSQL_USER: ${MAUTIC_DB_USER:-mautic}
+      MYSQL_PASSWORD: ${MAUTIC_DB_PASSWORD:-mauticpass}
+    volumes:
+      - ${DATA_ROOT:-../ecommerce-data}/mariadb:/var/lib/mysql
+
+  mautic:
+    image: mautic/mautic:latest
+    container_name: marketing-mautic
+    restart: always
+    depends_on:
+      - mariadb
+    ports:
+      - "8085:80"
+    environment:
+      MAUTIC_DB_HOST: mariadb
+      MAUTIC_DB_USER: ${MAUTIC_DB_USER:-mautic}
+      MAUTIC_DB_PASSWORD: ${MAUTIC_DB_PASSWORD:-mauticpass}
+      MAUTIC_DB_NAME: mautic
+      MAUTIC_RUN_CRON_JOBS: "true"
+      MAUTIC_TRUSTED_PROXIES: "0.0.0.0/0"
+    volumes:
+      - ${DATA_ROOT:-../ecommerce-data}/mautic_data:/var/www/html/docroot/media
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: security-crowdsec
+    restart: always
+    environment:
+      GID: "${GID-1000}"
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik crowdsecurity/http-cve"
+    volumes:
+      - ${DATA_ROOT:-../ecommerce-data}/crowdsec/config:/etc/crowdsec
+      - ${DATA_ROOT:-../ecommerce-data}/crowdsec/data:/var/lib/crowdsec/data
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   postgres_data:
