@@ -3,8 +3,10 @@
 Welcome to the Fashion E-Commerce Middleware Documentation.
 
 ## 📂 Architecture & Design
-- [High-Level Architecture](ARCHITECTURE.md) - Core microservices overview and standard checkout flows.
-- [Multi-Marketplace Integration](MULTI_MARKETPLACE_INTEGRATION.md) - Detailed design for Amazon, Flipkart, ONDC, and more.
+- [High-Level Architecture](HIGH_LEVEL_ARCHITECTURE.md) - Marketplace-specific architecture and consolidated services.
+- [Multi-Marketplace Integration](MULTI_MARKETPLACE_INTEGRATION.md) - Original integration overview.
+- [Low-Level Design](MARKETPLACE_LLD.md) - Detailed component and class designs.
+- [Deliverable List](DELIVERABLES.md) - Tracking features and modules.
 
 ## 🛠️ Integrated Systems
 - **ERPNext**: Master data source for items, inventory, and orders.
