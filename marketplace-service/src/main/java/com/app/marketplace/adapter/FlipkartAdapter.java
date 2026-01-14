@@ -25,10 +25,11 @@ public class FlipkartAdapter implements MarketplaceAdapter {
     }
 
     @Override
-    public void handleWebhook(Map<String, Object> payload) {
+    public OrderDTO handleWebhook(Map<String, Object> payload) {
         log.info("Received Flipkart webhook event: {}", payload);
         OrderDTO order = normalize(payload);
         log.info("Normalized Flipkart Order: {}", order);
+        return order;
     }
 
     @Override

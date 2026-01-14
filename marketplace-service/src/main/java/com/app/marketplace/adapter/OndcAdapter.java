@@ -13,27 +13,25 @@ import java.util.Map;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class AmazonAdapter implements MarketplaceAdapter {
+public class OndcAdapter implements MarketplaceAdapter {
 
     private final NormalizationEngine normalizationEngine;
 
-    // In a real scenario, this would be injected value
-    private final String spApiSecret = "AMAZON_SECRET";
-
     @Override
     public List<OrderDTO> fetchOrders() {
-        log.info("Fetching orders from Amazon SP-API");
-        // Implementation to call Amazon SP-API would go here
+        // ONDC is typically push-based (webhooks/callbacks), so pulling might be
+        // different or not applicable
         return Collections.emptyList();
     }
 
     @Override
     public OrderDTO handleWebhook(Map<String, Object> payload) {
-        log.info("Received Amazon webhook event: {}", payload);
-        // Verify signature (would be done in Controller or here)
-        // Process payload
+        log.info("Received ONDC webhook event: {}", payload);
+        // ONDC Beckn protocol handling
+        // 1. Verify header (Authorization)
+        // 2. Process 'on_confirm' or 'on_status'
         OrderDTO order = normalize(payload);
-        log.info("Normalized Amazon Order: {}", order);
+        log.info("Normalized ONDC Order: {}", order);
         return order;
     }
 
@@ -42,8 +40,8 @@ public class AmazonAdapter implements MarketplaceAdapter {
         if (payload instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) payload;
-            return normalizationEngine.mapToInternal("AMAZON", map);
+            return normalizationEngine.mapToInternal("ONDC", map);
         }
-        throw new IllegalArgumentException("Invalid payload type for Amazon adapter");
+        throw new IllegalArgumentException("Invalid payload type for ONDC adapter");
     }
 }

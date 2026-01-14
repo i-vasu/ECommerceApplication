@@ -7,7 +7,7 @@ import java.util.Map;
 public interface MarketplaceAdapter {
     List<OrderDTO> fetchOrders();
 
-    void handleWebhook(Map<String, Object> payload);
+    OrderDTO handleWebhook(Map<String, Object> payload);
 
     OrderDTO normalize(Object payload);
 }
