@@ -17,10 +17,17 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: Asia/Kolkata
-  data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6380}
+
+marketplace:
+  amazon:
+    secret: ${AMAZON_WEBHOOK_SECRET:mock-amazon-secret}
+  flipkart:
+    secret: ${FLIPKART_WEBHOOK_SECRET:mock-flipkart-secret}
+  ondc:
+    secret: ${ONDC_WEBHOOK_SECRET:mock-ondc-secret}
 
 eureka:
   client:

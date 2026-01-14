@@ -30,6 +30,15 @@ public class WebhookController {
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
+    @org.springframework.beans.factory.annotation.Value("${marketplace.amazon.secret}")
+    private String amazonSecret;
+
+    @org.springframework.beans.factory.annotation.Value("${marketplace.flipkart.secret}")
+    private String flipkartSecret;
+
+    @org.springframework.beans.factory.annotation.Value("${marketplace.ondc.secret}")
+    private String ondcSecret;
+
     @PostMapping("/{channel}")
     public ResponseEntity<String> handleWebhook(
             @PathVariable String channel,
@@ -51,13 +60,20 @@ public class WebhookController {
         // 1. Persistence
         saveRawEvent(channel, payload);
 
-        // 2. Validate Signature (Optional/Simulated for now)
-        // In prod, each channel would have a different secret key strategy
+        // 2. Validate Signature
+        String secret = "mock";
+        if ("amazon".equalsIgnoreCase(channel))
+            secret = amazonSecret;
+        else if ("flipkart".equalsIgnoreCase(channel))
+            secret = flipkartSecret;
+        else if ("ondc".equalsIgnoreCase(channel))
+            secret = ondcSecret;
+
         if (signature != null
-                && !signatureVerificationService.verifySignature(payload.toString(), signature, "SECRET")) {
+                && !signatureVerificationService.verifySignature(payload.toString(), signature, secret)) {
             log.warn("Signature verification failed for {}", channel);
+            // In Production, UNCOMMENT the line below to reject invalid requests
             // return ResponseEntity.status(401).body("Invalid Signature");
-            // Forcing continue for dev testing ease unless strict
         }
 
         MarketplaceAdapter adapter = getAdapter(channel);

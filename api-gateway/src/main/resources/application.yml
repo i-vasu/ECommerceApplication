@@ -17,6 +17,11 @@ spring:
           predicates:
             - Path=/api/**
 
+        - id: marketplace-service
+          uri: lb://MARKETPLACE-SERVICE
+          predicates:
+            - Path=/webhooks/**
+
 eureka:
   client:
     service-url:
