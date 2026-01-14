@@ -63,15 +63,11 @@ public class ProductServiceImpl implements ProductService {
 
 		boolean isProductNotPresent = true;
 
-		List<Product> products = category.getProducts();
+		Product existingProduct = productRepo.findByCategoryAndProductNameAndDescription(category, product.getProductName(),
+				product.getDescription());
 
-		for (int i = 0; i < products.size(); i++) {
-			if (products.get(i).getProductName().equals(product.getProductName())
-					&& products.get(i).getDescription().equals(product.getDescription())) {
-
-				isProductNotPresent = false;
-				break;
-			}
+		if (existingProduct != null) {
+			isProductNotPresent = false;
 		}
 
 		if (isProductNotPresent) {
