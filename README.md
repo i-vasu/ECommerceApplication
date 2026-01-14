@@ -24,7 +24,7 @@ This will build the Java jar with the SkyWalking Agent attached, start the Postg
 docker compose up -d --build
 ```
 - **Java API**: [http://localhost:8080](http://localhost:8080)
-- **MinIO Console**: [http://localhost:9001](http://localhost:9001) (User: `minioadmin`, Pass: `minioadmin`)
+- **MinIO Console**: [http://localhost:9001](http://localhost:9001) 
 - **Swagger Docs**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
 
 ---
