@@ -30,4 +30,9 @@ public class Shipment {
     private String status;
     private String trackUrl;
 
+    // Shiprocket specific fields
+    private String externalOrderId; // Shiprocket order ID
+    private String externalShipmentId; // Shiprocket shipment ID
+    private String courierName; // Assigned courier name (e.g., "Delhivery", "Blue Dart")
+
 }

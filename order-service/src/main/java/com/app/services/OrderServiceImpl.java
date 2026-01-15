@@ -210,4 +210,53 @@ public class OrderServiceImpl implements OrderService {
 		return modelMapper.map(order, OrderDTO.class);
 	}
 
+	@Override
+	public OrderDTO placeMarketplaceOrder(OrderDTO orderDTO) {
+		// Create order directly from DTO (marketplace flow - no cart)
+		Order order = new Order();
+		order.setEmail(orderDTO.getEmail());
+		order.setOrderDate(LocalDate.now());
+		order.setTotalAmount(orderDTO.getTotalAmount() != null ? orderDTO.getTotalAmount() : 0.0);
+		order.setOrderStatus(
+				orderDTO.getOrderStatus() != null ? orderDTO.getOrderStatus() : "Marketplace Order Received");
+
+		// Create payment record
+		Payment payment = new Payment();
+		payment.setOrder(order);
+		payment.setPaymentMethod("Marketplace"); // Generic payment method for marketplace orders
+		payment = paymentRepo.save(payment);
+		order.setPayment(payment);
+
+		Order savedOrder = orderRepo.save(order);
+
+		// Process order items
+		List<OrderItem> orderItems = new ArrayList<>();
+		if (orderDTO.getOrderItems() != null) {
+			for (OrderItemDTO itemDTO : orderDTO.getOrderItems()) {
+				OrderItem orderItem = new OrderItem();
+				orderItem.setProductId(itemDTO.getProduct() != null ? itemDTO.getProduct().getProductId() : null);
+				orderItem.setProductName(
+						itemDTO.getProduct() != null ? itemDTO.getProduct().getProductName() : "Unknown");
+				orderItem.setQuantity(itemDTO.getQuantity());
+				orderItem.setDiscount(itemDTO.getDiscount());
+				orderItem.setOrderedProductPrice(itemDTO.getOrderedProductPrice());
+				orderItem.setOrder(savedOrder);
+				orderItems.add(orderItem);
+			}
+		}
+
+		orderItems = orderItemRepo.saveAll(orderItems);
+		savedOrder.setOrderItems(orderItems);
+
+		// Async ERPNext sync
+		new Thread(() -> {
+			erpNextService.createSalesOrder(savedOrder);
+		}).start();
+
+		OrderDTO result = modelMapper.map(savedOrder, OrderDTO.class);
+		orderItems.forEach(item -> result.getOrderItems().add(modelMapper.map(item, OrderItemDTO.class)));
+
+		return result;
+	}
+
 }

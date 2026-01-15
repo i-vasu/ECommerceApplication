@@ -1,5 +1,8 @@
 package com.app.services;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,6 +132,58 @@ public class PaymentServiceImpl implements PaymentService {
 
     private String getSecret() {
         return secret;
+    }
+
+    @Override
+    public Map<String, Object> initiateRefund(String paymentId, Long amount, String notes) {
+        try {
+            org.json.JSONObject refundRequest = new org.json.JSONObject();
+            if (amount != null) {
+                refundRequest.put("amount", amount);
+            }
+            if (notes != null && !notes.isEmpty()) {
+                org.json.JSONObject notesJson = new org.json.JSONObject();
+                notesJson.put("reason", notes);
+                refundRequest.put("notes", notesJson);
+            }
+            refundRequest.put("speed", "normal");
+
+            com.razorpay.Refund refund = razorpayClient.payments.refund(paymentId, refundRequest);
+
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("refund_id", refund.get("id"));
+            response.put("payment_id", refund.get("payment_id"));
+            response.put("amount", refund.get("amount"));
+            response.put("status", refund.get("status"));
+            response.put("speed_requested", refund.get("speed_requested"));
+
+            return response;
+        } catch (RazorpayException e) {
+            throw new RuntimeException("Refund failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public java.util.Map<String, Object> getPaymentDetails(String paymentId) {
+        try {
+            com.razorpay.Payment payment = razorpayClient.payments.fetch(paymentId);
+
+            java.util.Map<String, Object> details = new java.util.HashMap<>();
+            details.put("id", payment.get("id"));
+            details.put("amount", payment.get("amount"));
+            details.put("currency", payment.get("currency"));
+            details.put("status", payment.get("status"));
+            details.put("method", payment.get("method"));
+            details.put("email", payment.get("email"));
+            details.put("contact", payment.get("contact"));
+            details.put("order_id", payment.get("order_id"));
+            details.put("captured", payment.get("captured"));
+            details.put("created_at", payment.get("created_at"));
+
+            return details;
+        } catch (RazorpayException e) {
+            throw new RuntimeException("Failed to fetch payment: " + e.getMessage(), e);
+        }
     }
 
 }

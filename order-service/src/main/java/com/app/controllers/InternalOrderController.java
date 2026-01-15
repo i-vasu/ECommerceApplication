@@ -16,15 +16,7 @@ public class InternalOrderController {
 
     @PostMapping("/ingest")
     public ResponseEntity<OrderDTO> ingestOrder(@RequestBody OrderDTO orderDTO) {
-        // In a real implementation, we would likely need a dedicated service method
-        // that handles marketplace orders (skipping cart logic, handling external IDs
-        // etc).
-        // For now, we assume the DTO comes fully populated.
-        // We might need to save it directly or adapt it.
-        // Since the current Service assumes Cart, we might need to extend the service.
-        // For this task, I will create a placeholder response that mimics success
-        // to verify the integration flow.
-
-        return new ResponseEntity<>(orderDTO, HttpStatus.CREATED);
+        OrderDTO savedOrder = orderService.placeMarketplaceOrder(orderDTO);
+        return new ResponseEntity<>(savedOrder, HttpStatus.CREATED);
     }
 }

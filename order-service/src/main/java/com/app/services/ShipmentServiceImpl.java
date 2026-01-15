@@ -1,8 +1,10 @@
 package com.app.services;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,15 +13,35 @@ import org.springframework.transaction.annotation.Transactional;
 import com.app.entites.Order;
 import com.app.entites.Shipment;
 import com.app.exceptions.ResourceNotFoundException;
-import com.app.external.ShadowfaxClient;
 import com.app.repositories.OrderRepo;
 import com.app.repositories.ShipmentRepo;
 
+/**
+ * Multi-provider Shipment Service
+ * 
+ * Supports multiple shipping providers:
+ * - Shiprocket (recommended for Indian e-commerce)
+ * - Shadowfax (hyperlocal delivery)
+ * 
+ * Provider selection is done via configuration.
+ */
 @Service
 public class ShipmentServiceImpl implements ShipmentService {
 
+    private static final Logger log = LoggerFactory.getLogger(ShipmentServiceImpl.class);
+
+    public enum ShippingProvider {
+        SHIPROCKET, SHADOWFAX
+    }
+
+    @Value("${shipping.provider:SHIPROCKET}")
+    private String shippingProvider;
+
     @Autowired
-    private ShadowfaxClient shadowfaxClient;
+    private ShiprocketService shiprocketService;
+
+    @Autowired(required = false)
+    private com.app.external.ShadowfaxClient shadowfaxClient;
 
     @Autowired
     private OrderRepo orderRepo;
@@ -30,7 +52,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Autowired
     private com.app.repositories.UserRepo userRepo;
 
-    @Value("${shadowfax.token:Token token_value}")
+    @Value("${shadowfax.token:}")
     private String shadowfaxToken;
 
     @Override
@@ -39,44 +61,77 @@ public class ShipmentServiceImpl implements ShipmentService {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
 
+        // Return existing shipment if already created
         if (order.getShipment() != null) {
+            log.info("Shipment already exists for order {}", orderId);
             return order.getShipment();
         }
 
-        Map<String, Object> payload = buildShadowfaxPayload(order);
+        ShippingProvider provider = ShippingProvider.valueOf(shippingProvider.toUpperCase());
 
+        Shipment shipment;
+        switch (provider) {
+            case SHIPROCKET:
+                shipment = createShiprocketShipment(order);
+                break;
+            case SHADOWFAX:
+                shipment = createShadowfaxShipment(order);
+                break;
+            default:
+                throw new RuntimeException("Unsupported shipping provider: " + shippingProvider);
+        }
+
+        order.setShipment(shipment);
+        return shipmentRepo.save(shipment);
+    }
+
+    private Shipment createShiprocketShipment(Order order) {
+        log.info("Creating Shiprocket shipment for order {}", order.getOrderId());
+
+        Map<String, Object> response = shiprocketService.createShipment(order);
+
+        Shipment shipment = new Shipment();
+        shipment.setOrder(order);
+        shipment.setCarrier("Shiprocket");
+
+        // Extract Shiprocket order and shipment IDs
+        if (response.containsKey("order_id")) {
+            shipment.setExternalOrderId(String.valueOf(response.get("order_id")));
+        }
+        if (response.containsKey("shipment_id")) {
+            shipment.setExternalShipmentId(String.valueOf(response.get("shipment_id")));
+        }
+
+        // If AWB is already generated
+        if (response.containsKey("awb_code")) {
+            shipment.setAwbNumber(String.valueOf(response.get("awb_code")));
+        }
+
+        shipment.setStatus("CREATED");
+
+        log.info("Shiprocket shipment created: shipment_id={}", shipment.getExternalShipmentId());
+        return shipment;
+    }
+
+    private Shipment createShadowfaxShipment(Order order) {
+        log.info("Creating Shadowfax shipment for order {}", order.getOrderId());
+
+        if (shadowfaxClient == null) {
+            throw new RuntimeException("Shadowfax client not configured");
+        }
+
+        Map<String, Object> payload = buildShadowfaxPayload(order);
         Map<String, Object> response = shadowfaxClient.createOrder(shadowfaxToken, payload);
 
-        // Parse response to get AWB
-        // Assuming response structure: {"data": {"awb_number": "...", "status": "..."}}
-        // This depends on actual API response, implementing basic extraction
-
-        String awb = null;
-        String status = "CREATED";
-
-        if (response.containsKey("data") && response.get("data") instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> data = (Map<String, Object>) response.get("data");
-            awb = (String) data.get("awb_number");
-            status = (String) data.get("status");
-        } else if (response.containsKey("awb_number")) {
-            awb = (String) response.get("awb_number");
-        }
-
-        if (awb == null && response.containsKey("message")) {
-            // Handle error or store failure
-            throw new RuntimeException("Shadowfax Error: " + response.get("message"));
-        }
+        String awb = extractAwbFromShadowfax(response);
 
         Shipment shipment = new Shipment();
         shipment.setOrder(order);
         shipment.setCarrier("Shadowfax");
         shipment.setAwbNumber(awb);
-        shipment.setStatus(status);
+        shipment.setStatus("CREATED");
 
-        order.setShipment(shipment);
-
-        return shipmentRepo.save(shipment);
+        return shipment;
     }
 
     @Override
@@ -84,8 +139,122 @@ public class ShipmentServiceImpl implements ShipmentService {
         Shipment shipment = shipmentRepo.findById(shipmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Shipment", "id", shipmentId));
 
-        return shadowfaxClient.trackOrder(shadowfaxToken, shipment.getAwbNumber());
+        ShippingProvider provider = ShippingProvider.valueOf(shippingProvider.toUpperCase());
+
+        switch (provider) {
+            case SHIPROCKET:
+                if (shipment.getAwbNumber() != null) {
+                    return shiprocketService.trackByAwb(shipment.getAwbNumber());
+                } else if (shipment.getExternalShipmentId() != null) {
+                    return shiprocketService.trackByShipmentId(shipment.getExternalShipmentId());
+                }
+                throw new RuntimeException("No AWB or shipment ID available for tracking");
+
+            case SHADOWFAX:
+                if (shadowfaxClient == null) {
+                    throw new RuntimeException("Shadowfax client not configured");
+                }
+                return shadowfaxClient.trackOrder(shadowfaxToken, shipment.getAwbNumber());
+
+            default:
+                throw new RuntimeException("Unsupported shipping provider: " + shippingProvider);
+        }
     }
+
+    /**
+     * Generate AWB for a Shiprocket shipment
+     */
+    public Shipment generateAwb(Long shipmentId, String courierId) {
+        Shipment shipment = shipmentRepo.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "id", shipmentId));
+
+        if (shipment.getAwbNumber() != null && !shipment.getAwbNumber().isEmpty()) {
+            log.info("AWB already exists for shipment {}: {}", shipmentId, shipment.getAwbNumber());
+            return shipment;
+        }
+
+        if (!"Shiprocket".equals(shipment.getCarrier())) {
+            throw new RuntimeException("AWB generation is only available for Shiprocket shipments");
+        }
+
+        Map<String, Object> response = shiprocketService.generateAwb(
+                shipment.getExternalShipmentId(), courierId);
+
+        if (response.containsKey("awb_code")) {
+            shipment.setAwbNumber(String.valueOf(response.get("awb_code")));
+            if (response.containsKey("courier_name")) {
+                shipment.setCourierName(String.valueOf(response.get("courier_name")));
+            }
+            shipment.setStatus("AWB_ASSIGNED");
+            return shipmentRepo.save(shipment);
+        }
+
+        throw new RuntimeException("Failed to generate AWB: " + response);
+    }
+
+    /**
+     * Request pickup for shipment
+     */
+    public Shipment requestPickup(Long shipmentId) {
+        Shipment shipment = shipmentRepo.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "id", shipmentId));
+
+        if (!"Shiprocket".equals(shipment.getCarrier())) {
+            throw new RuntimeException("Pickup request is only available for Shiprocket shipments");
+        }
+
+        shiprocketService.requestPickup(shipment.getExternalShipmentId());
+
+        shipment.setStatus("PICKUP_REQUESTED");
+        return shipmentRepo.save(shipment);
+    }
+
+    /**
+     * Cancel a shipment
+     */
+    @Transactional
+    public Shipment cancelShipment(Long shipmentId) {
+        Shipment shipment = shipmentRepo.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "id", shipmentId));
+
+        if ("Shiprocket".equals(shipment.getCarrier()) && shipment.getExternalOrderId() != null) {
+            shiprocketService.cancelOrder(List.of(shipment.getExternalOrderId()));
+        }
+
+        shipment.setStatus("CANCELLED");
+        return shipmentRepo.save(shipment);
+    }
+
+    /**
+     * Get available courier partners for a shipment route
+     */
+    public Map<String, Object> getAvailableCouriers(String pickupPincode, String deliveryPincode,
+            double weight, boolean isCod) {
+        return shiprocketService.getAvailableCouriers(pickupPincode, deliveryPincode, weight, isCod);
+    }
+
+    /**
+     * Generate shipping label
+     */
+    public Map<String, Object> generateLabel(Long shipmentId) {
+        Shipment shipment = shipmentRepo.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "id", shipmentId));
+
+        if (!"Shiprocket".equals(shipment.getCarrier())) {
+            throw new RuntimeException("Label generation is only available for Shiprocket shipments");
+        }
+
+        return shiprocketService.generateLabel(shipment.getExternalShipmentId());
+    }
+
+    /**
+     * Get all configured pickup locations
+     */
+    public Map<String, Object> getPickupLocations() {
+        return shiprocketService.getPickupLocations();
+    }
+
+    // ==================== Shadowfax Helper Methods ====================
 
     private Map<String, Object> buildShadowfaxPayload(Order order) {
         com.app.entites.User user = userRepo.findByEmail(order.getEmail())
@@ -97,15 +266,15 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         com.app.entites.Address address = user.getAddresses().get(0);
 
-        Map<String, Object> payload = new HashMap<>();
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
 
-        Map<String, Object> orderDetails = new HashMap<>();
+        java.util.Map<String, Object> orderDetails = new java.util.HashMap<>();
         orderDetails.put("client_order_id", String.valueOf(order.getOrderId()));
-        orderDetails.put("actual_weight", 0.5); // Placeholder
+        orderDetails.put("actual_weight", 0.5);
         orderDetails.put("product_value", order.getTotalAmount());
-        orderDetails.put("payment_mode", "prepaid"); // Or COD based on payment logic
+        orderDetails.put("payment_mode", "prepaid");
 
-        Map<String, Object> consigneeDetails = new HashMap<>();
+        java.util.Map<String, Object> consigneeDetails = new java.util.HashMap<>();
         consigneeDetails.put("city", address.getCity());
         consigneeDetails.put("name", user.getFirstName() + " " + user.getLastName());
         consigneeDetails.put("phone", user.getMobileNumber());
@@ -114,7 +283,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         consigneeDetails.put("state", address.getState());
         consigneeDetails.put("country", address.getCountry());
 
-        Map<String, Object> pickupDetails = new HashMap<>();
+        java.util.Map<String, Object> pickupDetails = new java.util.HashMap<>();
         pickupDetails.put("warehouse_name", "Main Warehouse");
         pickupDetails.put("city", "Bangalore");
         pickupDetails.put("address_line_1", "Warehouse Address");
@@ -129,4 +298,19 @@ public class ShipmentServiceImpl implements ShipmentService {
         return payload;
     }
 
+    private String extractAwbFromShadowfax(Map<String, Object> response) {
+        if (response.containsKey("data") && response.get("data") instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) response.get("data");
+            return (String) data.get("awb_number");
+        } else if (response.containsKey("awb_number")) {
+            return (String) response.get("awb_number");
+        }
+
+        if (response.containsKey("message")) {
+            throw new RuntimeException("Shadowfax Error: " + response.get("message"));
+        }
+
+        return null;
+    }
 }

@@ -21,6 +21,13 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
   discovery-server:
     image: eclipse-temurin:21-jdk-alpine
     container_name: discovery-server
@@ -96,6 +103,31 @@ services:
       JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
       JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+
+  marketplace-service:
+    image: eclipse-temurin:21-jdk-alpine
+    container_name: marketplace-service
+    working_dir: /app
+    volumes:
+      - ./marketplace-service/target:/app/target
+    command: java -jar target/marketplace-service-0.0.1-SNAPSHOT.jar
+    restart: always
+    depends_on:
+      - db
+      - discovery-server
+    ports:
+      - "8086:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
+      JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
+      JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      REDIS_HOST: ${REDIS_HOST_DOCKER:-redis}
+      REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      # Secrets
+      AMAZON_WEBHOOK_SECRET: ${AMAZON_WEBHOOK_SECRET:-mock-amazon}
+      FLIPKART_WEBHOOK_SECRET: ${FLIPKART_WEBHOOK_SECRET:-mock-flipkart}
+      ONDC_WEBHOOK_SECRET: ${ONDC_WEBHOOK_SECRET:-mock-ondc}
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
