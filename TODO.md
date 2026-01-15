@@ -17,7 +17,7 @@ Build a modern, premium fashion e-commerce store using a headless architecture.
 
 - [x] **Virtual Threads**: Implement virtual threads.
 - [ ] **Crowdsec**: Implement firewall,fail-open,autorstart. (Implemented Agent)
-- [ ] **Mautic**: Implement mautic for campaign and user behaviour tracking. (Implemented Container)
+- [x] **Marketing Stack**: Removed Mautic. Added Dittofeed, Umami.
 - [-] **ProtoBuf**: Skipped.
 
 ### 1.2 Data Loop
@@ -32,13 +32,13 @@ Build a modern, premium fashion e-commerce store using a headless architecture.
 
 ### 2.1 Logic & Backend (Java)
 - [ ] **Item Variants**: Support for sizes/colors (Attributes in ERPNext).
-- [ ] **Authentication**: Implement Keycloak (sync users with ERPNext Customers).
+- [x] **Authentication**: Custom JWT with Refresh Token, Email Verification, Password Reset. (Removed Keycloak).
 - [ ] **Cart Management**: Handle cart state (Redis or Database).
 - [ ] **Image Compression**: Thumbnail library for converison into webp or AVIV.
-- [ ] **Search & Filter**: Implement category/price/size filters with redis.
+- [ ] **Search & Filter**: Implement category/price/size filters with Meilisearch/Dragonfly.
 - [ ] **Real-time Sync**: Replace Polling with ERPNext Webhooks.
-- [ ] **Payment Gateway**: Implement payment gateway (Razorpay).
-- [ ] **Shipping Gateway**: Implement Shipping gateway (Shiprocket).
+- [x] **Payment Gateway**: Implement payment gateway (Razorpay).
+- [x] **Shipping Gateway**: Implement Shipping gateway (Shiprocket).
 - [ ] **Channel Management**: Implement channel management (sync orders with Amazon,myntra,nykaa,ajio,flipkart,ONDC,website).
 - [ ] **Order Management**: Implement order management (sync orders with ERPNext).  
 - [ ] **Inventory Management**: Implement inventory management (sync inventory with ERPNext).
