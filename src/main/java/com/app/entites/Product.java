@@ -49,7 +49,9 @@ public class Product {
 	@JoinColumn(name = "category_id")
 	private Category category;
 	
-	@OneToMany(mappedBy = "product", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.EAGER)
+	// Bolt: Optimized fetch type to LAZY (default) to avoid N+1 query problem when loading products.
+	// This prevents loading all associated cart items for every product.
+	@OneToMany(mappedBy = "product", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	private List<CartItem> products = new ArrayList<>();
 	
 	@OneToMany(mappedBy = "product", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
