@@ -2,6 +2,8 @@ package com.app.services;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
+import java.time.LocalDateTime;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +61,13 @@ public class UserServiceImpl implements UserService {
 
 		try {
 			User user = modelMapper.map(userDTO, User.class);
+
+			// Generate verification code
+			user.setVerificationCode(UUID.randomUUID().toString());
+			user.setVerified(false);
+
+			// Mock email sending
+			System.out.println("Verification Code for " + user.getEmail() + ": " + user.getVerificationCode());
 
 			Cart cart = new Cart();
 			user.setCart(cart);
@@ -253,6 +262,53 @@ public class UserServiceImpl implements UserService {
 		userRepo.delete(user);
 
 		return "User with userId " + userId + " deleted successfully!!!";
+	}
+
+	@Override
+	public void verifyEmail(String email, String code) {
+		User user = userRepo.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+		if (user.isVerified()) {
+			throw new APIException("User is already verified");
+		}
+
+		if (code.equals(user.getVerificationCode())) {
+			user.setVerified(true);
+			user.setVerificationCode(null);
+			userRepo.save(user);
+		} else {
+			throw new APIException("Invalid verification code");
+		}
+	}
+
+	@Override
+	public void forgotPassword(String email) {
+		User user = userRepo.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+		String token = UUID.randomUUID().toString();
+		user.setResetToken(token);
+		user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
+		userRepo.save(user);
+
+		// Mock email sending
+		System.out.println("Password Reset Token for " + email + ": " + token);
+	}
+
+	@Override
+	public void resetPassword(String token, String newPassword) {
+		User user = userRepo.findByResetToken(token)
+				.orElseThrow(() -> new APIException("Invalid password reset token"));
+
+		if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+			throw new APIException("Token expired");
+		}
+
+		user.setPassword(passwordEncoder.encode(newPassword));
+		user.setResetToken(null);
+		user.setResetTokenExpiry(null);
+		userRepo.save(user);
 	}
 
 }

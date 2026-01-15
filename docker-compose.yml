@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: ${postgres_db:-dev}
       POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      POSTGRES_MULTIPLE_DATABASES: keycloak
+      POSTGRES_MULTIPLE_DATABASES: keycloak,dittofeed,umami,metabase
     volumes:
       - ${DATA_ROOT:-../ecommerce-data}/postgres:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
@@ -22,11 +22,26 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
-    container_name: redis
+    image: 'dragonflydb/dragonfly'
+    container_name: dragonfly
     restart: always
+    ulimits:
+      memlock: -1
     ports:
       - "6379:6379"
+    volumes:
+      - ${DATA_ROOT:-../ecommerce-data}/dragonfly:/data
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    container_name: search-meilisearch
+    restart: always
+    ports:
+      - "7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-masterKey}
+    volumes:
+      - ${DATA_ROOT:-../ecommerce-data}/meilisearch:/meili_data
 
   discovery-server:
     image: eclipse-temurin:21-jdk-alpine
@@ -149,36 +164,6 @@ services:
         condition: service_healthy
     command: start-dev
 
-  mariadb:
-    image: mariadb:10.11
-    container_name: mautic-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MAUTIC_DB_ROOT_PASSWORD:-mauticroot}
-      MYSQL_DATABASE: mautic
-      MYSQL_USER: ${MAUTIC_DB_USER:-mautic}
-      MYSQL_PASSWORD: ${MAUTIC_DB_PASSWORD:-mauticpass}
-    volumes:
-      - ${DATA_ROOT:-../ecommerce-data}/mariadb:/var/lib/mysql
-
-  mautic:
-    image: mautic/mautic:latest
-    container_name: marketing-mautic
-    restart: always
-    depends_on:
-      - mariadb
-    ports:
-      - "8085:80"
-    environment:
-      MAUTIC_DB_HOST: mariadb
-      MAUTIC_DB_USER: ${MAUTIC_DB_USER:-mautic}
-      MAUTIC_DB_PASSWORD: ${MAUTIC_DB_PASSWORD:-mauticpass}
-      MAUTIC_DB_NAME: mautic
-      MAUTIC_RUN_CRON_JOBS: "true"
-      MAUTIC_TRUSTED_PROXIES: "0.0.0.0/0"
-    volumes:
-      - ${DATA_ROOT:-../ecommerce-data}/mautic_data:/var/www/html/docroot/media
-
   crowdsec:
     image: crowdsecurity/crowdsec:latest
     container_name: security-crowdsec
@@ -190,6 +175,45 @@ services:
       - ${DATA_ROOT:-../ecommerce-data}/crowdsec/config:/etc/crowdsec
       - ${DATA_ROOT:-../ecommerce-data}/crowdsec/data:/var/lib/crowdsec/data
       - /var/run/docker.sock:/var/run/docker.sock
+
+  dittofeed:
+    image: dittofeed/dittofeed-lite:latest
+    container_name: marketing-dittofeed
+    restart: always
+    ports:
+      - "3301:3000"
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      POSTGRES_DB: dittofeed
+      REDIS_URL: redis://redis:6379
+      ADMIN_API_KEY: "password"
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    container_name: marketing-umami
+    restart: always
+    ports:
+      - "3300:3000"
+    environment:
+      DATABASE_URL: postgresql://${JAVA_DB_USERNAME:-postgres}:${JAVA_DB_PASSWORD:-123Vasu456}@db:5432/umami
+      HASH_SALT: "ReplaceMeWithARandomString"
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: analytics-metabase
+    restart: always
+    ports:
+      - "3302:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${JAVA_DB_USERNAME:-postgres}
+      MB_DB_PASS: ${JAVA_DB_PASSWORD:-123Vasu456}
+      MB_DB_HOST: db
 
 volumes:
   postgres_data:
