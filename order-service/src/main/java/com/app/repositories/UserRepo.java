@@ -20,4 +20,6 @@ public interface UserRepo extends JpaRepository<User, Long> {
 	Optional<User> findByVerificationCode(String verificationCode);
 
 	Optional<User> findByResetToken(String resetToken);
+
+	Optional<User> findByMobileNumber(String mobileNumber);
 }

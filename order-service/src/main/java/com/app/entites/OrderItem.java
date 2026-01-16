@@ -25,6 +25,8 @@ public class OrderItem {
 	@jakarta.persistence.Column(name = "product_id")
 	private Long productId;
 
+	private String itemCode;
+
 	private String productName;
 
 	@ManyToOne

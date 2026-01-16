@@ -23,8 +23,6 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 @EnableCaching
 @EnableScheduling
 @SpringBootApplication
-@org.springframework.cloud.openfeign.EnableFeignClients
-@org.springframework.cloud.client.discovery.EnableDiscoveryClient
 @SecurityScheme(name = "E-Commerce Application", scheme = "bearer", type = SecuritySchemeType.HTTP, in = SecuritySchemeIn.HEADER)
 public class ECommerceApplication implements CommandLineRunner {
 

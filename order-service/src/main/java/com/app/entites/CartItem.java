@@ -29,10 +29,11 @@ public class CartItem {
 	@jakarta.persistence.Column(name = "product_id")
 	private Long productId;
 
+	private String itemCode;
+
 	private String productName;
 
 	private Integer quantity;
 	private double discount;
 	private double productPrice;
-
 }

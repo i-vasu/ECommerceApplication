@@ -18,16 +18,16 @@
 	</parent>
 
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<spring-cloud.version>2024.0.0</spring-cloud.version>
+		<spring-ai.version>1.0.0-SNAPSHOT</spring-ai.version>
 	</properties>
 
 	<modules>
-		<module>discovery-server</module>
-		<module>api-gateway</module>
 		<module>order-service</module>
 		<module>product-service</module>
 		<module>marketplace-service</module>
+		<module>automation-tests</module>
 	</modules>
 
 	<dependencyManagement>
@@ -41,6 +41,25 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+    
+    <repositories>
+        <repository>
+            <id>spring-snapshots</id>
+            <name>Spring Snapshots</name>
+            <url>https://repo.spring.io/snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
 	<build>
 		<plugins>

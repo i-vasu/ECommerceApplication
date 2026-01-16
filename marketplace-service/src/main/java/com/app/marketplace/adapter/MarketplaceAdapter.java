@@ -10,4 +10,6 @@ public interface MarketplaceAdapter {
     OrderDTO handleWebhook(Map<String, Object> payload);
 
     OrderDTO normalize(Object payload);
+
+    void updateInventory(String sku, int quantity);
 }

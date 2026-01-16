@@ -263,9 +263,10 @@ class ShipmentServiceImplTest {
         when(shiprocketService.cancelOrder(any())).thenReturn(new HashMap<>());
         when(shipmentRepo.save(any(Shipment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Shipment result = shipmentService.cancelShipment(shipmentId);
+        shipmentService.cancelShipment(shipmentId);
 
-        assertEquals("CANCELLED", result.getStatus());
+        assertEquals("CANCELLED", shipment.getStatus());
         verify(shiprocketService).cancelOrder(any());
+        verify(shipmentRepo).save(any(Shipment.class));
     }
 }

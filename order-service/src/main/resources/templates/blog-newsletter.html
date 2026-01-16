@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>New Blog Post</title>
+</head>
+
+<body>
+    <h1 th:text="'New Post: ' + ${blogTitle}">New Post</h1>
+    <p th:text="'Hi ' + ${firstName} + ','">Hi User,</p>
+    <p>Check out our latest blog post:</p>
+    <hr />
+    <div th:utext="${blogContent}">Content</div>
+    <hr />
+    <p>Visit our store for more!</p>
+</body>
+
+</html>

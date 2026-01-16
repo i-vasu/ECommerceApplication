@@ -8,4 +8,5 @@ import com.app.entites.Payment;
 @Repository
 public interface PaymentRepo extends JpaRepository<Payment, Long> {
 
+    Payment findByPgOrderId(String pgOrderId);
 }

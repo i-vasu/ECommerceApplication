@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProductVariantDTO {
     private Long variantId;
+    private String itemCode;
     private String color;
     private String size;
     private Integer stockQuantity;

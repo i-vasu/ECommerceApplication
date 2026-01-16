@@ -1,0 +1,7 @@
+{
+    "db_host": "mariadb",
+    "db_port": 3306,
+    "redis_cache": "redis://dragonfly:6379",
+    "redis_queue": "redis://dragonfly:6379",
+    "redis_socketio": "redis://dragonfly:6379"
+}

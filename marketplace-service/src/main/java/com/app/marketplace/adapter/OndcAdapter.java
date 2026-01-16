@@ -44,4 +44,9 @@ public class OndcAdapter implements MarketplaceAdapter {
         }
         throw new IllegalArgumentException("Invalid payload type for ONDC adapter");
     }
+
+    @Override
+    public void updateInventory(String sku, int quantity) {
+        log.info("Mock: Updating stock on ONDC for SKU: {} to Qty: {}", sku, quantity);
+    }
 }

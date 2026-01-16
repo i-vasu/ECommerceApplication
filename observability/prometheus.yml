@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'ecommerce'
+    environment: 'production'
+
+scrape_configs:
+  # Order Service
+  - job_name: 'order-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['order-service:8081']
+        labels:
+          service: 'order-service'
+          app: 'ecommerce'
+
+  # Product Service
+  - job_name: 'product-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['product-service:8082']
+        labels:
+          service: 'product-service'
+          app: 'ecommerce'
+
+  # Marketplace Service
+  - job_name: 'marketplace-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['marketplace-service:8083']
+        labels:
+          service: 'marketplace-service'
+          app: 'ecommerce'
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

@@ -23,6 +23,27 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: docker.io/dragonflydb/dragonfly
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      minio:
+        image: minio/minio
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 30s
+          --health-timeout 20s
+          --health-retries 3
 
     steps:
     - uses: actions/checkout@v4
@@ -43,10 +64,15 @@ jobs:
         JAVA_JWT_SECRET: ci_test_secret
         ERPNEXT_API_KEY: mock_key
         ERPNEXT_API_SECRET: mock_secret
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        MINIO_ENDPOINT: http://localhost:9000
+        MINIO_ACCESS_KEY: minioadmin
+        MINIO_SECRET_KEY: minioadmin
 
     - name: Build Package
       run: mvn -B package -DskipTests
 
-    - name: Build Docker image
-      run: |
-        docker build -t ecommerce-middleware:latest .
+    # - name: Build Docker image
+    #   run: |
+    #     docker build -t ecommerce-middleware:latest .

@@ -34,6 +34,8 @@ public class Product {
 	@Size(min = 3, message = "Product name must contain atleast 3 characters")
 	private String productName;
 
+	private String itemCode;
+
 	private String image;
 
 	@NotBlank
@@ -49,10 +51,17 @@ public class Product {
 	@JoinColumn(name = "category_id")
 	private Category category;
 
-	@OneToMany(mappedBy = "product", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.EAGER)
-	private List<CartItem> products = new ArrayList<>();
-
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProductVariant> variants = new ArrayList<>();
 
+	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ProductMedia> media = new ArrayList<>();
+
+	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ProductReview> reviews = new ArrayList<>();
+
+	private boolean isCustomizable = false;
+
+	@jakarta.persistence.Column(columnDefinition = "TEXT")
+	private String customizationConfig; // JSON defining available options (Fabric, Color, etc.)
 }

@@ -8,4 +8,5 @@ import com.app.entites.ProductVariant;
 @Repository
 public interface ProductVariantRepo extends JpaRepository<ProductVariant, Long> {
 
+    ProductVariant findByItemCode(String itemCode);
 }

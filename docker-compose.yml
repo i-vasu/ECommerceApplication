@@ -2,27 +2,33 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15-alpine
-    container_name: java-db
+    image: paradedb/paradedb:latest # PostgreSQL 16 + search extensions
+    container_name: postgres
     restart: always
     environment:
       POSTGRES_DB: ${postgres_db:-dev}
       POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      POSTGRES_MULTIPLE_DATABASES: keycloak,dittofeed,umami,metabase
     volumes:
       - ${DATA_ROOT:-../ecommerce-data}/postgres:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - ./postgres-init:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
+      command: postgres
+    deploy:
+      resources:
+        limits:
+          memory: 1G # Increased from 768M for better performance
+    networks:
+      - ecommerce-net
 
-  redis:
-    image: 'dragonflydb/dragonfly'
+  dragonfly:
+    image: 'ghcr.io/dragonflydb/dragonfly:latest'
     container_name: dragonfly
     restart: always
     ulimits:
@@ -31,44 +37,36 @@ services:
       - "6379:6379"
     volumes:
       - ${DATA_ROOT:-../ecommerce-data}/dragonfly:/data
+    command: >
+      dragonfly --proactor_threads=1 --maxmemory 850mb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          memory: 1G # Increased from 768M for better cache performance
+    networks:
+      - ecommerce-net
 
-  meilisearch:
-    image: getmeili/meilisearch:v1.6
-    container_name: search-meilisearch
+  caddy:
+    image: caddy:latest
+    container_name: caddy
     restart: always
     ports:
-      - "7700:7700"
-    environment:
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-masterKey}
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
     volumes:
-      - ${DATA_ROOT:-../ecommerce-data}/meilisearch:/meili_data
-
-  discovery-server:
-    image: eclipse-temurin:21-jdk-alpine
-    container_name: discovery-server
-    working_dir: /app
-    volumes:
-      - ./discovery-server/target:/app/target
-    command: java -jar target/discovery-server-0.0.1-SNAPSHOT.jar
-    ports:
-      - "8761:8761"
-
-  api-gateway:
-    image: eclipse-temurin:21-jdk-alpine
-    container_name: api-gateway
-    working_dir: /app
-    volumes:
-      - ./api-gateway/target:/app/target
-    depends_on:
-      - discovery-server
-    command: java -jar target/api-gateway-0.0.1-SNAPSHOT.jar
-    ports:
-      - "8080:8080"
-    environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - ecommerce-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   order-service:
-    image: eclipse-temurin:21-jdk-alpine
+    image: eclipse-temurin:25-jdk-alpine
     container_name: order-service
     working_dir: /app
     volumes:
@@ -76,48 +74,63 @@ services:
     command: java -jar target/order-service-0.0.1-SNAPSHOT.jar
     restart: always
     depends_on:
-      - db
-      - discovery-server
+      db:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
     ports:
       - "8081:8081"
+    networks:
+      - ecommerce-net
+    deploy:
+      resources:
+        limits:
+          memory: 768M # Reduced from 1G for 8GB target
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
       JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
       JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
       JAVA_JWT_SECRET: ${JAVA_JWT_SECRET}
-      ERPNEXT_API_URL: ${ERPNEXT_API_URL}
+      ERPNEXT_API_URL: http://erpnext-nginx/api/resource/Item
       ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
       ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
-      REDIS_HOST: ${REDIS_HOST_DOCKER:-redis}
+      REDIS_HOST: dragonfly
       REDIS_PORT: 6379
-      SW_AGENT_NAME: ${SW_AGENT_NAME:-order-service}
-      SW_AGENT_COLLECTOR_BACKEND_SERVICES: ${SW_OAP_ADDRESS_DOCKER:-skywalking-oap:11800}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT_DOCKER:-http://minio:9000}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      MINIO_BUCKET: ${MINIO_BUCKET:-fashion-store}
-      KC_ISSUER_URI: http://keycloak:8080/realms/fashion-store
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
       PRODUCT_SERVICE_URL: http://product-service:8082
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m"
 
   product-service:
-    image: eclipse-temurin:21-jdk-alpine
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    image: product-service-custom:latest
     container_name: product-service
     working_dir: /app
     volumes:
       - ./product-service/target:/app/target
-    command: java -jar target/product-service-0.0.1-SNAPSHOT.jar
+    command: java --enable-native-access=ALL-UNNAMED --enable-preview -jar /app/app.jar
     restart: always
     depends_on:
-      - db
-      - discovery-server
+      db:
+        condition: service_healthy
     ports:
       - "8083:8082"
+    networks:
+      - ecommerce-net
+    deploy:
+      resources:
+        limits:
+          memory: 768M # Reduced from 1G for 8GB target
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
       JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
       JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      REDIS_HOST: dragonfly
+      REDIS_PORT: 6379
+      ERPNEXT_API_URL: http://erpnext-nginx/api/resource/Item
+      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
+      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m -XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders --enable-preview"
 
   marketplace-service:
     image: eclipse-temurin:21-jdk-alpine
@@ -128,53 +141,32 @@ services:
     command: java -jar target/marketplace-service-0.0.1-SNAPSHOT.jar
     restart: always
     depends_on:
-      - db
-      - discovery-server
+      db:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
     ports:
       - "8086:8083"
+    networks:
+      - ecommerce-net
+    deploy:
+      resources:
+        limits:
+          memory: 768M # Reduced from 1G for 8GB target
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
       JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
       JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      REDIS_HOST: ${REDIS_HOST_DOCKER:-redis}
+      REDIS_HOST: dragonfly
       REDIS_PORT: 6379
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
-      # Secrets
+      ECOMMERCE_SERVICE_URL: http://order-service:8081
+      ERPNEXT_API_URL: http://erpnext-nginx/api/resource/Item
+      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
+      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
       AMAZON_WEBHOOK_SECRET: ${AMAZON_WEBHOOK_SECRET:-mock-amazon}
       FLIPKART_WEBHOOK_SECRET: ${FLIPKART_WEBHOOK_SECRET:-mock-flipkart}
       ONDC_WEBHOOK_SECRET: ${ONDC_WEBHOOK_SECRET:-mock-ondc}
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    container_name: java-keycloak
-    restart: always
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
-      KC_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
-      KC_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
-      KC_DEBUG: "true"
-      KC_LOG_LEVEL: "INFO"
-    ports:
-      - "8084:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-    command: start-dev
-
-  crowdsec:
-    image: crowdsecurity/crowdsec:latest
-    container_name: security-crowdsec
-    restart: always
-    environment:
-      GID: "${GID-1000}"
-      COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik crowdsecurity/http-cve"
-    volumes:
-      - ${DATA_ROOT:-../ecommerce-data}/crowdsec/config:/etc/crowdsec
-      - ${DATA_ROOT:-../ecommerce-data}/crowdsec/data:/var/lib/crowdsec/data
-      - /var/run/docker.sock:/var/run/docker.sock
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m"
 
   dittofeed:
     image: dittofeed/dittofeed-lite:latest
@@ -182,14 +174,19 @@ services:
     restart: always
     ports:
       - "3301:3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256M # Reduced from 512M for admin-only
     environment:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
       POSTGRES_DB: dittofeed
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://dragonfly:6379
       ADMIN_API_KEY: "password"
+      NODE_OPTIONS: "--max-old-space-size=192"
 
   umami:
     image: ghcr.io/umami-software/umami:postgresql-latest
@@ -200,6 +197,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${JAVA_DB_USERNAME:-postgres}:${JAVA_DB_PASSWORD:-123Vasu456}@db:5432/umami
       HASH_SALT: "ReplaceMeWithARandomString"
+    deploy:
+      resources:
+        limits:
+          memory: 128M # Reduced from 256M for admin-only
 
   metabase:
     image: metabase/metabase:latest
@@ -214,6 +215,45 @@ services:
       MB_DB_USER: ${JAVA_DB_USERNAME:-postgres}
       MB_DB_PASS: ${JAVA_DB_PASSWORD:-123Vasu456}
       MB_DB_HOST: db
+      # Optimization for admin-only usage
+      JAVA_OPTS: "-Xmx384m -Xms128m -XX:MaxMetaspaceSize=128m"
+      MB_JETTY_MAX_THREADS: 10
+    deploy:
+      resources:
+        limits:
+          memory: 512M # Reduced from 1G for admin-only
+
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local
+    container_name: postgres-backup
+    restart: always
+    depends_on:
+      - db
+    volumes:
+      - ${BACKUP_ROOT:-../ecommerce-backups}:/backups
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${postgres_db:-dev}
+      POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      POSTGRES_EXTRA_OPTS: "-Z9 --schema=public --blobs"
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+      HEALTHCHECK_PORT: 8080
+    deploy:
+      resources:
+        limits:
+          memory: 128M # Reduced from 256M for 8GB target
+
+networks:
+  ecommerce-net:
+    external: true
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
+
+

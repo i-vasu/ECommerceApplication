@@ -46,4 +46,10 @@ public class AmazonAdapter implements MarketplaceAdapter {
         }
         throw new IllegalArgumentException("Invalid payload type for Amazon adapter");
     }
+
+    @Override
+    public void updateInventory(String sku, int quantity) {
+        log.info("Mock: Updating stock on Amazon for SKU: {} to Qty: {}", sku, quantity);
+        // Call Amazon SP-API Feeds API or Inventory API
+    }
 }

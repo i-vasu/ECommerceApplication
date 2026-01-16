@@ -49,4 +49,5 @@ public class Order {
 
 	private Double totalAmount;
 	private String orderStatus;
+	private String erpNextOrderName;
 }

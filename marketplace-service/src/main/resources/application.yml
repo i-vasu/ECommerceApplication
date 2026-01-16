@@ -1,5 +1,15 @@
 server:
   port: 8083
+  http2:
+    enabled: true
+  http3:
+    enabled: true
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  http2:
+    enabled: true
 
 spring:
   application:
@@ -30,10 +40,6 @@ marketplace:
   ondc:
     secret: ${ONDC_WEBHOOK_SECRET:mock-ondc-secret}
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
 
 logging:
   level:
