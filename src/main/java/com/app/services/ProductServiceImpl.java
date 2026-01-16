@@ -61,20 +61,9 @@ public class ProductServiceImpl implements ProductService {
 		Category category = categoryRepo.findById(categoryId)
 				.orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
 
-		boolean isProductNotPresent = true;
+		boolean isProductPresent = productRepo.existsByProductNameAndDescriptionAndCategory(product.getProductName(), product.getDescription(), category);
 
-		List<Product> products = category.getProducts();
-
-		for (int i = 0; i < products.size(); i++) {
-			if (products.get(i).getProductName().equals(product.getProductName())
-					&& products.get(i).getDescription().equals(product.getDescription())) {
-
-				isProductNotPresent = false;
-				break;
-			}
-		}
-
-		if (isProductNotPresent) {
+		if (!isProductPresent) {
 			product.setImage("default.png");
 
 			product.setCategory(category);
