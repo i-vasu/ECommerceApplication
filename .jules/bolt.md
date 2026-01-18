@@ -1,0 +1,3 @@
+## 2026-01-18 - EAGER Fetch Bomb and Circular Dependencies
+**Learning:** `Product` entity had `FetchType.EAGER` on `List<CartItem> products`. This means loading any product loaded ALL cart items globally associated with it, causing massive N+1 and memory issues. Additionally, Lombok's `@Data` generated circular `toString` calls between `Product` and `CartItem`, leading to potential StackOverflows.
+**Action:** Always check `@OneToMany` relationships for `EAGER` fetch (default is LAZY). Ensure `@ToString.Exclude` is used on relationship fields when using Lombok `@Data` to prevent StackOverflows and accidental lazy loading in logs.
