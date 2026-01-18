@@ -136,15 +136,15 @@ public class DAMFlowCompleteTest {
     @DisplayName("⚠️ Image processing timeout")
     void testImageProcessingTimeout() {
         // Very large image that takes too long to process
-        byte[] huge Image = new byte[50 * 1024 * 1024]; // 50MB
-        
+        byte[] hugeImage = new byte[50 * 1024 * 1024]; // 50MB
+
         given()
-            .contentType("multipart/form-data")
-            .multiPart("image", "huge.jpg", hugeImage)
-        .when()
-            .post(PRODUCT_SERVICE + "/api/public/products/search/visual")
-        .then()
-            .statusCode(anyOf(is(413), is(408), is(400), is(405))); // 408 = Request Timeout
+                .contentType("multipart/form-data")
+                .multiPart("image", "huge.jpg", hugeImage)
+                .when()
+                .post(PRODUCT_SERVICE + "/api/public/products/search/visual")
+                .then()
+                .statusCode(anyOf(is(413), is(408), is(400), is(405))); // 408 = Request Timeout
     }
 
     @Test

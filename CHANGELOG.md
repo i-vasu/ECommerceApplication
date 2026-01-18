@@ -2,10 +2,23 @@
 
 All notable changes to the **Java Middleware** will be documented in this file.
 
+## [2026-01-17] - Architecture Modularity & Memory Optimization
+### Branch: `develop`
+- **Architecture**: Implemented **Spring Modulith** across `product-service`, `order-service`, and `marketplace-service` for better modular boundary enforcement.
+- **Documentation**: Integrated **Swagger (OpenAPI)** for all services, accessible via `/swagger-ui.html`.
+- **Optimization**: Implemented **Memory Leak Prevention Strategy**.
+    - Refactored `ProductDataFlowService` to use **streaming** for image processing, eliminating large heap allocations.
+    - Updated `ImageService` to ensure safe resource management with `try-with-resources`.
+    - Documented strategy in `.agent/workflows/memory_leak_prevention_strategy.md`.
+- **Refactoring**:
+    - Updated `Lombok` to `edge-SNAPSHOT` to resolve Java 25 compatibility issues.
+    - Cleaned up duplicate dependencies in all `pom.xml` files.
+    - Fixed compilation issues related to variable shadowing and missing imports.
+- **Dependencies**: Added `spring-session-data-redis` to `marketplace-service` for distributed session handling.
+
 ## [2026-01-12] - Scaling & Observability Onboarding
 ### Branch: `develop`
-- **Infrastructure**: Added `docker-compose.o11y.yml` with **BanyanDB** (v0.5.0), SkyWalking OAP (v9.5.0), and SkyWalking UI.
-- **Optimization**: Swapped Elasticsearch for BanyanDB to reduce RAM footprint by ~60% (calculated saving of 6GB-8GB).
+
 - **Performance**: Integrated Redis for Java Middleware on port 6380 via `spring-boot-starter-data-redis`.
 - **UI/UX**: Onboarded `framer-motion` in the Storefront and created `PremiumHover` and `FadeIn` motion components.
 - **Analysis**: Created `PLAN_OBSERVABILITY.md` with detailed RAM analysis for 100 RPS peak load.

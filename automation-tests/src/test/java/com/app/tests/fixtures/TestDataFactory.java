@@ -33,7 +33,7 @@ public class TestDataFactory {
         }
 
         public OrderBuilder withUser(User user) {
-            order.setUser(user);
+            order.setEmail(user.getEmail());
             return this;
         }
 

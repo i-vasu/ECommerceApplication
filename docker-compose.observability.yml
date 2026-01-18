@@ -1,81 +1,19 @@
 version: '3.8'
 
 services:
-  # Metrics Collection
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    restart: always
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - ecommerce-net
-
-  # Dashboards & Visualization
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://localhost:3000
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./observability/grafana/provisioning:/etc/grafana/provisioning
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - ecommerce-net
-
-  # Distributed Tracing
-  zipkin:
-    image: openzipkin/zipkin:latest
-    container_name: zipkin
-    restart: always
-    ports:
-      - "9411:9411"
-    environment:
-      - STORAGE_TYPE=mem
-      - MEM_MAX_SPANS=10000
-      - JAVA_OPTS=-Xms256m -Xmx256m
-    deploy:
-      resources:
-        limits:
-          memory: 400M
-    networks:
-      - ecommerce-net
-
-  # Log Aggregation
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    restart: always
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./observability/loki-config.yml:/etc/loki/local-config.yaml
-      - loki-data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
     deploy:
       resources:
         limits:
@@ -83,20 +21,60 @@ services:
     networks:
       - ecommerce-net
 
-  # Log Shipping
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+    networks:
+      - ecommerce-net
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    networks:
+      - ecommerce-net
+
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
-    restart: always
     volumes:
-      - ./observability/promtail-config.yml:/etc/promtail/config.yml
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/log:/var/log
+      - ./config/promtail-config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 100M
+    networks:
+      - ecommerce-net
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    environment:
+      - STORAGE_TYPE=mem
+    deploy:
+      resources:
+        limits:
+          memory: 250M
     networks:
       - ecommerce-net
 
@@ -105,6 +83,5 @@ networks:
     external: true
 
 volumes:
-  prometheus-data:
-  grafana-data:
-  loki-data:
+  prometheus_data:
+  grafana_data:

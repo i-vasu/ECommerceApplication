@@ -1,27 +1,27 @@
-# Build stage
-FROM maven:3.9-eclipse-temurin-21-alpine AS build
+# Build stage - Liberica JDK 25
+FROM maven:3.9-eclipse-temurin-22-alpine AS build
+# Note: Using Temurin for build is fine as long as it handles Java 25 syntax, 
+# but for consistency and CRaC support we'll use Liberica for the runtime.
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn clean package -pl modulith-service -am -DskipTests
 
-# SkyWalking Agent Stage
-FROM alpine:latest AS agent
-WORKDIR /agent
-RUN apk add --no-cache wget tar
-# Download SkyWalking Java Agent
-RUN wget https://archive.apache.org/dist/skywalking/java-agent/9.0.0/apache-skywalking-java-agent-9.0.0.tgz && \
-    tar -zxvf apache-skywalking-java-agent-9.0.0.tgz && \
-    mv skywalking-agent agent
-
-# Run stage
-FROM eclipse-temurin:21-jre-alpine
+# Run stage - Liberica JDK 25 (Standard) for CRaC and Performance
+FROM bellsoft/liberica-openjdk-alpine:25
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-# Copy agent from agent stage
-COPY --from=agent /agent/agent /app/skywalking-agent
+COPY --from=build /app/modulith-service/target/*.jar app.jar
 
 EXPOSE 8080
 
-# Production Entrypoint with SkyWalking Agent
-ENTRYPOINT ["java", "-Duser.timezone=Asia/Kolkata", "-javaagent:/app/skywalking-agent/skywalking-agent.jar", "-Dskywalking.agent.service_name=ecommerce-backend", "-Dskywalking.collector.backend_service=skywalking-oap:11800", "-jar", "app.jar"]
+# Java 25 Production Optimized Entrypoint
+# - Generational ZGC: Sub-millisecond GC pauses
+# - String Deduplication: Reduce memory for repeated strings
+ENTRYPOINT ["java", \
+    "-Duser.timezone=Asia/Kolkata", \
+    "-XX:+UseZGC", \
+    "-XX:+ZGenerational", \
+    "-XX:+UseStringDeduplication", \
+    "-Xms512m", \
+    "-Xmx2g", \
+    "-jar", "app.jar"]

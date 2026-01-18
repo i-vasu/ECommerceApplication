@@ -13,7 +13,6 @@ The system follows a microservices architecture pattern, utilizing Spring Cloud 
 - **Order Service**: Manages shopping carts and order lifecycle. Integrates with Razorpay for payments and ERPNext for order fulfillment sync.
 - **Persistence**: Separate PostgreSQL instances for services (logical/physical separation).
 - **Cache**: Redis for product catalog caching and session management.
-- **Storage**: MinIO for high-performance object storage (product images).
 
 ![System Architecture](../high_level_architecture.png)
 
@@ -42,7 +41,6 @@ The `Product Service` acts as the downstream consumer for master data managed in
 1. **Sync Trigger**: Admin triggers manually or automated polling/webhook.
 2. **Data Fetch**: `ERPNextProductSyncService` calls ERPNext Item APIs.
 3. **Local Persistence**: Items are saved/updated in the local PostgreSQL.
-4. **Image Handling**: External images are processed and stored in `MinIO`.
 
 ---
 
@@ -55,6 +53,5 @@ The `Product Service` acts as the downstream consumer for master data managed in
 | Security | Keycloak (OIDC), OAuth2 Resource Server |
 | Database | PostgreSQL 15 |
 | Cache | Redis |
-| Storage | MinIO |
-| Observability | Apache SkyWalking, BanyanDB |
+| Observability | Prometheus, Grafana |
 | Integration | Feign, REST, ERPNext, Razorpay |

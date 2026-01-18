@@ -60,26 +60,27 @@ public class OrderLifecycleCompleteTest {
     @Order(2)
     @DisplayName("✅ Order status CREATED → PAID → SHIPPED → DELIVERED")
     void testOrderStatusTransitions() {
-        if (orderId == null) orderId = 12345L;
+        if (orderId == null)
+            orderId = 12345L;
 
-        String[] statuses = {"CREATED", "PAID", "PROCESSING", "SHIPPED", "DELIVERED"};
-        
+        String[] statuses = { "CREATED", "PAID", "PROCESSING", "SHIPPED", "DELIVERED" };
+
         for (String status : statuses) {
             String statusPayload = String.format("""
-                {
-                    "orderId": %d,
-                    "status": "%s"
-                }
-                """, orderId, status);
+                    {
+                        "orderId": %d,
+                        "status": "%s"
+                    }
+                    """, orderId, status);
 
             given()
-                .spec(AuthHelper.authenticatedRequest())
-                .contentType("application/json")
-                .body(statusPayload)
-            .when()
-                .put(ORDER_SERVICE + "/api/orders/" + orderId + "/status")
-            .then()
-                .status Code(anyOf(is(200), is(404)));
+                    .spec(AuthHelper.authenticatedRequest())
+                    .contentType("application/json")
+                    .body(statusPayload)
+                    .when()
+                    .put(ORDER_SERVICE + "/api/orders/" + orderId + "/status")
+                    .then()
+                    .statusCode(anyOf(is(200), is(404)));
         }
     }
 

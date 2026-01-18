@@ -13,21 +13,39 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.1</version>
+		<version>4.0.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<properties>
 		<java.version>25</java.version>
-		<spring-cloud.version>2024.0.0</spring-cloud.version>
-		<spring-ai.version>1.0.0-SNAPSHOT</spring-ai.version>
+		<spring-cloud.version>2025.1.0</spring-cloud.version>
+		<spring-ai.version>2.0.0-M1</spring-ai.version>
+		<spring-modulith.version>2.0.0</spring-modulith.version>
+		<springdoc.version>2.7.0</springdoc.version>
+		<mapstruct.version>1.6.3</mapstruct.version>
+		<modelmapper.version>3.2.1</modelmapper.version>
+		<loki-logback.version>1.5.2</loki-logback.version>
+		<spring-boot-admin.version>3.4.1</spring-boot-admin.version>
+		<archunit.version>1.3.0</archunit.version>
+		<logstash-logback.version>8.0</logstash-logback.version>
+		<rest-assured.version>5.5.0</rest-assured.version>
+		<playwright.version>1.49.0</playwright.version>
+		<junit-jupiter.version>5.11.3</junit-jupiter.version>
+		<testcontainers.version>1.20.4</testcontainers.version>
+		<awaitility.version>4.2.2</awaitility.version>
+		<mockito.version>5.14.2</mockito.version>
+		<assertj.version>3.26.3</assertj.version>
+		<jacoco.version>0.8.12</jacoco.version>
+		<pitest.version>1.17.0</pitest.version>
+		<maven-surefire.version>3.5.2</maven-surefire.version>
+		<maven-compiler.version>3.13.0</maven-compiler.version>
+		<spotless.version>2.44.2</spotless.version>
 	</properties>
 
 	<modules>
-		<module>order-service</module>
-		<module>product-service</module>
-		<module>marketplace-service</module>
 		<module>automation-tests</module>
+		<module>modulith-service</module>
 	</modules>
 
 	<dependencyManagement>
@@ -38,6 +56,95 @@
 				<version>${spring-cloud.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<!-- Spring Modulith BOM -->
+			<dependency>
+				<groupId>org.springframework.modulith</groupId>
+				<artifactId>spring-modulith-bom</artifactId>
+				<version>${spring-modulith.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<!-- Springdoc OpenAPI -->
+			<dependency>
+				<groupId>org.springdoc</groupId>
+				<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+				<version>${springdoc.version}</version>
+			</dependency>
+			<!-- Rest Assured -->
+			<dependency>
+				<groupId>io.rest-assured</groupId>
+				<artifactId>rest-assured</artifactId>
+				<version>${rest-assured.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.rest-assured</groupId>
+				<artifactId>json-schema-validator</artifactId>
+				<version>${rest-assured.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${testcontainers.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.junit</groupId>
+				<artifactId>junit-bom</artifactId>
+				<version>${junit-jupiter.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.jspecify</groupId>
+				<artifactId>jspecify</artifactId>
+				<version>1.0.0</version>
+			</dependency>
+			<dependency>
+				<groupId>com.bucket4j</groupId>
+				<artifactId>bucket4j-core</artifactId>
+				<version>8.10.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.crac</groupId>
+				<artifactId>crac</artifactId>
+				<version>1.5.0</version>
+			</dependency>
+			<dependency>
+				<groupId>com.auth0</groupId>
+				<artifactId>java-jwt</artifactId>
+				<version>4.4.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.json</groupId>
+				<artifactId>json</artifactId>
+				<version>20240303</version>
+			</dependency>
+			<dependency>
+				<groupId>app.photofox.vips-ffm</groupId>
+				<artifactId>vips-ffm-core</artifactId>
+				<version>1.9.5</version>
+			</dependency>
+			<dependency>
+				<groupId>io.trbl</groupId>
+				<artifactId>blurhash</artifactId>
+				<version>1.0.0</version>
+			</dependency>
+			<dependency>
+				<groupId>ai.djl</groupId>
+				<artifactId>api</artifactId>
+				<version>0.31.0</version>
+			</dependency>
+			<dependency>
+				<groupId>ai.djl.pytorch</groupId>
+				<artifactId>pytorch-engine</artifactId>
+				<version>0.31.0</version>
+			</dependency>
+			<dependency>
+				<groupId>ai.djl.pytorch</groupId>
+				<artifactId>pytorch-model-zoo</artifactId>
+				<version>0.31.0</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -66,9 +173,22 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler.version}</version>
 				<configuration>
-					<source>21</source>
-					<target>21</target>
+					<source>25</source>
+					<target>25</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<classifier>exec</classifier>
 				</configuration>
 			</plugin>
 		</plugins>

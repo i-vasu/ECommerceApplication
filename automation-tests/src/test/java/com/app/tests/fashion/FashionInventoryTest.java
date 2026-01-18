@@ -46,30 +46,27 @@ public class FashionInventoryTest {
     @DisplayName("CRITICAL: Prevent overselling when stock is low")
     void testPreventOverselling() {
         // Try to add 1000 items of a specific size
-        String cart
-
-Payload = """
-            {
-                "productId": 1,
-                "size": "XS",
-                "color": "Red",
-                "quantity": 1000
-            }
-            """;
+        String cartPayload = """
+                {
+                    "productId": 1,
+                    "size": "XS",
+                    "color": "Red",
+                    "quantity": 1000
+                }
+                """;
 
         given()
-            .contentType("application/json")
-            .body(cartPayload)
-        .when()
-            .post(ORDER_SERVICE + "/api/cart")
-        .then()
-            .statusCode(anyOf(is(400), is(422), is(401))) // 401 if auth required
-            .body(anyOf(
-                containsString("insufficient stock"),
-                containsString("exceeds available"),
-                containsString("unauthorized")
-            ));
-        
+                .contentType("application/json")
+                .body(cartPayload)
+                .when()
+                .post(ORDER_SERVICE + "/api/cart")
+                .then()
+                .statusCode(anyOf(is(400), is(422), is(401))) // 401 if auth required
+                .body(anyOf(
+                        containsString("insufficient stock"),
+                        containsString("exceeds available"),
+                        containsString("unauthorized")));
+
         System.out.println("✅ System prevents overselling of limited stock");
     }
 

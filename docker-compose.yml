@@ -19,7 +19,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      command: postgres
+    command: postgres
     deploy:
       resources:
         limits:
@@ -38,7 +38,12 @@ services:
     volumes:
       - ${DATA_ROOT:-../ecommerce-data}/dragonfly:/data
     command: >
-      dragonfly --proactor_threads=1 --maxmemory 850mb --maxmemory-policy allkeys-lru
+      dragonfly --proactor_threads=1 --maxmemory 850mb
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     deploy:
       resources:
         limits:
@@ -65,108 +70,7 @@ services:
         limits:
           memory: 128M
 
-  order-service:
-    image: eclipse-temurin:25-jdk-alpine
-    container_name: order-service
-    working_dir: /app
-    volumes:
-      - ./order-service/target:/app/target
-    command: java -jar target/order-service-0.0.1-SNAPSHOT.jar
-    restart: always
-    depends_on:
-      db:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    ports:
-      - "8081:8081"
-    networks:
-      - ecommerce-net
-    deploy:
-      resources:
-        limits:
-          memory: 768M # Reduced from 1G for 8GB target
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
-      JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
-      JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      JAVA_JWT_SECRET: ${JAVA_JWT_SECRET}
-      ERPNEXT_API_URL: http://erpnext-nginx/api/resource/Item
-      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
-      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
-      REDIS_HOST: dragonfly
-      REDIS_PORT: 6379
-      PRODUCT_SERVICE_URL: http://product-service:8082
-      JAVA_OPTS: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m"
-
-  product-service:
-    build:
-      context: ./product-service
-      dockerfile: Dockerfile
-    image: product-service-custom:latest
-    container_name: product-service
-    working_dir: /app
-    volumes:
-      - ./product-service/target:/app/target
-    command: java --enable-native-access=ALL-UNNAMED --enable-preview -jar /app/app.jar
-    restart: always
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8083:8082"
-    networks:
-      - ecommerce-net
-    deploy:
-      resources:
-        limits:
-          memory: 768M # Reduced from 1G for 8GB target
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
-      JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
-      JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      REDIS_HOST: dragonfly
-      REDIS_PORT: 6379
-      ERPNEXT_API_URL: http://erpnext-nginx/api/resource/Item
-      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
-      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
-      JAVA_OPTS: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m -XX:+UseZGC -XX:+ZGenerational -XX:+UseCompactObjectHeaders --enable-preview"
-
-  marketplace-service:
-    image: eclipse-temurin:21-jdk-alpine
-    container_name: marketplace-service
-    working_dir: /app
-    volumes:
-      - ./marketplace-service/target:/app/target
-    command: java -jar target/marketplace-service-0.0.1-SNAPSHOT.jar
-    restart: always
-    depends_on:
-      db:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    ports:
-      - "8086:8083"
-    networks:
-      - ecommerce-net
-    deploy:
-      resources:
-        limits:
-          memory: 768M # Reduced from 1G for 8GB target
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
-      JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
-      JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      REDIS_HOST: dragonfly
-      REDIS_PORT: 6379
-      ECOMMERCE_SERVICE_URL: http://order-service:8081
-      ERPNEXT_API_URL: http://erpnext-nginx/api/resource/Item
-      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
-      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
-      AMAZON_WEBHOOK_SECRET: ${AMAZON_WEBHOOK_SECRET:-mock-amazon}
-      FLIPKART_WEBHOOK_SECRET: ${FLIPKART_WEBHOOK_SECRET:-mock-flipkart}
-      ONDC_WEBHOOK_SECRET: ${ONDC_WEBHOOK_SECRET:-mock-ondc}
-      JAVA_OPTS: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m"
+  # Legacy services removed in favor of modular monolith
 
   dittofeed:
     image: dittofeed/dittofeed-lite:latest
@@ -179,7 +83,7 @@ services:
         limits:
           memory: 256M # Reduced from 512M for admin-only
     environment:
-      POSTGRES_HOST: db
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
@@ -187,6 +91,8 @@ services:
       REDIS_URL: redis://dragonfly:6379
       ADMIN_API_KEY: "password"
       NODE_OPTIONS: "--max-old-space-size=192"
+    networks:
+      - ecommerce-net
 
   umami:
     image: ghcr.io/umami-software/umami:postgresql-latest
@@ -195,12 +101,14 @@ services:
     ports:
       - "3300:3000"
     environment:
-      DATABASE_URL: postgresql://${JAVA_DB_USERNAME:-postgres}:${JAVA_DB_PASSWORD:-123Vasu456}@db:5432/umami
+      DATABASE_URL: postgresql://${JAVA_DB_USERNAME:-postgres}:${JAVA_DB_PASSWORD:-123Vasu456}@postgres:5432/umami
       HASH_SALT: "ReplaceMeWithARandomString"
     deploy:
       resources:
         limits:
           memory: 128M # Reduced from 256M for admin-only
+    networks:
+      - ecommerce-net
 
   metabase:
     image: metabase/metabase:latest
@@ -214,7 +122,7 @@ services:
       MB_DB_PORT: 5432
       MB_DB_USER: ${JAVA_DB_USERNAME:-postgres}
       MB_DB_PASS: ${JAVA_DB_PASSWORD:-123Vasu456}
-      MB_DB_HOST: db
+      MB_DB_HOST: postgres
       # Optimization for admin-only usage
       JAVA_OPTS: "-Xmx384m -Xms128m -XX:MaxMetaspaceSize=128m"
       MB_JETTY_MAX_THREADS: 10
@@ -222,6 +130,8 @@ services:
       resources:
         limits:
           memory: 512M # Reduced from 1G for admin-only
+    networks:
+      - ecommerce-net
 
   postgres-backup:
     image: prodrigestivill/postgres-backup-local
@@ -246,6 +156,32 @@ services:
       resources:
         limits:
           memory: 128M # Reduced from 256M for 8GB target
+    networks:
+      - ecommerce-net
+
+  modulith-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: modulith-service:latest
+    container_name: modulith-service
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - ecommerce-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
+      JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
+      JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
+      REDIS_HOST: dragonfly
+      REDIS_PORT: 6379
+      JAVA_OPTS: "-Xmx1g -Xms512m -XX:+UseZGC -XX:+ZGenerational"
 
 networks:
   ecommerce-net:
@@ -255,5 +191,3 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
-
-

@@ -32,7 +32,7 @@ services:
         limits:
           memory: 384M # Reduced from 1G for admin-only
     environment:
-      DB_HOST: mariadb
+      DB_HOST: erpnext-db
       DB_PORT: 3306
       DB_PASSWORD: erpnext
       ROUTING_WEBSITE_REDIRECT: /api
