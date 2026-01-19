@@ -14,8 +14,8 @@ public interface AddressApi {
     @Operation(summary = "Create Address", description = "Creates a new address for the user")
     ResponseEntity<AddressDTO> createAddress(AddressDTO addressDTO);
 
-    @Operation(summary = "Get User Addresses", description = "Retrieves all addresses for the current user")
-    ResponseEntity<List<AddressDTO>> getAddresses();
+    @Operation(summary = "Get All Addresses", description = "Retrieves all addresses (Admin/Paginated)")
+    ResponseEntity<org.springframework.data.domain.Page<AddressDTO>> getAddresses(org.springframework.data.domain.Pageable pageable);
 
     @Operation(summary = "Get Address by ID", description = "Retrieves a specific address by ID")
     ResponseEntity<AddressDTO> getAddress(Long addressId);

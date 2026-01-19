@@ -9,7 +9,7 @@ public interface AddressService {
 
 	AddressDTO createAddress(AddressDTO addressDTO);
 
-	List<AddressDTO> getAddresses();
+	org.springframework.data.domain.Page<AddressDTO> getAddresses(org.springframework.data.domain.Pageable pageable);
 
 	AddressDTO getAddress(Long addressId);
 

@@ -38,10 +38,9 @@ public class AddressController implements AddressApi {
 
 	@GetMapping("/addresses")
 	@Override
-	public ResponseEntity<List<AddressDTO>> getAddresses() {
-		List<AddressDTO> addressDTOs = addressService.getAddresses();
-
-		return new ResponseEntity<List<AddressDTO>>(addressDTOs, HttpStatus.FOUND);
+	public ResponseEntity<org.springframework.data.domain.Page<AddressDTO>> getAddresses(org.springframework.data.domain.Pageable pageable) {
+		org.springframework.data.domain.Page<AddressDTO> addressDTOs = addressService.getAddresses(pageable);
+		return new ResponseEntity<>(addressDTOs, HttpStatus.OK);
 	}
 
 	@GetMapping("/addresses/{addressId}")

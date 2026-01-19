@@ -43,9 +43,9 @@ public class CartController implements CartApi {
 
 	@GetMapping("/admin/carts")
 	@Override
-	public ResponseEntity<List<CartDTO>> getCarts() {
-		List<CartDTO> cartDTOs = cartService.getAllCarts();
-		return new ResponseEntity<List<CartDTO>>(cartDTOs, HttpStatus.FOUND);
+	public ResponseEntity<org.springframework.data.domain.Page<CartDTO>> getCarts(org.springframework.data.domain.Pageable pageable) {
+		org.springframework.data.domain.Page<CartDTO> cartDTOs = cartService.getAllCarts(pageable);
+		return new ResponseEntity<>(cartDTOs, HttpStatus.OK);
 	}
 
 	@GetMapping("/public/users/{emailId}/carts/{cartId}")

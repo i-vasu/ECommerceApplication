@@ -28,10 +28,10 @@ public interface SupportApi {
     @PostMapping("/tickets/{ticketId}/reply")
     ResponseEntity<SupportTicket> replyToTicket(@PathVariable Long ticketId, @RequestBody TicketMessage message);
 
-    @Operation(summary = "Get User Tickets", description = "Retrieves all tickets for a user")
+    @Operation(summary = "Get User Tickets", description = "Retrieves all tickets for a user with pagination")
     @ApiResponse(responseCode = "200", description = "Tickets retrieved")
     @GetMapping("/tickets/{email}")
-    ResponseEntity<List<SupportTicket>> getUserTickets(@PathVariable String email);
+    ResponseEntity<Page<SupportTicket>> getUserTickets(@PathVariable String email, Pageable pageable);
 
     @Operation(summary = "Get All Tickets (Paginated)", description = "Retrieves all tickets with pagination (Admin only). Default: page=0, size=20")
     @ApiResponse(responseCode = "200", description = "Tickets page retrieved")

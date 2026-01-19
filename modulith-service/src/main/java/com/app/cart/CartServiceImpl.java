@@ -22,7 +22,7 @@ import com.app.order.repositories.CartRepo;
 
 import jakarta.transaction.Transactional;
 
-@Transactional
+@Transactional(readOnly = true)
 @Service
 public class CartServiceImpl implements CartService {
 
@@ -42,6 +42,7 @@ public class CartServiceImpl implements CartService {
 	private ERPNextService erpNextService;
 
 	@Override
+	@Transactional
 	public CartDTO addProductToCart(Long cartId, Long productId, String itemCode, Integer quantity) {
 
 		Cart cart = cartRepo.findById(cartId)
@@ -89,13 +90,13 @@ public class CartServiceImpl implements CartService {
 	}
 
 	@Override
-	public List<CartDTO> getAllCarts() {
-		List<Cart> carts = cartRepo.findAll();
-		return carts.stream().map(cart -> {
+	public org.springframework.data.domain.Page<CartDTO> getAllCarts(org.springframework.data.domain.Pageable pageable) {
+		org.springframework.data.domain.Page<Cart> carts = cartRepo.findAll(pageable);
+		return carts.map(cart -> {
 			CartDTO dto = cartMapper.cartToCartDTO(cart);
 			populateProductDetails(dto, cart);
 			return dto;
-		}).collect(Collectors.toList());
+		});
 	}
 
 	@Override
@@ -109,6 +110,7 @@ public class CartServiceImpl implements CartService {
 	}
 
 	@Override
+	@Transactional
 	public void updateProductInCarts(Long cartId, Long productId) {
 		// Logic to update price if product changed globally
 		CartItem cartItem = cartItemRepo.findCartItemByProductIdAndCartId(cartId, productId);
@@ -122,6 +124,7 @@ public class CartServiceImpl implements CartService {
 	}
 
 	@Override
+	@Transactional
 	public CartDTO updateProductQuantityInCart(Long cartId, Long productId, String itemCode, Integer quantity) {
 		Cart cart = cartRepo.findById(cartId)
 				.orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
@@ -150,6 +153,7 @@ public class CartServiceImpl implements CartService {
 	}
 
 	@Override
+	@Transactional
 	public String deleteProductFromCart(Long cartId, Long productId) {
 		Cart cart = cartRepo.findById(cartId)
 				.orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));

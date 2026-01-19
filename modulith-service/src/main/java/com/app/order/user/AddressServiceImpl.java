@@ -57,14 +57,9 @@ public class AddressServiceImpl implements AddressService {
 
 	@Transactional(readOnly = true)
 	@Override
-	public List<AddressDTO> getAddresses() {
-		// Note: This returns ALL addresses - consider adding pagination or user filter
-		List<Address> addresses = addressRepo.findAll();
-
-		List<AddressDTO> addressDTOs = addresses.stream().map(identityMapper::addressToAddressDTO)
-				.collect(Collectors.toList());
-
-		return addressDTOs;
+	public org.springframework.data.domain.Page<AddressDTO> getAddresses(org.springframework.data.domain.Pageable pageable) {
+		org.springframework.data.domain.Page<Address> addresses = addressRepo.findAll(pageable);
+		return addresses.map(identityMapper::addressToAddressDTO);
 	}
 
 	@Transactional(readOnly = true)

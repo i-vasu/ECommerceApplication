@@ -62,8 +62,8 @@ public class SupportController implements SupportApi {
     }
 
     @Override
-    public ResponseEntity<List<SupportTicket>> getUserTickets(@PathVariable String email) {
-        return ResponseEntity.ok(ticketRepo.findByUserEmail(email));
+    public ResponseEntity<org.springframework.data.domain.Page<SupportTicket>> getUserTickets(@PathVariable String email, org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(ticketRepo.findByUserEmail(email, pageable));
     }
 
     @Override

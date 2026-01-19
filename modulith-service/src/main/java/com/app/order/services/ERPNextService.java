@@ -241,11 +241,7 @@ public class ERPNextService {
         if (apiKey == null || apiKey.isEmpty())
             return;
 
-        List<Order> pendingOrders = orderRepo.findAll().stream()
-                .filter(o -> o.getErpNextOrderName() != null)
-                .filter(o -> !"DELIVERED".equalsIgnoreCase(o.getOrderStatus())
-                        && !"CANCELLED".equalsIgnoreCase(o.getOrderStatus()))
-                .toList();
+        List<Order> pendingOrders = orderRepo.findOngoingOrders();
 
         for (Order order : pendingOrders) {
             try {

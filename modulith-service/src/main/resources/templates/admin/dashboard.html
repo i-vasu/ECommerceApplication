@@ -82,62 +82,128 @@
 
         <!-- Content Scrollable -->
         <div class="flex-1 overflow-auto p-8 bg-gray-50 scroll-smooth">
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Stat Card 1 -->
-                <div
-                    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Sales</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">₹ 24,500</p>
-                        </div>
-                        <div class="p-3 bg-green-50 rounded-xl text-green-600">
-                            <i data-lucide="trending-up" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                </div>
+            <!-- App Launcher Sections -->
 
-                <!-- Stat Card 2 -->
-                <div
-                    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Orders</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">45</p>
+            <!-- Business Section -->
+            <div class="mb-10">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 px-1 flex items-center">
+                    <i data-lucide="briefcase" class="w-5 h-5 mr-2 text-purple-600"></i>
+                    Business Suite
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- ERPNext -->
+                    <a href="http://localhost:8000" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                <span class="text-2xl font-bold text-blue-600">E</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">ERPNext</h3>
+                                <p class="text-sm text-gray-500">Enterprise Resource Planning</p>
+                            </div>
                         </div>
-                        <div class="p-3 bg-blue-50 rounded-xl text-blue-600">
-                            <i data-lucide="shopping-cart" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                </div>
+                    </a>
 
-                <!-- Stat Card 3 -->
-                <div
-                    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Customers</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">128</p>
+                    <!-- Umami -->
+                    <a href="http://localhost:3000" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors">
+                                <i data-lucide="bar-chart-2" class="w-8 h-8 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Umami</h3>
+                                <p class="text-sm text-gray-500">Web Analytics</p>
+                            </div>
                         </div>
-                        <div class="p-3 bg-purple-50 rounded-xl text-purple-600">
-                            <i data-lucide="users" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                </div>
+                    </a>
 
-                <!-- Stat Card 4 -->
-                <div
-                    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Pending</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">12</p>
+                    <!-- Ditto -->
+                    <a href="#" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors">
+                                <i data-lucide="copy" class="w-8 h-8 text-pink-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Ditto</h3>
+                                <p class="text-sm text-gray-500">Sync & Replication</p>
+                            </div>
                         </div>
-                        <div class="p-3 bg-orange-50 rounded-xl text-orange-600">
-                            <i data-lucide="clock" class="w-6 h-6"></i>
+                    </a>
+
+                    <!-- Metabase -->
+                    <a href="http://localhost:3001" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                <i data-lucide="pie-chart" class="w-8 h-8 text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Metabase</h3>
+                                <p class="text-sm text-gray-500">Business Intelligence</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Developer Section -->
+            <div class="mb-8">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 px-1 flex items-center">
+                    <i data-lucide="code-2" class="w-5 h-5 mr-2 text-indigo-600"></i>
+                    Developer Tools
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- ParadeDB -->
+                    <a href="http://localhost:5432" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-yellow-50 rounded-xl flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
+                                <i data-lucide="database" class="w-8 h-8 text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">ParadeDB</h3>
+                                <p class="text-sm text-gray-500">PostgreSQL Search</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- DragonFlyDB -->
+                    <a href="http://localhost:6379" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                                <i data-lucide="zap" class="w-8 h-8 text-indigo-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">DragonFlyDB</h3>
+                                <p class="text-sm text-gray-500">High-Performance Cache</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Grafana -->
+                    <a href="http://localhost:3000" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                                <i data-lucide="activity" class="w-8 h-8 text-orange-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Grafana</h3>
+                                <p class="text-sm text-gray-500">Monitoring Stack</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
             </div>
 

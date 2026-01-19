@@ -23,4 +23,7 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 	@Query("SELECT o FROM Order o WHERE o.orderStatus = 'PLACED'")
 	List<Order> findPendingOrders();
 
+	@Query("SELECT o FROM Order o WHERE o.erpNextOrderName IS NOT NULL AND o.orderStatus NOT IN ('DELIVERED', 'CANCELLED')")
+	List<Order> findOngoingOrders();
+
 }

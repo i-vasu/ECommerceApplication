@@ -8,7 +8,7 @@ public interface CartService {
 
 	CartDTO addProductToCart(Long cartId, Long productId, String itemCode, Integer quantity);
 
-	List<CartDTO> getAllCarts();
+	org.springframework.data.domain.Page<CartDTO> getAllCarts(org.springframework.data.domain.Pageable pageable);
 
 	CartDTO getCart(String emailId, Long cartId);
 

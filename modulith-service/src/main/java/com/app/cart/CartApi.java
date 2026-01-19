@@ -13,7 +13,7 @@ public interface CartApi {
     ResponseEntity<CartDTO> addProductToCart(Long cartId, Long productId, Integer quantity, String itemCode);
 
     @Operation(summary = "Get All Carts", description = "Retrieves all carts (Admin only)")
-    ResponseEntity<List<CartDTO>> getCarts();
+    ResponseEntity<org.springframework.data.domain.Page<CartDTO>> getCarts(org.springframework.data.domain.Pageable pageable);
 
     @Operation(summary = "Get Cart by ID", description = "Retrieves cart details by ID")
     ResponseEntity<CartDTO> getCartById(String emailId, Long cartId);

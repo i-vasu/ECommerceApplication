@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle} + ' - Vasu Admin'">Products - Vasu Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-xl z-20 flex flex-col">
+        <div class="h-16 flex items-center justify-center border-b border-gray-100">
+            <h1
+                class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
+                Vasu Admin</h1>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <a href="/admin/dashboard"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="layout-dashboard"
+                    class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Dashboard
+            </a>
+            <a href="/admin/products"
+                class="flex items-center px-4 py-3 text-purple-600 bg-purple-50 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="package" class="w-5 h-5 mr-3"></i>
+                Products
+            </a>
+            <a href="/admin/orders"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="shopping-bag" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Orders
+            </a>
+            <a href="/admin/customers"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="users" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Customers
+            </a>
+            <a href="/admin/settings"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="settings" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Settings
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-100">
+            <form th:action="@{/admin/logout}" method="post">
+                <button
+                    class="flex items-center w-full px-4 py-2 text-gray-500 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50">
+                    <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>Sign Out
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <header
+            class="h-16 bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-between px-8 z-10 w-full sticky top-0">
+            <div class="text-xl font-semibold text-gray-800">Products Management</div>
+            <div class="flex items-center space-x-4">
+                <button class="relative p-2 text-gray-400 hover:text-gray-600"><i data-lucide="bell"
+                        class="w-6 h-6"></i></button>
+                <div
+                    class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white font-bold flex items-center justify-center">
+                    A</div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-8 bg-gray-50 scroll-smooth">
+            <!-- Action Bar -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="relative">
+                    <i data-lucide="search"
+                        class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                    <input type="text" placeholder="Search products..."
+                        class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 w-64 bg-white/50 backdrop-blur-sm">
+                </div>
+                <button
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center shadow-lg transition-transform hover:scale-105">
+                    <i data-lucide="plus" class="w-5 h-5 mr-2"></i> Add Product
+                </button>
+            </div>
+
+            <div th:if="${error}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow-sm"
+                th:text="${error}"></div>
+
+            <!-- Products Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr
+                            class="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+                            <th class="px-6 py-4">Image</th>
+                            <th class="px-6 py-4">Product Name</th>
+                            <th class="px-6 py-4">Price</th>
+                            <th class="px-6 py-4">Discount</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr th:each="product : ${products}" class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <img th:src="${product.image}"
+                                    th:if="${product.image != null and product.image != 'default.png'}" alt="Product"
+                                    class="w-12 h-12 rounded-lg object-cover border border-gray-200">
+                                <div th:if="${product.image == null or product.image == 'default.png'}"
+                                    class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 font-xs">
+                                    No Img</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-gray-900" th:text="${product.productName}">Product Name
+                                </div>
+                                <div class="text-xs text-gray-500 truncate w-48" th:text="${product.description}">Desc
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 font-medium text-gray-900" th:text="'₹' + ${product.price}">₹ 1000</td>
+                            <td class="px-6 py-4 text-green-600 font-medium" th:text="${product.discount} + '%'">10%
+                            </td>
+                            <td class="px-6 py-4">
+                                <span
+                                    class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">Active</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <button
+                                    class="text-gray-400 hover:text-purple-600 mx-1 p-1 hover:bg-gray-100 rounded-full transition-colors"><i
+                                        data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                <button
+                                    class="text-gray-400 hover:text-red-600 mx-1 p-1 hover:bg-gray-100 rounded-full transition-colors"><i
+                                        data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                        <tr th:if="${products == null or products.empty}">
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+                                <div class="flex flex-col items-center">
+                                    <i data-lucide="package-open" class="w-10 h-10 mb-2 opacity-50"></i>
+                                    No products found in the catalog.
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination Placeholder -->
+            <div th:if="${products != null and !products.empty}"
+                class="flex justify-between items-center mt-6 text-sm text-gray-600">
+                <div>Showing Results</div>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 border rounded hover:bg-gray-100">Prev</button>
+                    <button class="px-3 py-1 border rounded bg-purple-600 text-white">1</button>
+                    <button class="px-3 py-1 border rounded hover:bg-gray-100">Next</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script> lucide.createIcons(); </script>
+</body>
+
+</html>

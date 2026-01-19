@@ -48,7 +48,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-@Transactional
+@Transactional(readOnly = true)
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -98,6 +98,7 @@ public class OrderServiceImpl implements OrderService {
 	private ProductRepo productRepo;
 
 	@Override
+	@Transactional
 	public OrderDTO placeOrder(String emailId, Long cartId, String paymentMethod) {
 
 		Cart cart = cartRepo.findCartByEmailAndCartId(emailId, cartId);
@@ -256,6 +257,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
+	@Transactional
 	public OrderDTO updateOrder(String emailId, Long orderId, String orderStatus) {
 
 		Order order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
@@ -270,6 +272,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
+	@Transactional
 	public OrderDTO placeMarketplaceOrder(OrderDTO orderDTO) {
 		Order order = new Order();
 		order.setEmail(orderDTO.getEmail());
@@ -320,6 +323,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
+	@Transactional
 	public OrderDTO cancelOrder(String emailId, Long orderId) {
 		Order order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
 
