@@ -50,6 +50,9 @@ public class ERPNextProductSyncService {
 
     @Autowired
     private SyncGateway syncGateway;
+    
+    @Autowired
+    private org.springframework.cache.CacheManager cacheManager;
 
     public void syncItems(com.app.core.multitenancy.Tenant tenant) {
         log.info("Initiating Product Sync for Tenant: {} via Spring Integration Flow...", tenant.getTenantId());
@@ -136,6 +139,10 @@ public class ERPNextProductSyncService {
                         }
                     }
                     log.info("Synced stock levels for {} items from ERPNext", rawList.size());
+                    
+                    // Invalidate Cache to reflect stock updates
+                    if (cacheManager.getCache("products") != null) cacheManager.getCache("products").clear();
+                    if (cacheManager.getCache("product") != null) cacheManager.getCache("product").clear();
                 }
             }
         } catch (Exception e) {

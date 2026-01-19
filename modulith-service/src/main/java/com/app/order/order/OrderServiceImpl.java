@@ -97,6 +97,9 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private ProductRepo productRepo;
 
+	@Autowired
+	private com.app.order.async.OrderProducer orderProducer;
+
 	@Override
 	@Transactional
 	public OrderDTO placeOrder(String emailId, Long cartId, String paymentMethod) {
@@ -173,7 +176,8 @@ public class OrderServiceImpl implements OrderService {
 			savedOrder.setOrderItems(orderItems);
 
 			if (!"RAZORPAY".equalsIgnoreCase(paymentMethod)) {
-				erpNextService.createSalesOrderAsync(savedOrder);
+                // Decoupled: Send to DragonflyDB Queue
+				orderProducer.sendOrder(savedOrder.getOrderId());
 			}
 
 			cart.getCartItems().forEach(item -> {
