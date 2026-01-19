@@ -5,7 +5,7 @@
 	
 	<groupId>com.app</groupId>
 	<artifactId>fashion-store-parent</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Fashion Store Parent</name>
 	<description>Parent POM for Microservices</description>

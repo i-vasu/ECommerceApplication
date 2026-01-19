@@ -57,12 +57,17 @@ public class ERPNextProductSyncService {
         // Resolve effective credentials (fallback to global if tenant-specific are missing or empty)
         String effectiveApiKey = (tenant.getErpNextApiKey() != null && !tenant.getErpNextApiKey().isBlank()) ? tenant.getErpNextApiKey() : credentialProvider.getApiKey();
         String effectiveApiSecret = (tenant.getErpNextApiSecret() != null && !tenant.getErpNextApiSecret().isBlank()) ? tenant.getErpNextApiSecret() : credentialProvider.getApiSecret();
-        String effectiveUrl = (tenant.getErpNextUrl() != null && !tenant.getErpNextUrl().isBlank()) ? tenant.getErpNextUrl() : credentialProvider.getBaseUrl();
-
-        // Ensure we don't pass nulls or empty URL
-        if (effectiveApiKey == null) effectiveApiKey = "";
-        if (effectiveApiSecret == null) effectiveApiSecret = "";
-        if (effectiveUrl == null || effectiveUrl.isBlank()) effectiveUrl = "http://localhost:8000";
+        String effectiveUrl = tenant.getErpNextUrl();
+        if (effectiveUrl == null || effectiveUrl.isBlank()) {
+            effectiveUrl = credentialProvider.getBaseUrl();
+        }
+        if (effectiveUrl == null || effectiveUrl.isBlank()) {
+            effectiveUrl = "http://localhost:8000";
+        }
+        effectiveUrl = effectiveUrl.trim();
+        if (!effectiveUrl.startsWith("http")) {
+            effectiveUrl = "http://" + effectiveUrl;
+        }
 
         // Pass tenant info to integration flow via headers if needed,
         // but for now we'll update the global values temporarily or use a better way.
@@ -81,7 +86,17 @@ public class ERPNextProductSyncService {
                 : credentialProvider.getApiKey();
         String effectiveApiSecret = tenant.getErpNextApiSecret() != null ? tenant.getErpNextApiSecret()
                 : credentialProvider.getApiSecret();
-        String effectiveUrl = tenant.getErpNextUrl() != null ? tenant.getErpNextUrl() : credentialProvider.getBaseUrl();
+        String effectiveUrl = tenant.getErpNextUrl();
+        if (effectiveUrl == null || effectiveUrl.isBlank()) {
+            effectiveUrl = credentialProvider.getBaseUrl();
+        }
+        if (effectiveUrl == null || effectiveUrl.isBlank()) {
+            effectiveUrl = "http://localhost:8000";
+        }
+        effectiveUrl = effectiveUrl.trim();
+        if (!effectiveUrl.startsWith("http")) {
+            effectiveUrl = "http://" + effectiveUrl;
+        }
 
         if (effectiveApiKey == null || effectiveApiKey.isEmpty())
             return;

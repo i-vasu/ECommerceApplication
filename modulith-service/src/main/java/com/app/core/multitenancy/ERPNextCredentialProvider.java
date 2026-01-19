@@ -21,15 +21,24 @@ public class ERPNextCredentialProvider {
     private String defaultSecret;
 
     public String getBaseUrl() {
-        return getTenant().map(Tenant::getErpNextUrl).orElse(defaultUrl);
+        return getTenant().map(Tenant::getErpNextUrl)
+                .filter(s -> s != null && !s.isBlank())
+                .map(String::trim)
+                .orElse(defaultUrl);
     }
 
     public String getApiKey() {
-        return getTenant().map(Tenant::getErpNextApiKey).orElse(defaultKey);
+        return getTenant().map(Tenant::getErpNextApiKey)
+                .filter(s -> s != null && !s.isBlank())
+                .map(String::trim)
+                .orElse(defaultKey);
     }
 
     public String getApiSecret() {
-        return getTenant().map(Tenant::getErpNextApiSecret).orElse(defaultSecret);
+        return getTenant().map(Tenant::getErpNextApiSecret)
+                .filter(s -> s != null && !s.isBlank())
+                .map(String::trim)
+                .orElse(defaultSecret);
     }
 
     private java.util.Optional<Tenant> getTenant() {
