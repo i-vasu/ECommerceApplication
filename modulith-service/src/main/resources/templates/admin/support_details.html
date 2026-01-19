@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Details - Vasu Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-xl z-20 flex flex-col">
+        <div class="h-16 flex items-center justify-center border-b border-gray-100">
+            <h1
+                class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
+                Vasu Admin</h1>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <a href="/admin/dashboard"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="layout-dashboard"
+                    class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Dashboard
+            </a>
+            <a href="/admin/support"
+                class="flex items-center px-4 py-3 text-purple-600 bg-purple-50 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="message-square" class="w-5 h-5 mr-3"></i>
+                Support
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-100">
+            <form th:action="@{/admin/logout}" method="post">
+                <button
+                    class="flex items-center w-full px-4 py-2 text-gray-500 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50">
+                    <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>Sign Out
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen">
+        <header class="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 flex-shrink-0">
+            <div class="flex items-center space-x-4">
+                <a href="/admin/support" class="text-gray-400 hover:text-gray-600"><i data-lucide="arrow-left"
+                        class="w-5 h-5"></i></a>
+                <h1 class="text-lg font-bold text-gray-800" th:text="${ticket.subject}">Ticket Subject</h1>
+                <span
+                    th:class="${'px-2 py-0.5 rounded-full text-xs font-bold ' + (ticket.status == 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700')}"
+                    th:text="${ticket.status}">OPEN</span>
+            </div>
+            <div class="text-sm text-gray-500" th:text="'User: ' + ${ticket.userEmail}">user@example.com</div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 space-y-6 bg-gray-50">
+            <!-- Messages -->
+            <div th:each="msg : ${ticket.messages}"
+                th:class="${'flex ' + (msg.senderType == 'ADMIN' ? 'justify-end' : 'justify-start')}">
+                <div
+                    th:class="${'max-w-2xl p-4 rounded-2xl shadow-sm ' + (msg.senderType == 'ADMIN' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none')}">
+                    <p class="text-sm" th:text="${msg.message}">Message content</p>
+                    <div th:class="${'text-xs mt-2 ' + (msg.senderType == 'ADMIN' ? 'text-purple-200' : 'text-gray-400')}"
+                        th:text="${#temporals.format(msg.timestamp, 'dd MMM HH:mm')}">10:00 AM</div>
+                </div>
+            </div>
+
+            <div th:if="${ticket.messages.empty}" class="text-center text-gray-400 py-10">No messages yet.</div>
+        </div>
+
+        <div class="p-4 bg-white border-t border-gray-100 flex-shrink-0">
+            <form th:action="@{'/admin/support/' + ${ticket.ticketId} + '/reply'}" method="post"
+                class="max-w-4xl mx-auto flex space-x-4">
+                <input type="text" name="message" required placeholder="Type your reply..."
+                    class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+                <button type="submit"
+                    class="px-6 py-3 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 transition-colors flex items-center shadow-lg shadow-purple-200">
+                    <i data-lucide="send" class="w-4 h-4 mr-2"></i> Reply
+                </button>
+            </form>
+        </div>
+    </main>
+    <script> lucide.createIcons(); </script>
+</body>
+
+</html>

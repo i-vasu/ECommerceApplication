@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle} + ' - Vasu Admin'">Support - Vasu Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-xl z-20 flex flex-col">
+        <div class="h-16 flex items-center justify-center border-b border-gray-100">
+            <h1
+                class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
+                Vasu Admin</h1>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <a href="/admin/dashboard"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="layout-dashboard"
+                    class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Dashboard
+            </a>
+            <a href="/admin/support"
+                class="flex items-center px-4 py-3 text-purple-600 bg-purple-50 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="message-square" class="w-5 h-5 mr-3"></i>
+                Support
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-100">
+            <form th:action="@{/admin/logout}" method="post">
+                <button
+                    class="flex items-center w-full px-4 py-2 text-gray-500 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50">
+                    <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>Sign Out
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <header
+            class="h-16 bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-between px-8 z-10 w-full sticky top-0">
+            <div class="text-xl font-semibold text-gray-800">Support Tickets</div>
+            <div class="flex items-center space-x-4">
+                <div
+                    class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white font-bold flex items-center justify-center">
+                    A</div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-8 bg-gray-50 scroll-smooth">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr
+                            class="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+                            <th class="px-6 py-4">ID</th>
+                            <th class="px-6 py-4">Subject</th>
+                            <th class="px-6 py-4">User</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr th:each="ticket : ${tickets.content}" class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 text-gray-500" th:text="'#' + ${ticket.ticketId}">#101</td>
+                            <td class="px-6 py-4 font-medium text-gray-900" th:text="${ticket.subject}">Subject</td>
+                            <td class="px-6 py-4 text-gray-600" th:text="${ticket.userEmail}">user@example.com</td>
+                            <td class="px-6 py-4">
+                                <span
+                                    th:class="${'px-3 py-1 rounded-full text-xs font-bold ' + (ticket.status == 'OPEN' ? 'bg-green-100 text-green-700' : (ticket.status == 'CLOSED' ? 'bg-gray-100 text-gray-700' : 'bg-yellow-100 text-yellow-700'))}"
+                                    th:text="${ticket.status}">OPEN</span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500 text-sm"
+                                th:text="${#temporals.format(ticket.createdAt, 'dd MMM yyyy HH:mm')}">Date</td>
+                            <td class="px-6 py-4 text-right">
+                                <a th:href="@{'/admin/support/' + ${ticket.ticketId}}"
+                                    class="text-purple-600 hover:text-purple-800 font-medium text-sm">View</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${tickets.content.empty}">
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-400">No tickets found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            <div th:if="${tickets.totalPages > 1}" class="flex justify-between items-center mt-6 text-sm text-gray-600">
+                <div>Page <span th:text="${currentPage + 1}">1</span> of <span th:text="${tickets.totalPages}">10</span>
+                </div>
+                <div class="flex space-x-2">
+                    <a th:if="${currentPage > 0}" th:href="@{'/admin/support?page=' + ${currentPage - 1}}"
+                        class="px-3 py-1 border rounded hover:bg-gray-100">Prev</a>
+                    <a th:if="${currentPage < tickets.totalPages - 1}"
+                        th:href="@{'/admin/support?page=' + ${currentPage + 1}}"
+                        class="px-3 py-1 border rounded hover:bg-gray-100">Next</a>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script> lucide.createIcons(); </script>
+</body>
+
+</html>
