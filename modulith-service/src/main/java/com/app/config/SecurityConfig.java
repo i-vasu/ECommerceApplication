@@ -34,9 +34,38 @@ public class SecurityConfig {
     private OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
 
     @Bean
-    @Primary
-    public SecurityFilterChain filterChain(HttpSecurity http, JWTFilter jwtFilter) throws Exception {
+    @org.springframework.core.annotation.Order(1)
+    public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
         http
+                .securityMatcher("/admin/**")
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/login", "/admin/css/**", "/admin/js/**", "/admin/images/**").permitAll()
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN") 
+                )
+                .formLogin(form -> form
+                        .loginPage("/admin/login")
+                        .loginProcessingUrl("/admin/login")
+                        .defaultSuccessUrl("/admin/dashboard", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/admin/logout")
+                        .logoutSuccessUrl("/admin/login?logout")
+                        .permitAll()
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .csrf(csrf -> csrf.disable()); // Simplify for now
+
+        http.authenticationProvider(daoAuthenticationProvider());
+
+        return http.build();
+    }
+
+    @Bean
+    @org.springframework.core.annotation.Order(2)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http, JWTFilter jwtFilter) throws Exception {
+        http
+                .securityMatcher("/api/**", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/**")
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/api/register/**", "/api/login")
@@ -46,7 +75,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/user/**").hasAnyAuthority("USER", "ADMIN")
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN") // API admin endpoints
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                         (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
