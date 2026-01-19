@@ -51,8 +51,8 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         product = productRepo.save(product);
 
         User user = new User();
-        user.setFirstName("Test");
-        user.setLastName("User");
+        user.setFirstName("TestUser");
+        user.setLastName("TestFamily");
         user.setEmail("test@example.com");
         user.setMobileNumber("1234567890");
         user = userRepo.save(user);
