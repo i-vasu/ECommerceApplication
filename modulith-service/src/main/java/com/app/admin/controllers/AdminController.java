@@ -53,6 +53,9 @@ public class AdminController {
             model.addAttribute("totalPages", tickets.getTotalPages());
         } catch (Exception e) {
             model.addAttribute("error", "Failed to load tickets: " + e.getMessage());
+            model.addAttribute("tickets", org.springframework.data.domain.Page.empty());
+            model.addAttribute("currentPage", 0);
+            model.addAttribute("totalPages", 0);
         }
         return "admin/support";
     }
