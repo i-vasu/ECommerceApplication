@@ -154,7 +154,7 @@ public class ProductServiceImpl implements ProductService {
 
 		Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
 
-		Page<Product> pageProducts = productRepo.findByProductNameLike(keyword, pageDetails);
+		Page<Product> pageProducts = productRepo.searchByKeyword(keyword, pageDetails);
 
 		List<Product> products = pageProducts.getContent();
 
