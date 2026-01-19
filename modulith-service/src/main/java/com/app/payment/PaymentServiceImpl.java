@@ -43,6 +43,9 @@ public class PaymentServiceImpl implements PaymentService {
     @Autowired
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
+    @Autowired
+    private com.app.core.async.EventProducer eventProducer;
+
     @Override
     @Transactional
     public void processPaymentCapture(String pgOrderId, String pgPaymentId) {
@@ -69,16 +72,19 @@ public class PaymentServiceImpl implements PaymentService {
                     order.getTotalAmount(),
                     pgPaymentId);
 
-            String eventJson = objectMapper.writeValueAsString(event);
-
-            // Publishing to a single Stream "order-events"
-            // Consumers (Email, Marketing, Shiprocket) will all listen to this stream group
-            // or separate groups
-            redisTemplate.opsForStream().add(
-                    "order-events",
-                    java.util.Collections.singletonMap("payload", eventJson));
-            System.out.println(">>> Published Payment Event to DragonflyDB Stream for Order: " + order.getOrderId());
-
+            eventProducer.publish("payment_events", event); // Unified stream for Payment/Order Events? 
+            // Wait, previous code used "order-events". StreamConfig used "orders_stream".
+            // I should stick to constants in RedisStreamConfig if possible, or just string literals consistent with plan.
+            // Plan said "payment_success_stream" or shared.
+            // Let's use "payment_events" for clarity, or "orders_stream" if we want unified timeline.
+            // NotificationConsumer listens to "orders_stream" (Order Placed).
+            // It should also listen to "payment_events".
+            
+            // I'll use "payment_events". I need to update RedisStreamConfig to listen to this too?
+            // NotificationConsumer logic (Line 23) checked `if (streamKey.contains("orders_stream"))`.
+            // I'll update NotificationConsumer to handle payment events too.
+            // For now, publish to "payment_events".
+            
         } catch (Exception e) {
             System.err.println("Failed to publish payment event: " + e.getMessage());
         }

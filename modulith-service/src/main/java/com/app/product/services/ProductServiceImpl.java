@@ -175,6 +175,9 @@ public class ProductServiceImpl implements ProductService {
 				pageProducts.isLast());
 	}
 
+	@Autowired
+	private com.app.core.async.EventProducer eventProducer;
+
 	@Override
 	@org.springframework.cache.annotation.Caching(evict = {
 			@CacheEvict(value = "products", allEntries = true),
@@ -197,12 +200,12 @@ public class ProductServiceImpl implements ProductService {
 
 		Product savedProduct = productRepo.save(product);
 
-		// Publish Event to DragonflyDB (Redis)
+		// Publish Event to DragonflyDB (Stream)
 		try {
 			com.app.product.payloads.ProductSyncEvent event = new com.app.product.payloads.ProductSyncEvent(productId,
 					"UPDATED");
-			String eventJson = new ObjectMapper().writeValueAsString(event);
-			redisTemplate.convertAndSend("product-sync-topic", eventJson);
+			// Using the new EventProducer
+			eventProducer.publish("product_events", event);
 		} catch (Exception e) {
 			System.err.println("Failed to publish product update event to Redis: " + e.getMessage());
 		}
@@ -294,11 +297,11 @@ public class ProductServiceImpl implements ProductService {
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
 		// Publish Event to DragonflyDB (Redis)
+		// Publish Event to DragonflyDB (Stream)
 		try {
 			com.app.product.payloads.ProductSyncEvent event = new com.app.product.payloads.ProductSyncEvent(productId,
 					"DELETED");
-			String eventJson = new ObjectMapper().writeValueAsString(event);
-			redisTemplate.convertAndSend("product-sync-topic", eventJson);
+			eventProducer.publish("product_events", event);
 		} catch (Exception e) {
 			System.err.println("Failed to publish product delete event to Redis: " + e.getMessage());
 		}

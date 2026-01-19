@@ -1,4 +1,14 @@
-# Architecture: Separation of Concerns
+# Architecture & Governance
+
+> [!IMPORTANT]
+> **GOVERNANCE RULE**: All architectural decisions and code changes MUST align with [STRATEGY_ANALYSIS.md](STRATEGY_ANALYSIS.md).
+>
+> **Core Pillars:**
+> 1.  **Async Write-Behind**: All heavy writes (ERPNext Sync) must be decoupled via **DragonflyDB Streams**.
+> 2.  **Native Search**: Use ParadeDB (`to_tsvector`) for search; do not implement inefficient JPA/Python search logic.
+> 3.  **Unified Bus**: Use the unified `EventProducer` for domain events.
+
+## High-Level Overview
 
 This document outlines the architectural roles and responsibilities of the key data subsystems in the Vasu E-Commerce Platform. The architecture follows a **Command Query Responsibility Segregation (CQRS)** inspired pattern, where business operations and high-performance reads are decoupled.
 
