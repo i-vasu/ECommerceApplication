@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/shipments")
 @SecurityRequirement(name = "E-Commerce Application")
 public class ShipmentController implements ShipmentApi {
 

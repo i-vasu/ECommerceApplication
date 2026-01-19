@@ -54,13 +54,23 @@ public class ERPNextProductSyncService {
     public void syncItems(com.app.core.multitenancy.Tenant tenant) {
         log.info("Initiating Product Sync for Tenant: {} via Spring Integration Flow...", tenant.getTenantId());
 
+        // Resolve effective credentials (fallback to global if tenant-specific are missing or empty)
+        String effectiveApiKey = (tenant.getErpNextApiKey() != null && !tenant.getErpNextApiKey().isBlank()) ? tenant.getErpNextApiKey() : credentialProvider.getApiKey();
+        String effectiveApiSecret = (tenant.getErpNextApiSecret() != null && !tenant.getErpNextApiSecret().isBlank()) ? tenant.getErpNextApiSecret() : credentialProvider.getApiSecret();
+        String effectiveUrl = (tenant.getErpNextUrl() != null && !tenant.getErpNextUrl().isBlank()) ? tenant.getErpNextUrl() : credentialProvider.getBaseUrl();
+
+        // Ensure we don't pass nulls or empty URL
+        if (effectiveApiKey == null) effectiveApiKey = "";
+        if (effectiveApiSecret == null) effectiveApiSecret = "";
+        if (effectiveUrl == null || effectiveUrl.isBlank()) effectiveUrl = "http://localhost:8000";
+
         // Pass tenant info to integration flow via headers if needed,
         // but for now we'll update the global values temporarily or use a better way.
         // Given the singleton nature of the config, we'll pass it in the gateway call.
         syncGateway.startSync("MANUAL_TRIGGER_" + tenant.getTenantId(),
-                tenant.getErpNextUrl() + "/api/resource/Item",
-                tenant.getErpNextApiKey(),
-                tenant.getErpNextApiSecret());
+                effectiveUrl + "/api/resource/Item",
+                effectiveApiKey,
+                effectiveApiSecret);
 
         // Trigger Stock Sync
         syncStock(tenant);

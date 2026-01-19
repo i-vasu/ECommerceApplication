@@ -1,36 +1,17 @@
 {
     # Global options
-    email your-email@example.com
+    email vasu2srinivas29@gmail.com
 }
 
 localhost {
-    # Product Service
-    handle /products* {
-        reverse_proxy product-service:8082
+    # Consolidated Modulith Service
+    handle /api/* {
+        reverse_proxy modulith-service:8080
     }
     
-    # Order Service (Carts, Orders)
-    handle /carts* {
-        reverse_proxy order-service:8081
-    }
-    handle /orders* {
-        reverse_proxy order-service:8081
-    }
-    
-    # Marketplace Service
-    handle /marketplace* {
-        reverse_proxy marketplace-service:8083
-    }
-    
-    # Static Frontend or Default
-    # handle {
-    #    reverse_proxy frontend-service:3000
-    # }
-    
-    # Enable HTTP/3 explicitly (enabled by default in newer Caddy versions)
-    servers {
-        protocol {
-            experimental_http3
-        }
+    # Storefront (Running on host port 3001)
+    # If Caddy is in Docker, and storefront is on host, we use host.docker.internal
+    handle /* {
+        reverse_proxy host.docker.internal:3001
     }
 }
