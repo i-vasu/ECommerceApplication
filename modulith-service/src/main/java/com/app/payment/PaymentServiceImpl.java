@@ -138,7 +138,8 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         try {
-            String secret = "your_key_secret"; // This should ideally come from config/bean, but RazorpayClient has it.
+            // Use the injected secret
+            String secret = this.secret;
             // Wait, Utils.verifyPaymentSignature needs the secret string.
             // I can inject it from properties or get it from a bean if I exposed it.
             // For now I'll check how to get it from RazorpayClient or inject value.

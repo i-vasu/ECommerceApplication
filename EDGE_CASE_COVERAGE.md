@@ -36,11 +36,11 @@
 ### **Payment Edge Cases** (High Risk)
 | Scenario | Impact | Status |
 |----------|--------|--------|
-| Payment fails mid-transaction | Customer charged but no order | 🔴 **MISSING** |
+| Payment fails mid-transaction | Customer charged but no order | ✅ Implemented |
 | Network timeout during payment | Duplicate charges | 🔴 **MISSING** |
-| Payment gateway returns error | Order stuck in limbo | 🔴 **MISSING** |
+| Payment gateway returns error | Order stuck in limbo | ✅ Implemented |
 | Customer closes payment window | Order not created | 🔴 **MISSING** |
-| Invalid payment signature | Security breach | 🔴 **MISSING** |
+| Invalid payment signature | Security breach | ✅ Implemented |
 
 ### **Cart Edge Cases**
 | Scenario | Impact | Status |
@@ -54,11 +54,11 @@
 ### **Address Validation Edge Cases**
 | Scenario | Impact | Status |
 |----------|--------|--------|
-| Invalid PIN code | Failed delivery | 🔴 **MISSING** |
-| PO Box address | Shipping restriction | 🔴 **MISSING** |
-| International address (India-only store) | Policy violation | 🔴 **MISSING** |
-| Missing mandatory fields | Validation bypass | 🔴 **MISSING** |
-| Special characters in address | Database errors | 🔴 **MISSING** |
+| Invalid PIN code | Failed delivery | ✅ Implemented |
+| PO Box address | Shipping restriction | ✅ Implemented |
+| International address (India-only store) | Policy violation | ✅ Implemented |
+| Missing mandatory fields | Validation bypass | ✅ Implemented |
+| Special characters in address | Database errors | ✅ Implemented |
 
 ### **Security Edge Cases**
 | Scenario | Impact | Status |
