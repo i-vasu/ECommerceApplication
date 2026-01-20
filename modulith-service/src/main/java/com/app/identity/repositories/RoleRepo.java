@@ -8,4 +8,5 @@ import com.app.identity.entities.Role;
 @Repository
 public interface RoleRepo extends JpaRepository<Role, Long> {
 
+	java.util.Optional<Role> findByRoleName(String roleName);
 }

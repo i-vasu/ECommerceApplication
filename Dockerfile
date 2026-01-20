@@ -1,10 +1,12 @@
 # Build stage - Liberica JDK 25
-FROM maven:3.9-eclipse-temurin-22-alpine AS build
+FROM bellsoft/liberica-openjdk-alpine:25 AS build
+RUN apk add --no-cache maven
 # Note: Using Temurin for build is fine as long as it handles Java 25 syntax, 
 # but for consistency and CRaC support we'll use Liberica for the runtime.
 WORKDIR /app
 COPY pom.xml .
-COPY src ./src
+COPY modulith-service ./modulith-service
+COPY automation-tests ./automation-tests
 RUN mvn clean package -pl modulith-service -am -DskipTests
 
 # Run stage - Liberica JDK 25 (Standard) for CRaC and Performance

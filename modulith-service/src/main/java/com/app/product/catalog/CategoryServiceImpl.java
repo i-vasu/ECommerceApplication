@@ -20,7 +20,7 @@ import com.app.product.payloads.CategoryResponse;
 import com.app.product.repositories.CategoryRepo;
 import com.app.product.ProductService;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
 @Service

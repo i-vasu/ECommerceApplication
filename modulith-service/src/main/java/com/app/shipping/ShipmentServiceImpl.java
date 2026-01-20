@@ -56,6 +56,9 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Value("${shadowfax.token:}")
     private String shadowfaxToken;
 
+    @Autowired
+    private com.app.core.async.EventProducer eventProducer;
+
     @Override
     @Transactional
     public Shipment createShipment(Long orderId) {
@@ -244,10 +247,25 @@ public class ShipmentServiceImpl implements ShipmentService {
                     // Extract status (simplifying for now, Shiprocket response structure varies)
                     if (tracking.containsKey("tracking_data")) {
                         // Update status logic here
-                        // For now we just log it and potentially update local status if we have a
-                        // mapper
-                        log.info("Updated tracking for shipment {}: {}", shipment.getShipmentId(),
-                                tracking.get("status"));
+                        Map<String, Object> tData = (Map<String, Object>) tracking.get("tracking_data");
+                        String status = (String) tData.get("track_status"); // Check actual field name in prod
+                        
+                        if (status != null && !status.equalsIgnoreCase(shipment.getStatus())) {
+                            shipment.setStatus(status);
+                            shipmentRepo.save(shipment);
+                            log.info("Updated tracking for shipment {}: {}", shipment.getShipmentId(), status);
+                            
+                            // Publish Event
+                            try {
+                                com.app.core.events.OrderStatusEvent event = new com.app.core.events.OrderStatusEvent(
+                                    shipment.getOrder().getOrderId(), shipment.getOrder().getEmail(), 
+                                    status, shipment.getAwbNumber(), shipment.getCarrier()
+                                );
+                                eventProducer.publish("order_status_events", event);
+                            } catch (Exception px) {
+                                System.err.println("Failed to publish shipment status event: " + px.getMessage());
+                            }
+                        }
                     }
                 }
             } catch (Exception e) {

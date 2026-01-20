@@ -11,13 +11,13 @@ public class ERPNextCredentialProvider {
     @Autowired
     private TenantRepository tenantRepository;
 
-    @Value("${erpnext.api.base-url:http://localhost:8000}")
+    @Value("${erpnext.api.base-url:}")
     private String defaultUrl;
 
-    @Value("${erpnext.api.key:mock_key}")
+    @Value("${erpnext.api.key:}")
     private String defaultKey;
 
-    @Value("${erpnext.api.secret:mock_secret}")
+    @Value("${erpnext.api.secret:}")
     private String defaultSecret;
 
     public String getBaseUrl() {

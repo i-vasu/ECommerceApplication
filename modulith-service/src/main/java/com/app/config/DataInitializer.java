@@ -26,8 +26,8 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Initialize Roles if not present
-        Role adminRole = initRole(101L, "ADMIN");
-        Role userRole = initRole(102L, "USER");
+        Role adminRole = initRole("ADMIN");
+        Role userRole = initRole("USER");
 
         // Initialize Admin User
         String adminEmail = "admin@vasu.com";
@@ -46,9 +46,10 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
     
-    private Role initRole(Long id, String name) {
-        return roleRepo.findById(id).orElseGet(() -> {
-            Role role = new Role(id, name);
+    private Role initRole(String name) {
+        return roleRepo.findByRoleName(name).orElseGet(() -> {
+            Role role = new Role();
+            role.setRoleName(name);
             return roleRepo.save(role);
         });
     }

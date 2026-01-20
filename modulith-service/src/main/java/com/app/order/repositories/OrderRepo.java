@@ -17,13 +17,13 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
 	List<Order> findAllByEmail(String emailId);
 
 	/**
-	 * Find orders pending ERPNext sync (PLACED status)
+	 * Find orders pending ERPNext sync (PENDING status)
 	 * Performance: 100x faster than findAll().filter()
 	 */
-	@Query("SELECT o FROM Order o WHERE o.orderStatus = 'PLACED'")
+	@Query("SELECT o FROM Order o WHERE o.orderStatus = com.app.commerce.states.OrderStatus.PENDING")
 	List<Order> findPendingOrders();
 
-	@Query("SELECT o FROM Order o WHERE o.erpNextOrderName IS NOT NULL AND o.orderStatus NOT IN ('DELIVERED', 'CANCELLED')")
+	@Query("SELECT o FROM Order o WHERE o.erpNextOrderName IS NOT NULL AND o.orderStatus NOT IN (com.app.commerce.states.OrderStatus.DELIVERED, com.app.commerce.states.OrderStatus.CANCELLED)")
 	List<Order> findOngoingOrders();
 
 }

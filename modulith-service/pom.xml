@@ -386,6 +386,13 @@
 					<mainClass>com.app.ModulithApplication</mainClass>
 					<jvmArguments>-Duser.timezone=Asia/Kolkata -XX:+UseZGC -XX:+ZGenerational -Xmx2g -Xms512m --add-modules jdk.incubator.vector</jvmArguments>
 				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 		</plugins>

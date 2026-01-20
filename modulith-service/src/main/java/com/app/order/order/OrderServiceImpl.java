@@ -39,7 +39,7 @@ import com.app.order.repositories.PaymentRepo;
 import com.app.identity.repositories.UserRepo;
 import com.app.product.repositories.ProductRepo;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
@@ -100,6 +100,12 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private com.app.order.async.OrderProducer orderProducer;
 
+	@Autowired
+	private com.app.core.async.EventProducer eventProducer;
+
+	@Autowired
+	private com.app.commerce.states.OrderStateMachine stateMachine;
+
 	@Override
 	@Transactional
 	public OrderDTO placeOrder(String emailId, Long cartId, String paymentMethod) {
@@ -124,7 +130,13 @@ public class OrderServiceImpl implements OrderService {
 				boolean reserved = inventoryReservationService.reserveStock(itemCode, item.getQuantity());
 				if (reserved) {
 					reservedItems.add(item);
-				}
+				} else {
+                    // Start Rollback of previously reserved items
+                    for (CartItem rBox : reservedItems) {
+				        inventoryReservationService.releaseStock(rBox.getItemCode(), rBox.getQuantity());
+			        }
+                    throw new APIException("Out of Stock (or Reservation Failed) for item: " + itemCode);
+                }
 			}
 		} catch (Exception e) {
 			for (CartItem item : reservedItems) {
@@ -140,7 +152,9 @@ public class OrderServiceImpl implements OrderService {
 			order.setOrderDate(LocalDate.now());
 
 			order.setTotalAmount(cart.getTotalPrice());
-			order.setOrderStatus("Order Accepted !");
+			
+            // Use strict State ENUM
+            order.setOrderStatus(com.app.commerce.states.OrderStatus.PENDING);
 
 			Payment payment = new Payment();
 			payment.setOrder(order);
@@ -174,11 +188,16 @@ public class OrderServiceImpl implements OrderService {
 
 			orderItems = orderItemRepo.saveAll(orderItems);
 			savedOrder.setOrderItems(orderItems);
-
-			if (!"RAZORPAY".equalsIgnoreCase(paymentMethod)) {
+            
+            // Advance State if payment successful (Simplified flow for now)
+            if (!"RAZORPAY".equalsIgnoreCase(paymentMethod)) {
+                // If COD/Other, assume captured for now logic, or keep PENDING
+                // stateMachine.transition(savedOrder.getOrderStatus(), OrderStatus.PAYMENT_CAPTURED); 
+                // Don't transition yet, let async process do it.
+                
                 // Decoupled: Send to DragonflyDB Queue
-				orderProducer.sendOrder(savedOrder.getOrderId());
-			}
+ 				orderProducer.sendOrder(savedOrder.getOrderId());
+            }
 
 			cart.getCartItems().forEach(item -> {
 				cartService.deleteProductFromCart(cartId, item.getProductId());
@@ -262,15 +281,25 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public OrderDTO updateOrder(String emailId, Long orderId, String orderStatus) {
-
+	public OrderDTO updateOrder(String emailId, Long orderId, String orderStatusStr) {
 		Order order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
-
 		if (order == null) {
 			throw new ResourceNotFoundException("Order", "orderId", orderId);
 		}
 
-		order.setOrderStatus(orderStatus);
+        // Validate Transition using State Machine
+        try {
+            com.app.commerce.states.OrderStatus current = order.getOrderStatus();
+            com.app.commerce.states.OrderStatus next = com.app.commerce.states.OrderStatus.valueOf(orderStatusStr);
+            
+            // Enforce Rules
+            stateMachine.transition(current, next);
+            
+            order.setOrderStatus(next);
+            
+        } catch (IllegalArgumentException e) {
+             throw new APIException("Invalid Status: " + orderStatusStr);
+        }
 
 		return orderMapper.orderToOrderDTO(order);
 	}
@@ -282,8 +311,14 @@ public class OrderServiceImpl implements OrderService {
 		order.setEmail(orderDTO.getEmail());
 		order.setOrderDate(LocalDate.now());
 		order.setTotalAmount(orderDTO.getTotalAmount() != null ? orderDTO.getTotalAmount() : 0.0);
-		order.setOrderStatus(
-				orderDTO.getOrderStatus() != null ? orderDTO.getOrderStatus() : "Marketplace Order Received");
+        
+        // Marketplace orders might start at PROCESSED or SHIPPED
+        try {
+		    order.setOrderStatus(
+                orderDTO.getOrderStatus() != null ? com.app.commerce.states.OrderStatus.valueOf(orderDTO.getOrderStatus()) : com.app.commerce.states.OrderStatus.PENDING);
+        } catch (Exception e) {
+            order.setOrderStatus(com.app.commerce.states.OrderStatus.PENDING);
+        }
 
 		Payment payment = new Payment();
 		payment.setOrder(order);
@@ -318,7 +353,7 @@ public class OrderServiceImpl implements OrderService {
 		orderItems = orderItemRepo.saveAll(orderItems);
 		savedOrder.setOrderItems(orderItems);
 
-		erpNextService.createSalesOrderAsync(savedOrder);
+		orderProducer.sendOrder(savedOrder.getOrderId());
 
 		OrderDTO result = orderMapper.orderToOrderDTO(savedOrder);
 		orderItems.forEach(item -> result.getOrderItems().add(orderMapper.orderItemToOrderItemDTO(item)));
@@ -335,9 +370,10 @@ public class OrderServiceImpl implements OrderService {
 			throw new ResourceNotFoundException("Order", "orderId", orderId);
 		}
 
-		if ("CANCELLED".equalsIgnoreCase(order.getOrderStatus())) {
-			throw new APIException("Order is already cancelled");
-		}
+        // State Machine Check
+        if (!stateMachine.canCancel(order.getOrderStatus())) {
+             throw new APIException("Order cannot be cancelled in state: " + order.getOrderStatus());
+        }
 
 		if (order.getShipment() != null) {
 			try {
@@ -358,13 +394,14 @@ public class OrderServiceImpl implements OrderService {
 
 		if (order.getErpNextOrderName() != null) {
 			try {
-				erpNextService.cancelSalesOrder(order.getErpNextOrderName());
+                // Async Cancellation
+                eventProducer.publish("cancellation_events", order.getErpNextOrderName());
 			} catch (Exception e) {
-				System.err.println(">>> Error cancelling ERPNext order: " + e.getMessage());
+				System.err.println(">>> Error queuing cancellation for ERPNext: " + e.getMessage());
 			}
 		}
 
-		order.setOrderStatus("CANCELLED");
+		order.setOrderStatus(com.app.commerce.states.OrderStatus.CANCELLED);
 		Order savedOrder = orderRepo.save(order);
 
 		return orderMapper.orderToOrderDTO(savedOrder);

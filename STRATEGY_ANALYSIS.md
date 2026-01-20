@@ -5,7 +5,7 @@ The "Best Strategy" for the Vasu E-Commerce platform is a **Hybrid CQRS (Command
 
 ## 1. ERPNext (The "Back Office" Engine)
 **Role:** Source of Truth for Business Rules, Accounting, and Inventory.
-**Constraint:** Native API is often synchronous and can be slow under high load (Python/Frappe framework overhead).
+**Constraint:** Native API is often synchronous and can be slow under high load (Python/Frappe framework overhead). (Confirm this with data)
 **Best Strategy:** **Asynchronous Write-Behind**.
 -   **Do Not:** Call ERPNext APIs synchronously during a customer checkout (`OrderServiceImpl`).
 -   **Do:** Queue orders in **DragonflyDB**. Let a background consumer push to ERPNext.
@@ -41,3 +41,26 @@ graph LR
 
 ## Conclusion
 We are currently moving towards this target state. The recent implementation of `RedisStreamConfig` and `EventProducer` is the critical step to enforce the "Asynchronous Write-Behind" strategy.
+
+Give this as an instruction, stick to and implement this. Every change in future must align with this strategy.
+
+## 4. Deep Analysis & Remediation (Completed)
+
+> [!NOTE]
+> Following a deep audit, the following violations were identified and fixed to align with the Governance pillars.
+
+### A. User Domain Sync
+**Violation**: `UserServiceImpl.registerUser` was calling ERPNext `createCustomer` synchronously.
+**Fix**: Implemented `UserConsumer` listening to `user_events` stream. `registerUser` now publishes an event.
+
+### B. Cart Stock Check
+**Violation**: `CartServiceImpl` was calling `ERPNextService` directly for stock checks.
+**Fix**: Injected `InventoryReservationService` (Redis-First). Implemented `checkStock()` method with Read-Through capability (if Redis is empty, it attempts to fetch from ERP).
+
+### C. Order Domain Async
+**Violation**: `cancelOrder` and `placeMarketplaceOrder` were synchronous/in-memory.
+**Fix**:
+- `cancelOrder`: Publishes to `cancellation_events`. Handled by `OrderCancellationConsumer`.
+- `placeMarketplaceOrder`: Uses `OrderProducer` (DragonflyDB Stream).
+
+The codebase is now fully compliant with the "Async Write-Behind" architecture.

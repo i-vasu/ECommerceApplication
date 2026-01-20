@@ -35,7 +35,7 @@ public class AdminController {
         model.addAttribute("pageTitle", "Products Management");
         try {
             var response = productService.getAllProducts(0, 100, "productName", "asc");
-            model.addAttribute("products", response.getContent());
+            model.addAttribute("products", response.content());
         } catch (Exception e) {
             model.addAttribute("error", "Failed to load products: " + e.getMessage());
         }

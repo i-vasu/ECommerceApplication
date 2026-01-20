@@ -65,6 +65,9 @@ public class Product {
 
 	private boolean isCustomizable = false;
 
-	@jakarta.persistence.Column(columnDefinition = "TEXT")
-	private String customizationConfig; // JSON defining available options (Fabric, Color, etc.)
+    // PGVector embedding is managed via VisualSearchService to utilize native vector operations
+    // and avoid Hibernate type mapping complexities with pgvector.
+    // Column: feature_vector vector(512)
+    @jakarta.persistence.Transient
+    private float[] dbEmbedding; 
 }

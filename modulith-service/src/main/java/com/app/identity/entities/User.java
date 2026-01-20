@@ -23,7 +23,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "users")
+@Table(name = "app_users")
 public class User {
 
 	@Id
@@ -32,14 +32,17 @@ public class User {
 
 	@Size(min = 5, max = 20, message = "First Name must be between 5 and 30 characters long")
 	@Pattern(regexp = "^[a-zA-Z]*$", message = "First Name must not contain numbers or special characters")
+	@Column(name = "first_name")
 	private String firstName;
 
 	@Size(min = 5, max = 20, message = "Last Name must be between 5 and 30 characters long")
 	@Pattern(regexp = "^[a-zA-Z]*$", message = "Last Name must not contain numbers or special characters")
+	@Column(name = "last_name")
 	private String lastName;
 
 	@Size(min = 10, max = 10, message = "Mobile Number must be exactly 10 digits long")
 	@Pattern(regexp = "^\\d{10}$", message = "Mobile Number must contain only Numbers")
+	@Column(name = "mobile_number")
 	private String mobileNumber;
 
 	@Email
@@ -48,24 +51,34 @@ public class User {
 
 	private String password;
 
-	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.EAGER)
+	@ManyToMany(cascade = { CascadeType.MERGE }, fetch = FetchType.EAGER)
 	@JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
 	private Set<Role> roles = new HashSet<>();
 
-	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@ManyToMany(cascade = { CascadeType.MERGE })
 	@JoinTable(name = "user_address", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "address_id"))
 	private List<Address> addresses = new ArrayList<>();
 
 	// Loyalty
+	@Column(name = "reward_points")
 	private Integer rewardPoints = 0;
+
+    @Column(name = "customer_group")
+    private String customerGroup = "RETAIL"; // Default to RETAIL
 
 	@OneToOne(mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, orphanRemoval = true)
 	private Cart cart;
 
+	@Column(name = "verification_code")
 	private String verificationCode;
+
+	@Column(name = "is_verified", nullable = false)
 	private boolean isVerified = false;
 
+	@Column(name = "reset_token")
 	private String resetToken;
+
+	@Column(name = "reset_token_expiry")
 	private java.time.LocalDateTime resetTokenExpiry;
 
 	public User() {

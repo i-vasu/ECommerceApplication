@@ -20,7 +20,7 @@ import com.app.product.payloads.ProductDTO;
 import com.app.order.repositories.CartItemRepo;
 import com.app.order.repositories.CartRepo;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Transactional(readOnly = true)
 @Service
@@ -39,7 +39,10 @@ public class CartServiceImpl implements CartService {
 	private CartMapper cartMapper;
 
 	@Autowired
-	private ERPNextService erpNextService;
+	private com.app.commerce.pricing.OrderTotalService orderTotalService;
+
+	@Autowired
+	private com.app.inventory.InventoryReservationService inventoryReservationService;
 
 	@Override
 	@Transactional
@@ -65,8 +68,9 @@ public class CartServiceImpl implements CartService {
 			throw new APIException("Item with code " + effectiveItemCode + " already exists in the cart");
 		}
 
-		if (!erpNextService.checkStock(effectiveItemCode, quantity)) {
-			throw new APIException("Insufficient stock in ERPNext for " + effectiveItemCode);
+        // Use Redis Check (Async Write-Behind compatible)
+		if (!inventoryReservationService.checkStock(effectiveItemCode, quantity)) {
+			throw new APIException("Insufficient stock for " + effectiveItemCode);
 		}
 
 		CartItem newCartItem = new CartItem();
@@ -80,7 +84,15 @@ public class CartServiceImpl implements CartService {
 
 		cartItemRepo.save(newCartItem);
 
-		cart.setTotalPrice(cart.getTotalPrice() + (product.getSpecialPrice() * quantity));
+        // Recalculate using Pipeline
+        // Need to add item to list first for calculation, but it is saved above.
+        // We need to fetch cart again or just trust JPA update?
+        // Let's rely on JPA to refresh or manual add for transient calc.
+        // cart.getCartItems().add(newCartItem); // Already linked via JPA save?
+        // To be safe, reload or ensure consistency.
+        
+        com.app.commerce.pricing.contracts.OrderSummary summary = orderTotalService.calculate(cart);
+		cart.setTotalPrice(summary.getFinalTotal().doubleValue());
 		cartRepo.save(cart);
 
 		CartDTO cartDTO = cartMapper.cartToCartDTO(cart);
@@ -104,6 +116,13 @@ public class CartServiceImpl implements CartService {
 		Cart cart = cartRepo.findCartByEmailAndCartId(emailId, cartId);
 		if (cart == null)
 			throw new ResourceNotFoundException("Cart", "cartId", cartId);
+		
+        // Optional: Recalculate on View to ensure freshness
+        com.app.commerce.pricing.contracts.OrderSummary summary = orderTotalService.calculate(cart);
+		cart.setTotalPrice(summary.getFinalTotal().doubleValue());
+        // Don't save on read, just show? Or save to keep sync?
+        // For now, simple return.
+        
 		CartDTO cartDTO = cartMapper.cartToCartDTO(cart);
 		populateProductDetails(cartDTO, cart);
 		return cartDTO;
@@ -119,6 +138,12 @@ public class CartServiceImpl implements CartService {
 			if (product != null) {
 				cartItem.setProductPrice(product.getSpecialPrice());
 				cartItemRepo.save(cartItem);
+                
+                // Recalculate Cart Total
+                Cart cart = cartItem.getCart();
+                com.app.commerce.pricing.contracts.OrderSummary summary = orderTotalService.calculate(cart);
+		        cart.setTotalPrice(summary.getFinalTotal().doubleValue());
+                cartRepo.save(cart);
 			}
 		}
 	}
@@ -135,16 +160,17 @@ public class CartServiceImpl implements CartService {
 
 		String effectiveItemCode = (itemCode != null && !itemCode.isEmpty()) ? itemCode : cartItem.getItemCode();
 
-		if (!erpNextService.checkStock(effectiveItemCode, quantity)) {
-			throw new APIException("Insufficient stock in ERPNext for " + effectiveItemCode);
+		if (!inventoryReservationService.checkStock(effectiveItemCode, quantity)) {
+			throw new APIException("Insufficient stock for " + effectiveItemCode);
 		}
 
-		double oldPrice = cartItem.getProductPrice() * cartItem.getQuantity();
 		cartItem.setQuantity(quantity);
 		cartItem.setItemCode(effectiveItemCode);
 		cartItemRepo.save(cartItem);
 
-		cart.setTotalPrice(cart.getTotalPrice() - oldPrice + (cartItem.getProductPrice() * quantity));
+        // Recalculate Pipeline
+        com.app.commerce.pricing.contracts.OrderSummary summary = orderTotalService.calculate(cart);
+		cart.setTotalPrice(summary.getFinalTotal().doubleValue());
 		cartRepo.save(cart);
 
 		CartDTO cartDTO = cartMapper.cartToCartDTO(cart);
@@ -161,8 +187,14 @@ public class CartServiceImpl implements CartService {
 		if (cartItem == null)
 			throw new ResourceNotFoundException("Product", "productId", productId);
 
-		cart.setTotalPrice(cart.getTotalPrice() - (cartItem.getProductPrice() * cartItem.getQuantity()));
 		cartItemRepo.delete(cartItem);
+        
+        // Remove from list for calculation accuracy if not automatically synched
+        cart.getCartItems().remove(cartItem); 
+        
+        // Recalculate Pipeline
+        com.app.commerce.pricing.contracts.OrderSummary summary = orderTotalService.calculate(cart);
+		cart.setTotalPrice(summary.getFinalTotal().doubleValue());
 		cartRepo.save(cart);
 
 		return "Product removed from the cart";

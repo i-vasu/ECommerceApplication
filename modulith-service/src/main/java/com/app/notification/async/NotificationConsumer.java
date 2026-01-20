@@ -15,13 +15,16 @@ public class NotificationConsumer implements StreamListener<String, ObjectRecord
     @Autowired
     private OrderRepo orderRepo;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Override
     public void onMessage(ObjectRecord<String, String> message) {
         try {
             String streamKey = message.getStream();
             String payload = message.getValue();
 
-            if (streamKey.contains("orders_stream")) {
+            if (streamKey != null && streamKey.contains("orders_stream")) {
                // Order Created Event (Payload is Order ID String)
                Long orderId = Long.valueOf(payload);
                Order order = orderRepo.findById(orderId).orElse(null);
@@ -29,8 +32,15 @@ public class NotificationConsumer implements StreamListener<String, ObjectRecord
                    System.out.println(">>> [Notification] Sending Order Confirmation Email to: " + order.getEmail());
                    // Mock Email Service Call
                }
-            } else if (streamKey.contains("payment_events")) {
+            } else if (streamKey != null && streamKey.contains("payment_events")) {
                 System.out.println(">>> [Notification] Sending Payment Receipt Email. Payload: " + payload);
+            } else if (streamKey != null && streamKey.contains("order_status_events")) {
+                // Deserialize
+                com.app.core.events.OrderStatusEvent event = objectMapper.readValue(payload, com.app.core.events.OrderStatusEvent.class);
+                System.out.println(">>> [Notification] Sending Status Update Email (" + event.getStatus() + ") to: " + event.getUserEmail());
+                if (event.getTrackingNumber() != null) {
+                     System.out.println("      Tracking: " + event.getCarrier() + " " + event.getTrackingNumber());
+                }
             }
             
         } catch (Exception e) {

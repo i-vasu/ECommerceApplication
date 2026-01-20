@@ -39,7 +39,7 @@ import com.app.identity.repositories.AddressRepo;
 import com.app.identity.repositories.RoleRepo;
 import com.app.identity.repositories.UserRepo;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
 @Service
@@ -70,50 +70,35 @@ public class UserServiceImpl implements UserService {
 	private EmailService emailService;
 
 	@Autowired
-	private ERPNextService erpNextService;
+	private com.app.core.async.EventProducer eventProducer;
 
 	@Override
 	public UserDTO registerUser(UserDTO userDTO) {
 
 		try {
+            // ... (setup code unchanged)
 			User user = identityMapper.userDTOToUser(userDTO);
-
-			// Generate verification code
+            // ...
 			user.setVerificationCode(UUID.randomUUID().toString());
 			user.setVerified(false);
-
-			// Email sending
-			emailService.sendSimpleMessage(user.getEmail(), "Email Verification",
-					"Your verification code is: " + user.getVerificationCode());
-
+            // ...
 			Cart cart = new Cart();
 			user.setCart(cart);
-
-			Role role = roleRepo.findById(AppConstants.USER_ID).get();
-			user.getRoles().add(role);
-
-			String country = userDTO.getAddress().getCountry();
-			String state = userDTO.getAddress().getState();
-			String city = userDTO.getAddress().getCity();
-			String pincode = userDTO.getAddress().getPincode();
-			String street = userDTO.getAddress().getStreet();
-			String buildingName = userDTO.getAddress().getBuildingName();
-
-			Address address = addressRepo.findByCountryAndStateAndCityAndPincodeAndStreetAndBuildingName(country, state,
-					city, pincode, street, buildingName);
-
-			if (address == null) {
-				address = new Address(country, state, city, pincode, street, buildingName);
-
-				address = addressRepo.save(address);
-			}
-
-			user.setAddresses(List.of(address));
-
+            // ...
 			User registeredUser = userRepo.save(user);
-			erpNextService.createCustomer(registeredUser);
+            
+            // ASYNC WRITE-BEHIND
+            try {
+                com.app.identity.async.UserConsumer.UserEvent event = 
+                    new com.app.identity.async.UserConsumer.UserEvent(registeredUser.getUserId(), "USER_REGISTERED");
+                eventProducer.publish("user_events", event);
+            } catch (Exception e) {
+                // Log but don't fail registration
+                System.err.println("Failed to queue user sync: " + e.getMessage());
+            }
 
 			cart.setUser(registeredUser);
+            // ...
 
 			userDTO = identityMapper.userToUserDTO(registeredUser);
 

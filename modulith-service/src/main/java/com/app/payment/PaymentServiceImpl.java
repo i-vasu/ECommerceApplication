@@ -59,7 +59,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepo.save(payment);
 
         Order order = payment.getOrder();
-        order.setOrderStatus("PAID");
+        order.setOrderStatus(com.app.commerce.states.OrderStatus.PAYMENT_CAPTURED);
         orderRepo.save(order);
 
         // Publish Events for Async Workflows (Replacing RabbitMQ with DragonflyDB
@@ -144,28 +144,18 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         try {
-            // Use the injected secret
-            String secret = this.secret;
-            // Wait, Utils.verifyPaymentSignature needs the secret string.
-            // I can inject it from properties or get it from a bean if I exposed it.
-            // For now I'll check how to get it from RazorpayClient or inject value.
-
-            // Re-injecting value to be safe as RazorpayClient doesn't expose getter for
-            // secret easily?
-            // Actually I should Inject it.
-
-            // Let's assume validation passes for now or use a placeholder and fix it in
-            // next step with @Value
-            // But for correctness I will add @Value
+             // Validate signature using Razorpay Utils
+             // The secret is injected via @Value("${razorpay.key.secret}")
+            if (this.secret == null || this.secret.isEmpty()) {
+                 throw new RuntimeException("Razorpay secret not configured");
+            }
 
             JSONObject options = new JSONObject();
             options.put("razorpay_order_id", payment.getPgOrderId());
             options.put("razorpay_payment_id", paymentId);
             options.put("razorpay_signature", signature);
 
-            // I will fix the secret injection in the actual code block below.
-
-            boolean isValid = Utils.verifyPaymentSignature(options, secret);
+            boolean isValid = Utils.verifyPaymentSignature(options, this.secret);
 
             if (isValid) {
                 payment.setPgPaymentId(paymentId);

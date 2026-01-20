@@ -5,6 +5,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import org.springframework.scheduling.annotation.Async;
+
 @Service
 public class EmailServiceImpl implements EmailService {
 
@@ -15,6 +17,7 @@ public class EmailServiceImpl implements EmailService {
     private JavaMailSender emailSender;
 
     @Override
+    @Async
     public void sendSimpleMessage(String to, String subject, String text) {
         // Fallback or legacy support
         SimpleMailMessage message = new SimpleMailMessage();
@@ -25,6 +28,7 @@ public class EmailServiceImpl implements EmailService {
         emailSender.send(message);
     }
 
+    @Async
     public void sendOrderConfirmation(String to, Long orderId, Double amount, String paymentId) {
         try {
             jakarta.mail.internet.MimeMessage message = emailSender.createMimeMessage();

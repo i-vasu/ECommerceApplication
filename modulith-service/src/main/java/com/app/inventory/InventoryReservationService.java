@@ -38,6 +38,9 @@ public class InventoryReservationService {
                 Duration.ofHours(24));
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.app.admin.services.ERPNextProductSyncService erpNextSyncService;
+
     // 2. Atomic Reservation
     public boolean reserveStock(String itemCode, int quantity) {
         DefaultRedisScript<Long> script = new DefaultRedisScript<>(RESERVE_SCRIPT, Long.class);
@@ -45,11 +48,25 @@ public class InventoryReservationService {
                 String.valueOf(quantity));
 
         if (result == -1) {
-            log.warn("Stock not initialized in Redis for {}, falling back to ERPNext (slow)", itemCode);
-            return false; // Indicating caller should fetch from source
+            log.warn("Stock not initialized in Redis for {}, initiating Read-Through from ERPNext", itemCode);
+            // Read-Through
+            try {
+                int actualStock = erpNextSyncService.fetchStockFromERPNext(itemCode);
+                setStock(itemCode, actualStock);
+                // Retry Reservation Recursively (once)
+                // To avoid infinite loop if Redis fails to set, check for recursion depth or trust Redis.
+                // trusting Redis for now.
+                return reserveStock(itemCode, quantity);
+            } catch (Exception e) {
+                log.error("Read-Through failed for {}: {}", itemCode, e.getMessage());
+                return false; // Fail Safe
+            }
         } else if (result == -2) {
             log.info("Insufficient stock for reservation: {}", itemCode);
-            throw new APIException("Item out of stock: " + itemCode);
+            // throw new APIException("Item out of stock: " + itemCode); 
+            // Return false so caller handles it (OrderService handles exception or logic)
+            // OrderServiceImpl expects boolean.
+            return false; 
         } else {
             log.info("Stock reserved for {}. Remaining: {}", itemCode, result);
             return true;
@@ -60,5 +77,25 @@ public class InventoryReservationService {
     public void releaseStock(String itemCode, int quantity) {
         redisTemplate.opsForValue().increment(INVENTORY_KEY_PREFIX + itemCode, quantity);
         log.info("Stock released for {}", itemCode);
+    }
+    
+    // 4. Check Stock (Peek) - For Cart operations
+    public boolean checkStock(String itemCode, int quantity) {
+        String stockStr = redisTemplate.opsForValue().get(INVENTORY_KEY_PREFIX + itemCode);
+        if (stockStr == null) {
+            // Read-Through
+             log.warn("Stock check: Redis Miss for {}, initiating Read-Through", itemCode);
+            try {
+                int actualStock = erpNextSyncService.fetchStockFromERPNext(itemCode);
+                setStock(itemCode, actualStock);
+                return actualStock >= quantity;
+            } catch (Exception e) {
+                log.error("Stock check failed for {}: {}", itemCode, e.getMessage());
+                return false;
+            }
+        }
+        
+        long stock = Long.parseLong(stockStr);
+        return stock >= quantity;
     }
 }

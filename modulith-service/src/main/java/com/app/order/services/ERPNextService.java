@@ -36,6 +36,9 @@ public class ERPNextService {
     @Autowired(required = false)
     private SearchService searchService;
 
+    @Autowired
+    private com.app.core.async.EventProducer eventProducer;
+
     @Value("${erpnext.api.base-url:http://localhost:8000}/api/resource/Item")
     private String erpNextUrl;
 
@@ -253,11 +256,11 @@ public class ERPNextService {
                         .retrieve()
                         .body(JsonNode.class);
 
-                if (response != null && response.has("data")) {
+                    if (response != null && response.has("data")) {
                     String erpStatus = response.get("data").get("status").asText();
-                    String localStatus = mapErpStatus(erpStatus);
+                    com.app.commerce.states.OrderStatus localStatus = mapErpStatus(erpStatus);
 
-                    if (!localStatus.equalsIgnoreCase(order.getOrderStatus())) {
+                    if (localStatus != order.getOrderStatus()) {
                         order.setOrderStatus(localStatus);
 
                         // Capture Tracking Info if Shipped/Delivered
@@ -271,6 +274,18 @@ public class ERPNextService {
 
                         orderRepo.save(order);
                         System.out.println(">>> Order " + order.getOrderId() + " status updated to " + localStatus);
+                        
+                        // Publish Event
+                        try {
+                            com.app.core.events.OrderStatusEvent event = new com.app.core.events.OrderStatusEvent(
+                                order.getOrderId(), order.getEmail(), localStatus.getValue(), 
+                                (order.getShipment() != null) ? order.getShipment().getAwbNumber() : null,
+                                (order.getShipment() != null) ? order.getShipment().getCarrier() : null
+                            );
+                            eventProducer.publish("order_status_events", event);
+                        } catch (Exception px) {
+                            System.err.println("Failed to publish status event: " + px.getMessage());
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -334,13 +349,13 @@ public class ERPNextService {
         }
     }
 
-    private String mapErpStatus(String erpStatus) {
+    private com.app.commerce.states.OrderStatus mapErpStatus(String erpStatus) {
         return switch (erpStatus.toUpperCase()) {
-            case "COMPLETED" -> "DELIVERED";
-            case "CANCELLED" -> "CANCELLED";
-            case "DRAFT" -> "PENDING";
-            case "ON HOLD" -> "HOLD";
-            default -> "PROCESSING";
+            case "COMPLETED" -> com.app.commerce.states.OrderStatus.DELIVERED;
+            case "CANCELLED" -> com.app.commerce.states.OrderStatus.CANCELLED;
+            case "DRAFT" -> com.app.commerce.states.OrderStatus.PENDING;
+            case "ON HOLD" -> com.app.commerce.states.OrderStatus.PROCESSING; // Fallback
+            default -> com.app.commerce.states.OrderStatus.PROCESSING;
         };
     }
 }

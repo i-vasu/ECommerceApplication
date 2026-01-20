@@ -31,7 +31,7 @@ import com.app.product.repositories.CategoryRepo;
 import com.app.product.repositories.ProductRepo;
 import java.io.IOException;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
 @Service

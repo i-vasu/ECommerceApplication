@@ -9,6 +9,7 @@ import org.springframework.modulith.Modulith;
 @EnableScheduling
 @org.springframework.retry.annotation.EnableRetry
 @org.springframework.modulith.Modulithic
+@org.springframework.scheduling.annotation.EnableAsync
 public class ModulithApplication {
 
     public static void main(String[] args) {

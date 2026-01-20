@@ -45,14 +45,17 @@ public class Order {
 	private Shipment shipment;
 
 	private Double totalAmount;
-	private String orderStatus;
+    
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+	private com.app.commerce.states.OrderStatus orderStatus;
+    
 	private String erpNextOrderName;
 
 	public Order() {
 	}
 
 	public Order(Long orderId, String email, List<OrderItem> orderItems, LocalDate orderDate, Payment payment,
-			Shipment shipment, Double totalAmount, String orderStatus, String erpNextOrderName) {
+			Shipment shipment, Double totalAmount, com.app.commerce.states.OrderStatus orderStatus, String erpNextOrderName) {
 		this.orderId = orderId;
 		this.email = email;
 		this.orderItems = orderItems;
@@ -120,11 +123,11 @@ public class Order {
 		this.totalAmount = totalAmount;
 	}
 
-	public String getOrderStatus() {
+	public com.app.commerce.states.OrderStatus getOrderStatus() {
 		return orderStatus;
 	}
 
-	public void setOrderStatus(String orderStatus) {
+	public void setOrderStatus(com.app.commerce.states.OrderStatus orderStatus) {
 		this.orderStatus = orderStatus;
 	}
 

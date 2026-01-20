@@ -21,8 +21,8 @@ public class ERPNextSyncConfig {
         return IntegrationFlow.from("syncRequestChannel")
                 .enrichHeaders(h -> h.headerExpression("Authorization",
                         "'token ' + headers['erpNextApiKey'] + ':' + headers['erpNextApiSecret']"))
-                .handle(Http.outboundGateway(
-                        "headers['erpNextUrl'] + '?fields=[\"name\",\"item_name\",\"description\",\"standard_rate\",\"image\",\"item_group\",\"has_variants\",\"variant_of\",\"brand\"]&limit_page_length=100'")
+                .handle(Http.outboundGateway(m -> 
+                        m.getHeaders().get("erpNextUrl") + "?fields=[\"name\",\"item_name\",\"description\",\"standard_rate\",\"image\",\"item_group\",\"has_variants\",\"variant_of\",\"brand\"]&limit_page_length=100")
                         .httpMethod(HttpMethod.GET)
                         .expectedResponseType(Map.class)
                         .charset("UTF-8"))

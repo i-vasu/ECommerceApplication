@@ -15,23 +15,15 @@ import org.springframework.data.redis.stream.Subscription;
 
 import com.app.order.entites.Order;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Configuration
 public class RedisStreamConfig {
 
     public static final String ORDER_STREAM_KEY = "orders_stream";
     public static final String ORDER_GROUP = "order_group";
 
-        // Subscription for Order processing (ERP Sync)
-        listenerContainer.receive(
-                Consumer.from(ORDER_GROUP, "erp_sync_consumer"),
-                StreamOffset.create(ORDER_STREAM_KEY, ReadOffset.lastConsumed()),
-                streamListener); // This injects the bean passed to config method, likely OrderConsumer? 
-                
-        // Wait, the method signature injects ONE listener. I need multiple.
-        // I should refactor this config to autowire the specific listeners.
-        
-        return null; // Logic moved to separate method/bean definitions below
-    }
+
 
     @Autowired
     private com.app.order.async.OrderConsumer orderConsumer;
@@ -43,7 +35,7 @@ public class RedisStreamConfig {
     private com.app.notification.async.NotificationConsumer notificationConsumer;
 
     @Bean
-    public Subscription subscriptionContainer(RedisConnectionFactory factory) {
+    public StreamMessageListenerContainer<String, ObjectRecord<String, String>> streamMessageListenerContainer(RedisConnectionFactory factory) {
         
         // 1. Create Groups if not exist
         createGroup(factory, ORDER_STREAM_KEY, ORDER_GROUP);
@@ -64,9 +56,7 @@ public class RedisStreamConfig {
                 StreamOffset.create(ORDER_STREAM_KEY, ReadOffset.lastConsumed()),
                 orderConsumer);
 
-        // 3. Register Notification Consumer (Emails) - Listens to SAME stream, DIFFERENT Consumer Name (Same Group? No, Notifications should also receive. different group!)
-        // If same group, they share load (competing consumers).
-        // ERP and Notification are distinct actions -> Different Groups (Pub/Sub semantics via Streams).
+        // 3. Register Notification Consumer (Emails)
         createGroup(factory, ORDER_STREAM_KEY, "notification_group");
         container.receive(
                 Consumer.from("notification_group", "email_sender_1"),
@@ -85,10 +75,55 @@ public class RedisStreamConfig {
                 StreamOffset.create("product_events", ReadOffset.lastConsumed()),
                 productEventConsumer);
 
+        // 5. Register User Consumer (ERP Sync)
+        createGroup(factory, "user_events", "user_group");
+        container.receive(
+                Consumer.from("user_group", "user_erp_sync_1"),
+                StreamOffset.create("user_events", ReadOffset.lastConsumed()),
+                userConsumer);
+                
+        // 6. Register Cancellation Consumer
+        createGroup(factory, "cancellation_events", "cancellation_group");
+        container.receive(
+                Consumer.from("cancellation_group", "cancel_worker_1"),
+                StreamOffset.create("cancellation_events", ReadOffset.lastConsumed()),
+                orderCancellationConsumer);
+
+        // 7. Register Status Notification Consumer
+        createGroup(factory, "order_status_events", "notification_group");
+        container.receive(
+                 Consumer.from("notification_group", "status_notifier_1"),
+                 StreamOffset.create("order_status_events", ReadOffset.lastConsumed()),
+                 notificationConsumer);
+
         container.start();
-        return null; // Return implies bean managed, but container.start() is void. 
-        // Returning container is better practices.
+        return container;
     }
+
+    @Bean
+    public StreamMessageListenerContainer<String, org.springframework.data.redis.connection.stream.MapRecord<String, String, String>> mapStreamMessageListenerContainer(
+            RedisConnectionFactory factory) {
+
+        createGroup(factory, "product-sync-events", "marketplace-group");
+        createGroup(factory, "order-events", "marketplace-group");
+
+        StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, org.springframework.data.redis.connection.stream.MapRecord<String, String, String>> options =
+                StreamMessageListenerContainer.StreamMessageListenerContainerOptions.builder()
+                        .pollTimeout(Duration.ofSeconds(1))
+                        .build();
+
+        StreamMessageListenerContainer<String, org.springframework.data.redis.connection.stream.MapRecord<String, String, String>> container =
+                StreamMessageListenerContainer.create(factory, options);
+
+        container.start();
+        return container;
+    }
+    
+    @Autowired
+    private com.app.identity.async.UserConsumer userConsumer;
+
+    @Autowired
+    private com.app.order.async.OrderCancellationConsumer orderCancellationConsumer;
     
     private void createGroup(RedisConnectionFactory factory, String key, String group) {
         try {

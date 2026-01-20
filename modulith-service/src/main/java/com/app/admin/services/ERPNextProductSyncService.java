@@ -150,6 +150,44 @@ public class ERPNextProductSyncService {
         }
     }
 
+    // Single item sync (Read-Through)
+    public int fetchStockFromERPNext(String itemCode) {
+        log.info("Fetching real-time stock for item: {}", itemCode);
+        try {
+            // Fetch Bin data for the specific item
+            // Using "actual_qty" from Bin doctype
+            String url = credentialProvider.getBaseUrl() + "/api/resource/Bin"
+                    + "?filters=[[\"item_code\",\"=\",\"" + itemCode + "\"]]&fields=[\"actual_qty\"]&limit=1";
+
+            ResponseEntity<Map<String, Object>> response = restClient.get()
+                    .uri(url)
+                    .header("Authorization", "token " + credentialProvider.getApiKey() + ":" + credentialProvider.getApiSecret())
+                    .retrieve()
+                    .toEntity(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object dataObj = response.getBody().get("data");
+                if (dataObj instanceof List<?> rawList && !rawList.isEmpty()) {
+                    Map<?, ?> bin = (Map<?, ?>) rawList.get(0);
+                    Double qty = getDouble(bin.get("actual_qty"));
+                    
+                    // Update Cache while we have the fresh value
+                    String redisKey = "inventory:stock:" + itemCode;
+                    redisTemplate.opsForValue().set(redisKey, String.valueOf(qty.intValue()));
+                    
+                    return qty.intValue();
+                }
+            }
+            return 0; // Item likely has no stock entry yet
+        } catch (Exception e) {
+            log.error("Failed to fetch stock for {}: {}", itemCode, e.getMessage());
+            // Fallback to Redis if API fails? Or return 0? 
+            // For now, fail safe 0.
+            return 0;
+        }
+    }
+
     private void saveOrUpdateVariant(Map<String, Object> itemData, String parentItemCode) {
         String itemCode = (String) itemData.get("name");
         Product parent = productRepo.findByItemCode(parentItemCode);
