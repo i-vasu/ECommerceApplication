@@ -18,7 +18,9 @@ public interface ProductRepo extends JpaRepository<Product, Long> {
 
 	java.util.List<Product> findByCategory(com.app.product.entites.Category category);
 	
-	@org.springframework.data.jpa.repository.Query(value = "SELECT * FROM products p WHERE to_tsvector('english', p.product_name || ' ' || p.description) @@ plainto_tsquery('english', :keyword)", nativeQuery = true)
+	// ParadeDB BM25 Search Query
+    // Syntax: WHERE index_name @@@ 'query_string'
+	@org.springframework.data.jpa.repository.Query(value = "SELECT * FROM products p WHERE products_search_idx @@@ :keyword", nativeQuery = true)
 	Page<Product> searchByKeyword(@org.springframework.data.repository.query.Param("keyword") String keyword, Pageable pageable);
 
 }
