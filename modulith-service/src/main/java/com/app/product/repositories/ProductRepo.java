@@ -18,4 +18,6 @@ public interface ProductRepo extends JpaRepository<Product, Long> {
 
 	java.util.List<Product> findByCategory(com.app.product.entites.Category category);
 
+	boolean existsByCategoryAndProductNameAndDescription(com.app.product.entites.Category category, String productName, String description);
+
 }
