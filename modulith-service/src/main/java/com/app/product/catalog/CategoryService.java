@@ -1,6 +1,6 @@
 package com.app.product.catalog;
 
-import com.app.product.entites.Category;
+import com.app.product.entities.Category;
 import com.app.product.payloads.CategoryDTO;
 import com.app.product.payloads.CategoryResponse;
 

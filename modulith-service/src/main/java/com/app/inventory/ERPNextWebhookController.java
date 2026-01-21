@@ -1,17 +1,12 @@
 package com.app.inventory;
 
-import com.app.admin.services.ERPNextProductSyncService;
 import com.app.search.services.ProductDataFlowService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 @RestController
 @RequestMapping("/api/v1/inventory/webhooks")
@@ -21,9 +16,6 @@ public class ERPNextWebhookController implements InventoryWebhookApi {
 
     @Value("${erpnext.webhook.secret:}")
     private String webhookSecret;
-
-    @Autowired
-    private ERPNextProductSyncService syncService;
 
     @Autowired
     private ProductDataFlowService dataFlowService;

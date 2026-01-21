@@ -2,29 +2,30 @@ package com.app.search.controllers;
 
 import com.app.search.entities.CustomDesign;
 import com.app.search.repositories.CustomDesignRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.app.search.services.AiDesignService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
+import java.time.LocalDateTime;
+import reactor.core.publisher.Flux;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/search/custom-design")
+@RequiredArgsConstructor
+@SecurityRequirement(name = "E-Commerce Application")
 public class CustomDesignController implements CustomDesignApi {
 
-    @Autowired
-    private CustomDesignRepo designRepo;
-
-    @Autowired
-    private com.app.search.services.AiDesignService aiService;
+    private final CustomDesignRepo designRepo;
+    private final AiDesignService aiService;
 
     @Override
     public ResponseEntity<CustomDesign> saveDesign(@RequestBody CustomDesign design) {
         if (design.getCreatedAt() == null)
-            design.setCreatedAt(java.time.LocalDateTime.now());
+            design.setCreatedAt(LocalDateTime.now());
         return ResponseEntity.ok(designRepo.save(design));
     }
 
@@ -46,14 +47,13 @@ public class CustomDesignController implements CustomDesignApi {
     }
 
     @Override
-    public reactor.core.publisher.Flux<String> generateDesignStream(@RequestParam String prompt) {
+    public Flux<String> generateDesignStream(@RequestParam String prompt) {
         return aiService.generateSareeDesignStream(prompt);
     }
 
     @Override
-    public ResponseEntity<String> virtualTryOn(@RequestBody java.util.Map<String, String> request) {
-        // Expected: { "userPhotoUrl": "...", "sareeImageUrl": "..." }
-        String resultUrl = aiService.generateVirtualTryOn(
+    public ResponseEntity<String> virtualTryOn(@RequestBody Map<String, String> request) {
+        var resultUrl = aiService.generateVirtualTryOn(
                 request.get("userPhotoUrl"),
                 request.get("sareeImageUrl"));
         return ResponseEntity.ok(resultUrl);

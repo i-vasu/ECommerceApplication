@@ -1,17 +1,7 @@
 {
-    # Global options
-    email vasu2srinivas29@gmail.com
+    admin off
 }
 
-localhost {
-    # Consolidated Modulith Service
-    handle /api/* {
-        reverse_proxy modulith-service:8080
-    }
-    
-    # Storefront (Running on host port 3001)
-    # If Caddy is in Docker, and storefront is on host, we use host.docker.internal
-    handle /* {
-        reverse_proxy host.docker.internal:3001
-    }
+http://localhost {
+    reverse_proxy erpnext-nginx:80
 }

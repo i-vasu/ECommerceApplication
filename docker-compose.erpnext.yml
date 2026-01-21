@@ -24,7 +24,7 @@ services:
 
   # 2. The Core Application (Headless Mode Optimized)
   erpnext-backend:
-    image: frappe/erpnext:v15.20.0
+    image: frappe/erpnext:v16.0.0
     container_name: erpnext-backend
     restart: always
     deploy:
@@ -51,7 +51,7 @@ services:
 
   # 2.5. Frontend / Assets Server (Nginx)
   erpnext-nginx:
-    image: frappe/erpnext:v15.20.0
+    image: frappe/erpnext:v16.0.0
     container_name: erpnext-nginx
     user: root
     command: nginx -g 'daemon off;'
@@ -72,7 +72,7 @@ services:
 
   # 3. Queue Worker (Consolidated)
   erpnext-worker:
-    image: frappe/erpnext:v15.20.0
+    image: frappe/erpnext:v16.0.0
     container_name: erpnext-worker
     command: bench worker --queue default,short,long
     restart: always
@@ -95,7 +95,7 @@ services:
 
   # 4. Scheduler (Lightweight - Runs CRON jobs)
   erpnext-schedule:
-    image: frappe/erpnext:v15.20.0
+    image: frappe/erpnext:v16.0.0
     container_name: erpnext-schedule
     command: bench schedule
     restart: always

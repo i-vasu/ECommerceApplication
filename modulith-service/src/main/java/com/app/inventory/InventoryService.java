@@ -1,6 +1,6 @@
 package com.app.inventory;
 
-import com.app.order.entites.Cart;
+import com.app.order.entities.Cart;
 
 public interface InventoryService {
     InventoryLock lockInventoryForCart(Cart cart);

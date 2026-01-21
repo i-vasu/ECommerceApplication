@@ -1,6 +1,6 @@
 package com.app.marketing.services;
 
-import com.app.order.entites.Blog;
+import com.app.order.entities.Blog;
 import java.util.List;
 
 public interface BlogService {

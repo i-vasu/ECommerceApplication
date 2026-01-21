@@ -9,6 +9,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.app.product.ProductService;
+import com.app.customer_service.repositories.SupportTicketRepo;
+import com.app.order.entities.SupportTicket;
+import com.app.order.entities.TicketMessage;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import java.time.LocalDateTime;
+
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
@@ -19,10 +29,10 @@ public class AdminController {
     }
 
     @Autowired
-    private com.app.product.ProductService productService;
+    private ProductService productService;
 
     @Autowired
-    private com.app.customer_service.repositories.SupportTicketRepo ticketRepo;
+    private SupportTicketRepo ticketRepo;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -46,14 +56,15 @@ public class AdminController {
     public String support(Model model, @RequestParam(defaultValue = "0") int page) {
         model.addAttribute("pageTitle", "Support Tickets");
         try {
-            var pageable = org.springframework.data.domain.PageRequest.of(page, 20, org.springframework.data.domain.Sort.by("createdAt").descending());
+            var pageable = PageRequest.of(page, 20,
+                    Sort.by("createdAt").descending());
             var tickets = ticketRepo.findAll(pageable);
             model.addAttribute("tickets", tickets);
             model.addAttribute("currentPage", page);
             model.addAttribute("totalPages", tickets.getTotalPages());
         } catch (Exception e) {
             model.addAttribute("error", "Failed to load tickets: " + e.getMessage());
-            model.addAttribute("tickets", org.springframework.data.domain.Page.empty());
+            model.addAttribute("tickets", Page.empty());
             model.addAttribute("currentPage", 0);
             model.addAttribute("totalPages", 0);
         }
@@ -76,19 +87,19 @@ public class AdminController {
     @PostMapping("/support/{id}/reply")
     public String replyToTicket(@PathVariable Long id, @RequestParam String message) {
         try {
-             var ticket = ticketRepo.findById(id).orElseThrow(() -> new RuntimeException("Ticket not found"));
-             com.app.order.entites.TicketMessage msg = new com.app.order.entites.TicketMessage();
-             msg.setTicket(ticket);
-             msg.setSenderType("ADMIN");
-             msg.setSenderId("Admin"); // Ideally get from SecurityContext
-             msg.setMessage(message);
-             msg.setTimestamp(java.time.LocalDateTime.now());
-             
-             ticket.getMessages().add(msg);
-             if (!"CLOSED".equals(ticket.getStatus())) {
-                 ticket.setStatus("IN_PROGRESS");
-             }
-             ticketRepo.save(ticket);
+            var ticket = ticketRepo.findById(id).orElseThrow(() -> new RuntimeException("Ticket not found"));
+            TicketMessage msg = new TicketMessage();
+            msg.setTicket(ticket);
+            msg.setSenderType("ADMIN");
+            msg.setSenderId("Admin"); // Ideally get from SecurityContext
+            msg.setMessage(message);
+            msg.setTimestamp(LocalDateTime.now());
+
+            ticket.getMessages().add(msg);
+            if (!"CLOSED".equals(ticket.getStatus())) {
+                ticket.setStatus("IN_PROGRESS");
+            }
+            ticketRepo.save(ticket);
         } catch (Exception e) {
             // log error
         }

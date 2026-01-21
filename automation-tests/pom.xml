@@ -109,15 +109,10 @@
             <version>${assertj.version}</version>
         </dependency>
 
-        <!-- Product & Order Service for sharing entities in tests -->
+        <!-- Depend on the main modulith service to share entities and business logic for tests -->
         <dependency>
             <groupId>com.app</groupId>
-            <artifactId>product-service</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.app</groupId>
-            <artifactId>order-service</artifactId>
+            <artifactId>modulith-service</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

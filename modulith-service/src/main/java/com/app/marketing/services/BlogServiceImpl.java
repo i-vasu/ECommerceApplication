@@ -1,36 +1,34 @@
 package com.app.marketing.services;
 
 import com.app.marketing.repositories.BlogRepo;
-import com.app.order.entites.Blog;
-import com.app.identity.repositories.UserRepo;
-import com.app.identity.entities.User;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.app.order.entities.Blog;
+import com.app.order.config.OrderRedisConfig;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.connection.stream.ObjectRecord;
+import org.springframework.data.redis.connection.stream.StreamRecords;
 
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.time.LocalDateTime;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
+@RequiredArgsConstructor
 @Service
 public class BlogServiceImpl implements BlogService {
 
-    @Autowired
-    private BlogRepo blogRepo;
-
-    @Autowired
-    private MarketingService marketingService;
-
-    @Autowired
-    private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
-
-    @Autowired
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final BlogRepo blogRepo;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public Blog createBlog(Blog blog) {
         if (blog.getCreatedAt() == null)
-            blog.setCreatedAt(java.time.LocalDateTime.now());
+            blog.setCreatedAt(LocalDateTime.now());
         if (blog.getStatus() == null)
             blog.setStatus("DRAFT");
         return blogRepo.save(blog);
@@ -38,9 +36,10 @@ public class BlogServiceImpl implements BlogService {
 
     @Override
     public Blog publishBlog(Long blogId) {
-        Blog blog = blogRepo.findById(blogId).orElseThrow(() -> new RuntimeException("Blog not found"));
+        var blog = blogRepo.findById(blogId)
+                .orElseThrow(() -> new RuntimeException("Blog not found"));
         blog.setStatus("PUBLISHED");
-        Blog saved = blogRepo.save(blog);
+        var saved = blogRepo.save(blog);
 
         // Trigger Async Mailing
         broadcastBlog(saved);
@@ -54,22 +53,20 @@ public class BlogServiceImpl implements BlogService {
             Map<String, String> eventData = new HashMap<>();
             eventData.put("type", "BLOG_PUBLISHED");
             eventData.put("title", blog.getTitle());
-            String content = blog.getContent() != null ? blog.getContent() : "";
+            var content = blog.getContent() != null ? blog.getContent() : "";
             eventData.put("content", content);
 
-            // Generate JSON if needed or just send map
-
-            org.springframework.data.redis.connection.stream.ObjectRecord<String, Map<String, String>> record = org.springframework.data.redis.connection.stream.StreamRecords
+            ObjectRecord<String, Map<String, String>> record = StreamRecords
                     .newRecord()
                     .ofObject(eventData)
-                    .withStreamKey(com.app.order.config.OrderRedisConfig.BLOG_EVENTS_STREAM);
+                    .withStreamKey(OrderRedisConfig.BLOG_EVENTS_STREAM);
 
             redisTemplate.opsForStream().add(record);
 
-            System.out.println("Published Blog Broadcast Event to Redis Stream: " + blog.getTitle());
+            log.info("Published Blog Broadcast Event to Redis Stream: {}", blog.getTitle());
 
         } catch (Exception e) {
-            System.err.println("Failed to publish blog event: " + e.getMessage());
+            log.error("Failed to publish blog event: {}", e.getMessage());
         }
     }
 
@@ -80,6 +77,7 @@ public class BlogServiceImpl implements BlogService {
 
     @Override
     public Blog getBlogById(Long blogId) {
-        return blogRepo.findById(blogId).orElseThrow(() -> new RuntimeException("Blog not found"));
+        return blogRepo.findById(blogId)
+                .orElseThrow(() -> new RuntimeException("Blog not found"));
     }
 }

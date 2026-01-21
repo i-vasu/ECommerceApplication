@@ -1,6 +1,6 @@
 package com.app.cart;
 
-import com.app.order.entites.CartItem;
+import com.app.order.entities.CartItem;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;

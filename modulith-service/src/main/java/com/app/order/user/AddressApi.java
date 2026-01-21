@@ -1,12 +1,12 @@
 package com.app.order.user;
 
 import com.app.identity.entities.Address;
-import com.app.order.payloads.AddressDTO;
+import com.app.identity.payloads.AddressDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Tag(name = "Address", description = "Address Management APIs")
 public interface AddressApi {
@@ -15,7 +15,7 @@ public interface AddressApi {
     ResponseEntity<AddressDTO> createAddress(AddressDTO addressDTO);
 
     @Operation(summary = "Get All Addresses", description = "Retrieves all addresses (Admin/Paginated)")
-    ResponseEntity<org.springframework.data.domain.Page<AddressDTO>> getAddresses(org.springframework.data.domain.Pageable pageable);
+    ResponseEntity<Page<AddressDTO>> getAddresses(Pageable pageable);
 
     @Operation(summary = "Get Address by ID", description = "Retrieves a specific address by ID")
     ResponseEntity<AddressDTO> getAddress(Long addressId);

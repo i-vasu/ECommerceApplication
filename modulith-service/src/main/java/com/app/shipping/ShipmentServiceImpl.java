@@ -1,5 +1,7 @@
 package com.app.shipping;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,12 +12,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.order.entites.Order;
-import com.app.order.entites.Shipment;
+import com.app.core.async.EventProducer;
+import com.app.core.events.OrderStatusEvent;
 import com.app.core.ResourceNotFoundException;
+import com.app.identity.entities.Address;
+import com.app.identity.entities.User;
+import com.app.identity.repositories.UserRepo;
+import com.app.order.entities.Order;
+import com.app.order.entities.Shipment;
+import com.app.order.external.ShadowfaxClient;
 import com.app.order.repositories.OrderRepo;
 import com.app.order.repositories.ShipmentRepo;
-import com.app.order.external.ShadowfaxClient;
 
 /**
  * Multi-provider Shipment Service
@@ -23,6 +30,7 @@ import com.app.order.external.ShadowfaxClient;
  * Supports multiple shipping providers:
  * - Shiprocket (recommended for Indian e-commerce)
  * - Shadowfax (hyperlocal delivery)
+ * - Borzo (coming soon)
  * 
  * Provider selection is done via configuration.
  */
@@ -51,13 +59,13 @@ public class ShipmentServiceImpl implements ShipmentService {
     private ShipmentRepo shipmentRepo;
 
     @Autowired
-    private com.app.identity.repositories.UserRepo userRepo;
+    private UserRepo userRepo;
 
     @Value("${shadowfax.token:}")
     private String shadowfaxToken;
 
     @Autowired
-    private com.app.core.async.EventProducer eventProducer;
+    private EventProducer eventProducer;
 
     @Override
     @Transactional
@@ -247,20 +255,19 @@ public class ShipmentServiceImpl implements ShipmentService {
                     // Extract status (simplifying for now, Shiprocket response structure varies)
                     if (tracking.containsKey("tracking_data")) {
                         // Update status logic here
-                        Map<String, Object> tData = (Map<String, Object>) tracking.get("tracking_data");
+                        Map<String, Object> tData = castToMap(tracking.get("tracking_data"));
                         String status = (String) tData.get("track_status"); // Check actual field name in prod
-                        
+
                         if (status != null && !status.equalsIgnoreCase(shipment.getStatus())) {
                             shipment.setStatus(status);
                             shipmentRepo.save(shipment);
                             log.info("Updated tracking for shipment {}: {}", shipment.getShipmentId(), status);
-                            
+
                             // Publish Event
                             try {
-                                com.app.core.events.OrderStatusEvent event = new com.app.core.events.OrderStatusEvent(
-                                    shipment.getOrder().getOrderId(), shipment.getOrder().getEmail(), 
-                                    status, shipment.getAwbNumber(), shipment.getCarrier()
-                                );
+                                OrderStatusEvent event = new OrderStatusEvent(
+                                        shipment.getOrder().getOrderId(), shipment.getOrder().getEmail(),
+                                        status, shipment.getAwbNumber(), shipment.getCarrier());
                                 eventProducer.publish("order_status_events", event);
                             } catch (Exception px) {
                                 System.err.println("Failed to publish shipment status event: " + px.getMessage());
@@ -306,24 +313,24 @@ public class ShipmentServiceImpl implements ShipmentService {
     // ==================== Shadowfax Helper Methods ====================
 
     private Map<String, Object> buildShadowfaxPayload(Order order) {
-        com.app.identity.entities.User user = userRepo.findByEmail(order.getEmail())
+        User user = userRepo.findByEmail(order.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", order.getEmail()));
 
         if (user.getAddresses().isEmpty()) {
             throw new RuntimeException("No address found for user to create shipment");
         }
 
-        com.app.identity.entities.Address address = user.getAddresses().get(0);
+        Address address = user.getAddresses().get(0);
 
-        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        Map<String, Object> payload = new HashMap<>();
 
-        java.util.Map<String, Object> orderDetails = new java.util.HashMap<>();
+        Map<String, Object> orderDetails = new HashMap<>();
         orderDetails.put("client_order_id", String.valueOf(order.getOrderId()));
         orderDetails.put("actual_weight", 0.5);
         orderDetails.put("product_value", order.getTotalAmount());
         orderDetails.put("payment_mode", "prepaid");
 
-        java.util.Map<String, Object> consigneeDetails = new java.util.HashMap<>();
+        Map<String, Object> consigneeDetails = new HashMap<>();
         consigneeDetails.put("city", address.getCity());
         consigneeDetails.put("name", user.getFirstName() + " " + user.getLastName());
         consigneeDetails.put("phone", user.getMobileNumber());
@@ -332,7 +339,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         consigneeDetails.put("state", address.getState());
         consigneeDetails.put("country", address.getCountry());
 
-        java.util.Map<String, Object> pickupDetails = new java.util.HashMap<>();
+        Map<String, Object> pickupDetails = new HashMap<>();
         pickupDetails.put("warehouse_name", "Main Warehouse");
         pickupDetails.put("city", "Bangalore");
         pickupDetails.put("address_line_1", "Warehouse Address");
@@ -361,5 +368,14 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
 
         return null;
+    }
+
+    private Map<String, Object> castToMap(Object obj) {
+        if (obj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) obj;
+            return map;
+        }
+        return Collections.emptyMap();
     }
 }

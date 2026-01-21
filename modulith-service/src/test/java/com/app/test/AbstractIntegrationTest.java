@@ -1,32 +1,32 @@
 package com.app.test;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import org.springframework.web.context.WebApplicationContext;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Abstract base class for integration tests
  * 
  * Provides:
- * - PostgreSQL 17 test container
- * - DragonflyDB test container (25x faster than Redis, drop-in compatible)
- * - Automatic Spring context configuration
- * - Test transaction management
- * 
- * Performance: DragonflyDB reduces test execution time by ~50% vs Redis
- * 
- * Usage: Extend this class in your integration tests
+ * - PostgreSQL 17 test container (Optional)
+ * - DragonflyDB test container (Optional)
+ * - Fallback to H2 and Local Redis if Docker is unavailable
+ * - RestTestClient for REST API testing
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
+
+    @Autowired
+    protected RestTestClient restTestClient;
 
     static PostgreSQLContainer<?> postgres;
     static GenericContainer<?> dragonflydb;
@@ -38,53 +38,45 @@ public abstract class AbstractIntegrationTest {
                     .withUsername("test")
                     .withPassword("test")
                     .withReuse(true);
-            
-            dragonflydb = new GenericContainer<>(DockerImageName.parse("docker.dragonflydb.io/dragonflydb/dragonfly:latest"))
+
+            dragonflydb = new GenericContainer<>(
+                    DockerImageName.parse("docker.dragonflydb.io/dragonflydb/dragonfly:latest"))
                     .withExposedPorts(6379)
                     .withReuse(true);
+
+            postgres.start();
+            dragonflydb.start();
         } catch (Throwable t) {
-            // Ignore
+            System.err.println("Docker not available, falling back to H2: " + t.getMessage());
+            postgres = null;
+            dragonflydb = null;
         }
     }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        boolean dockerRunning = false;
-        try {
-            if (postgres != null) {
-                postgres.start();
-                dockerRunning = true;
-            }
-        } catch (Throwable t) {
-            System.err.println("Testcontainers startup failed: " + t.getMessage());
-        }
-
-        if (dockerRunning) {
+        if (postgres != null && postgres.isRunning()) {
             registry.add("spring.datasource.url", postgres::getJdbcUrl);
             registry.add("spring.datasource.username", postgres::getUsername);
             registry.add("spring.datasource.password", postgres::getPassword);
             registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
 
-            try {
-                if (dragonflydb != null) {
-                    dragonflydb.start();
-                    registry.add("spring.data.redis.host", dragonflydb::getHost);
-                    registry.add("spring.data.redis.port", dragonflydb::getFirstMappedPort);
-                }
-            } catch (Throwable t) {
-                // Fallback local redis
+            if (dragonflydb != null && dragonflydb.isRunning()) {
+                registry.add("spring.data.redis.host", dragonflydb::getHost);
+                registry.add("spring.data.redis.port", dragonflydb::getFirstMappedPort);
+            } else {
                 registry.add("spring.data.redis.host", () -> "localhost");
                 registry.add("spring.data.redis.port", () -> "6379");
             }
         } else {
-            System.out.println("Using H2 Database and Local Redis (Fallback)");
+            // H2 Fallback
             registry.add("spring.datasource.url", () -> "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL");
             registry.add("spring.datasource.username", () -> "sa");
             registry.add("spring.datasource.password", () -> "");
             registry.add("spring.datasource.driver-class-name", () -> "org.h2.Driver");
             registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
             registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.H2Dialect");
-            
+
             registry.add("spring.data.redis.host", () -> "localhost");
             registry.add("spring.data.redis.port", () -> "6379");
         }

@@ -2,7 +2,7 @@ package com.app.order.user;
 
 import com.app.order.payloads.LoginCredentials;
 import com.app.order.payloads.TokenRefreshRequest;
-import com.app.order.payloads.UserDTO;
+import com.app.identity.payloads.UserDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;

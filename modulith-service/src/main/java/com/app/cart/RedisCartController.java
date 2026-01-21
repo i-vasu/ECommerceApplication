@@ -1,15 +1,12 @@
 package com.app.cart;
 
-import com.app.order.entites.CartItem;
-import com.app.cart.RedisCartService;
+import com.app.order.entities.CartItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController

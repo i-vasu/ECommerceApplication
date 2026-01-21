@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.order.entites.RefreshToken;
+import com.app.order.entities.RefreshToken;
 import com.app.order.repositories.RefreshTokenRepo;
 import com.app.identity.repositories.UserRepo;
 import com.app.core.ResourceNotFoundException;

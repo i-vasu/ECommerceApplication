@@ -7,7 +7,6 @@ import com.app.commerce.pricing.contracts.OrderTotalInput;
 import com.app.commerce.promotion.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import java.math.BigDecimal;
 
 @Component
 @RequiredArgsConstructor
@@ -27,11 +26,22 @@ public class DiscountModule implements OrderTotalModule {
 
     @Override
     public OrderTotal calculate(OrderSummary summary, OrderTotalInput input) {
-        // Need to pass coupon code in Input! For now, let's assume it might come from Cart metadata 
-        // or just hardcode checking a known context (not available yet in Input).
-        // For PoC, we skip active lookup unless input has it.
-        // TODO: Add 'couponCode' to OrderTotalInput
-        
-        return null; 
+        if (input.getCouponCode() != null && !input.getCouponCode().isEmpty()) {
+            java.math.BigDecimal discount = promotionService.applyCoupon(
+                    input.getCouponCode(),
+                    java.math.BigDecimal.valueOf(summary.getSubTotal()),
+                    input.getEmail());
+
+            if (discount.compareTo(java.math.BigDecimal.ZERO) < 0) {
+                return OrderTotal.builder()
+                        .code("discount")
+                        .title("Discount")
+                        .value(discount)
+                        .sortOrder(20)
+                        .build();
+            }
+        }
+
+        return null;
     }
 }

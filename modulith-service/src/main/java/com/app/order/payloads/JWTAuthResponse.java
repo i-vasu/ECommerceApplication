@@ -1,6 +1,6 @@
 package com.app.order.payloads;
 
-import lombok.Data;
+import com.app.identity.payloads.UserDTO;
 
 public record JWTAuthResponse(String token, UserDTO user) {
 }

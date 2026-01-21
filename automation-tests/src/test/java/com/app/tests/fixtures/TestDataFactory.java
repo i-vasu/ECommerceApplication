@@ -1,9 +1,10 @@
 package com.app.tests.fixtures;
 
-import com.app.entites.Order;
-import com.app.entites.Payment;
-import com.app.entites.User;
-import com.app.payloads.OrderDTO;
+import com.app.order.entities.Order;
+import com.app.order.entities.Payment;
+import com.app.identity.entities.User;
+import com.app.order.payloads.OrderDTO;
+import com.app.commerce.states.OrderStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class TestDataFactory {
             return this;
         }
 
-        public OrderBuilder withStatus(String status) {
+        public OrderBuilder withStatus(OrderStatus status) {
             order.setOrderStatus(status);
             return this;
         }
@@ -44,7 +45,7 @@ public class TestDataFactory {
 
         public Order build() {
             if (order.getOrderStatus() == null)
-                order.setOrderStatus("CREATED");
+                order.setOrderStatus(OrderStatus.PENDING);
             if (order.getTotalAmount() == null)
                 order.setTotalAmount(100.0);
             if (order.getOrderItems() == null)
@@ -136,7 +137,7 @@ public class TestDataFactory {
                 .build();
 
         return order()
-                .withStatus("PAID")
+                .withStatus(OrderStatus.PAYMENT_CAPTURED)
                 .withAmount(500.0)
                 .withPayment(payment)
                 .build();
@@ -144,7 +145,7 @@ public class TestDataFactory {
 
     public static Order createPendingOrder() {
         return order()
-                .withStatus("PENDING")
+                .withStatus(OrderStatus.PENDING)
                 .withAmount(200.0)
                 .build();
     }

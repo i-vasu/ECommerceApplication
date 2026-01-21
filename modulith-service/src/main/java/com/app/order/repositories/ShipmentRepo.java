@@ -1,6 +1,6 @@
 package com.app.order.repositories;
 
-import com.app.order.entites.Shipment;
+import com.app.order.entities.Shipment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

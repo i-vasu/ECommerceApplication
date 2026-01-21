@@ -1,8 +1,10 @@
 package com.app.order.user;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.order.payloads.LoginCredentials;
-import com.app.order.payloads.UserDTO;
+import com.app.identity.payloads.UserDTO;
 import com.app.core.security.JWTUtil;
-import com.app.order.entites.RefreshToken;
+import com.app.order.entities.RefreshToken;
 import com.app.identity.entities.User;
 import com.app.order.payloads.TokenRefreshRequest;
 import com.app.order.payloads.TokenRefreshResponse;
@@ -33,36 +35,26 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/v1")
 @SecurityRequirement(name = "E-Commerce Application")
+@RequiredArgsConstructor
 public class AuthController implements AuthApi {
 
-	@Autowired
-	private UserService userService;
-
-	@Autowired
-	private JWTUtil jwtUtil;
-
-	@Autowired
-	private AuthenticationManager authenticationManager;
-
-	@Autowired
-	private PasswordEncoder passwordEncoder;
-
-	@Autowired
-	private RefreshTokenService refreshTokenService;
-
-	@Autowired
-	private UserRepo userRepo;
+	private final UserService userService;
+	private final JWTUtil jwtUtil;
+	private final AuthenticationManager authenticationManager;
+	private final PasswordEncoder passwordEncoder;
+	private final RefreshTokenService refreshTokenService;
+	private final UserRepo userRepo;
 
 	@PostMapping("/register")
 	@Override
 	public ResponseEntity<Map<String, Object>> registerHandler(@Valid @RequestBody UserDTO user) {
-		String encodedPass = passwordEncoder.encode(user.getPassword());
+		String encodedPass = passwordEncoder.encode(user.password());
 
-		user.setPassword(encodedPass);
+		UserDTO userWithEncodedPass = user.toBuilder().password(encodedPass).build();
 
-		UserDTO userDTO = userService.registerUser(user);
+		UserDTO userDTO = userService.registerUser(userWithEncodedPass);
 
-		String token = jwtUtil.generateToken(userDTO.getEmail());
+		String token = jwtUtil.generateToken(userDTO.email());
 
 		return new ResponseEntity<Map<String, Object>>(Collections.singletonMap("jwt-token", token),
 				HttpStatus.CREATED);
@@ -88,7 +80,7 @@ public class AuthController implements AuthApi {
 
 		RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
 
-		Map<String, Object> response = new java.util.HashMap<>();
+		Map<String, Object> response = new HashMap<>();
 		response.put("jwt-token", token);
 		response.put("refresh-token", refreshToken.getToken());
 		return response;

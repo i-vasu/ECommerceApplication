@@ -8,6 +8,7 @@ import com.app.marketing.services.EmailService;
 import com.app.order.services.ERPNextService;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -25,15 +26,15 @@ import org.springframework.stereotype.Service;
 
 import com.app.product.config.AppConstants;
 import com.app.identity.entities.Address;
-import com.app.order.entites.Cart;
-import com.app.order.entites.CartItem;
+import com.app.order.entities.Cart;
+import com.app.order.entities.CartItem;
 import com.app.identity.entities.Role;
 import com.app.identity.entities.User;
 import com.app.core.ResourceNotFoundException;
-import com.app.order.payloads.AddressDTO;
-import com.app.order.payloads.CartDTO;
+import com.app.identity.payloads.AddressDTO;
+import com.app.cart.payloads.CartDTO;
 import com.app.product.payloads.ProductDTO;
-import com.app.order.payloads.UserDTO;
+import com.app.identity.payloads.UserDTO;
 import com.app.order.payloads.UserResponse;
 import com.app.identity.repositories.AddressRepo;
 import com.app.identity.repositories.RoleRepo;
@@ -76,37 +77,42 @@ public class UserServiceImpl implements UserService {
 	public UserDTO registerUser(UserDTO userDTO) {
 
 		try {
-            // ... (setup code unchanged)
+			// ... (setup code unchanged)
 			User user = identityMapper.userDTOToUser(userDTO);
-            // ...
+			// ...
 			user.setVerificationCode(UUID.randomUUID().toString());
 			user.setVerified(false);
-            // ...
+			// ...
 			Cart cart = new Cart();
 			user.setCart(cart);
-            // ...
+			// ...
 			User registeredUser = userRepo.save(user);
-            
-            // ASYNC WRITE-BEHIND
-            try {
-                com.app.identity.async.UserConsumer.UserEvent event = 
-                    new com.app.identity.async.UserConsumer.UserEvent(registeredUser.getUserId(), "USER_REGISTERED");
-                eventProducer.publish("user_events", event);
-            } catch (Exception e) {
-                // Log but don't fail registration
-                System.err.println("Failed to queue user sync: " + e.getMessage());
-            }
+
+			// ASYNC WRITE-BEHIND
+			try {
+				com.app.identity.async.UserConsumer.UserEvent event = new com.app.identity.async.UserConsumer.UserEvent(
+						registeredUser.getUserId(), "USER_REGISTERED");
+				eventProducer.publish("user_events", event);
+			} catch (Exception e) {
+				// Log but don't fail registration
+				System.err.println("Failed to queue user sync: " + e.getMessage());
+			}
 
 			cart.setUser(registeredUser);
-            // ...
+			// ...
 
-			userDTO = identityMapper.userToUserDTO(registeredUser);
+			AddressDTO addressDTO = null;
+			if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
+				addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().get(0));
+			}
 
-			userDTO.setAddress(identityMapper.addressToAddressDTO(user.getAddresses().stream().findFirst().get()));
+			userDTO = identityMapper.userToUserDTO(registeredUser).toBuilder()
+					.address(addressDTO)
+					.build();
 
 			return userDTO;
 		} catch (DataIntegrityViolationException e) {
-			throw new APIException("User already exists with emailId: " + userDTO.getEmail());
+			throw new APIException("User already exists with emailId: " + userDTO.email());
 		}
 
 	}
@@ -127,29 +133,32 @@ public class UserServiceImpl implements UserService {
 		}
 
 		List<UserDTO> userDTOs = users.stream().map(user -> {
-			UserDTO dto = identityMapper.userToUserDTO(user);
+			UserDTO baseDTO = identityMapper.userToUserDTO(user);
 
-			if (user.getAddresses().size() != 0) {
-				dto.setAddress(identityMapper.addressToAddressDTO(user.getAddresses().stream().findFirst().get()));
+			AddressDTO addressDTO = null;
+			if (user.getAddresses() != null && user.getAddresses().size() != 0) {
+				addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().get(0));
 			}
 
-			CartDTO cart = cartMapper.cartToCartDTO(user.getCart());
-
 			List<ProductDTO> products = user.getCart().getCartItems().stream()
-					.map(item -> {
-						ProductDTO productDto = new ProductDTO();
-						productDto.setProductId(item.getProductId());
-						productDto.setProductName(item.getProductName());
-						productDto.setPrice(item.getProductPrice());
-						// Fetch more details if needed via client
-						return productDto;
-					}).collect(Collectors.toList());
+					.map(item -> new ProductDTO(
+							item.getProductId(),
+							item.getProductName(),
+							item.getItemCode(),
+							null, null, item.getQuantity(),
+							item.getProductPrice(), item.getDiscount(), item.getProductPrice(),
+							null, null, null, null))
+					.collect(Collectors.toList());
 
-			dto.setCart(cart);
+			CartDTO cartWithProducts = new CartDTO(
+					user.getCart().getCartId(),
+					user.getCart().getTotalPrice(),
+					products);
 
-			dto.getCart().setProducts(products);
-
-			return dto;
+			return baseDTO.toBuilder()
+					.address(addressDTO)
+					.cart(cartWithProducts)
+					.build();
 
 		}).collect(Collectors.toList());
 
@@ -170,26 +179,32 @@ public class UserServiceImpl implements UserService {
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
-		UserDTO userDTO = identityMapper.userToUserDTO(user);
+		UserDTO baseUserDTO = identityMapper.userToUserDTO(user);
 
-		userDTO.setAddress(identityMapper.addressToAddressDTO(user.getAddresses().stream().findFirst().get()));
-
-		CartDTO cart = cartMapper.cartToCartDTO(user.getCart());
+		AddressDTO addressDTO = null;
+		if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
+			addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().get(0));
+		}
 
 		List<ProductDTO> products = user.getCart().getCartItems().stream()
-				.map(item -> {
-					ProductDTO productDto = new ProductDTO();
-					productDto.setProductId(item.getProductId());
-					productDto.setProductName(item.getProductName());
-					productDto.setPrice(item.getProductPrice());
-					return productDto;
-				}).collect(Collectors.toList());
+				.map(item -> new ProductDTO(
+						item.getProductId(),
+						item.getProductName(),
+						item.getItemCode(),
+						null, null, item.getQuantity(),
+						item.getProductPrice(), item.getDiscount(), item.getProductPrice(),
+						null, null, null, null))
+				.collect(Collectors.toList());
 
-		userDTO.setCart(cart);
+		CartDTO cartWithProducts = new CartDTO(
+				user.getCart().getCartId(),
+				user.getCart().getTotalPrice(),
+				products);
 
-		userDTO.getCart().setProducts(products);
-
-		return userDTO;
+		return baseUserDTO.toBuilder()
+				.address(addressDTO)
+				.cart(cartWithProducts)
+				.build();
 	}
 
 	@Override
@@ -197,21 +212,21 @@ public class UserServiceImpl implements UserService {
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
-		String encodedPass = passwordEncoder.encode(userDTO.getPassword());
+		String encodedPass = passwordEncoder.encode(userDTO.password());
 
-		user.setFirstName(userDTO.getFirstName());
-		user.setLastName(userDTO.getLastName());
-		user.setMobileNumber(userDTO.getMobileNumber());
-		user.setEmail(userDTO.getEmail());
+		user.setFirstName(userDTO.firstName());
+		user.setLastName(userDTO.lastName());
+		user.setMobileNumber(userDTO.mobileNumber());
+		user.setEmail(userDTO.email());
 		user.setPassword(encodedPass);
 
-		if (userDTO.getAddress() != null) {
-			String country = userDTO.getAddress().getCountry();
-			String state = userDTO.getAddress().getState();
-			String city = userDTO.getAddress().getCity();
-			String pincode = userDTO.getAddress().getPincode();
-			String street = userDTO.getAddress().getStreet();
-			String buildingName = userDTO.getAddress().getBuildingName();
+		if (userDTO.address() != null) {
+			String country = userDTO.address().country();
+			String state = userDTO.address().state();
+			String city = userDTO.address().city();
+			String pincode = userDTO.address().pincode();
+			String street = userDTO.address().street();
+			String buildingName = userDTO.address().buildingName();
 
 			Address address = addressRepo.findByCountryAndStateAndCityAndPincodeAndStreetAndBuildingName(country, state,
 					city, pincode, street, buildingName);
@@ -225,26 +240,44 @@ public class UserServiceImpl implements UserService {
 			}
 		}
 
-		userDTO = identityMapper.userToUserDTO(user);
+		// Use mapper to create base UserDTO
+		UserDTO baseUserDTO = identityMapper.userToUserDTO(user);
 
-		userDTO.setAddress(identityMapper.addressToAddressDTO(user.getAddresses().stream().findFirst().get()));
+		// Get address DTO if available
+		AddressDTO addressDTO = null;
+		if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
+			addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().get(0));
+		}
 
-		CartDTO cart = cartMapper.cartToCartDTO(user.getCart());
-
+		// Build product DTOs from cart items
 		List<ProductDTO> products = user.getCart().getCartItems().stream()
-				.map(item -> {
-					ProductDTO productDto = new ProductDTO();
-					productDto.setProductId(item.getProductId());
-					productDto.setProductName(item.getProductName());
-					productDto.setPrice(item.getProductPrice());
-					return productDto;
-				}).collect(Collectors.toList());
+				.map(item -> new ProductDTO(
+						item.getProductId(),
+						item.getProductName(),
+						item.getItemCode(),
+						null, // image
+						null, // description
+						item.getQuantity(),
+						item.getProductPrice(),
+						item.getDiscount(),
+						item.getProductPrice(),
+						null, // variants
+						null, // media
+						null, // reviews
+						null // averageRating
+				)).collect(Collectors.toList());
 
-		userDTO.setCart(cart);
+		// Create CartDTO with products
+		CartDTO cartWithProducts = new CartDTO(
+				user.getCart().getCartId(),
+				user.getCart().getTotalPrice(),
+				products);
 
-		userDTO.getCart().setProducts(products);
-
-		return userDTO;
+		// Build new UserDTO with all fields using the builder
+		return baseUserDTO.toBuilder()
+				.address(addressDTO)
+				.cart(cartWithProducts)
+				.build();
 	}
 
 	@Override
@@ -351,4 +384,22 @@ public class UserServiceImpl implements UserService {
 		userRepo.save(receiver);
 	}
 
+	@Override
+	public List<UserDTO> getFriends(Long userId) {
+		// Basic stub for now to resolve compilation
+		return new ArrayList<>();
+	}
+
+	@Override
+	public void addFriend(Long userId, String friendEmail) {
+		// Basic stub for now to resolve compilation
+	}
+
+	@Override
+	public void deactivateAccount(Long userId) {
+		User user = userRepo.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+		user.setAccountStatus("DEACTIVATED");
+		userRepo.save(user);
+	}
 }

@@ -1,7 +1,7 @@
 package com.app.cart.mappers;
 
-import com.app.order.entites.Cart;
-import com.app.order.payloads.CartDTO;
+import com.app.order.entities.Cart;
+import com.app.cart.payloads.CartDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

@@ -2,7 +2,7 @@ package com.app.shipping;
 
 import java.util.Map;
 
-import com.app.order.entites.Shipment;
+import com.app.order.entities.Shipment;
 
 public interface ShipmentService {
     Shipment createShipment(Long orderId);

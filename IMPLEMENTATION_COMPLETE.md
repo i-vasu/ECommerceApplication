@@ -1,25 +1,21 @@
-Create a admin page using spring & java
+Java 25
 
-Should be able to login via single-sign-on or other strategy where admin can access below listed sites, without login/password. Just By clicking on website icons, admin will be redirected to the site. 
-
-List of websites to have:
-Business Section:
-ERPNext
-Umami
-Ditto
-
-Developer Section:
-ParadeDB
-DragonFlyDB
-Grafana stack sites
+CRaC liberica JDK 25
+Compact Object Headers
+Module Import Declarations
+Scoped Values
+Generational Shenandoah
+Stream Gatherers
+Ahead-of-Time (AOT) Class Loading/Method Profiling
+Class-File API
+Sequenced Collection
 
 
 
-1. Fix ERPNextService to use `findPendingOrders()`
-2. Add pagination to SupportController (critical)
-3. Fix remaining findAll() calls
+Spring Boot 4
 
+First-Class API Versioning
+Null Safety with JSpecify
+RestTestClient
+spring-boot-starter-opentelemetry
 
-4. Fix Redis serializer (deprecated)
-5. Refactor class-level `@Transactional`
-6. Add `@Transactional(readOnly = true)` for queries

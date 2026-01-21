@@ -1,6 +1,6 @@
 package com.app.shipping;
 
-import com.app.order.entites.Cart;
+import com.app.order.entities.Cart;
 
 public interface TaxCalculationService {
     TaxCalculation calculateGST(Cart cart, String state);

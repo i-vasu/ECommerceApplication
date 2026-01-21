@@ -11,11 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.order.entites.Shipment;
+import com.app.order.entities.Shipment;
 import com.app.shipping.ShipmentService;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController

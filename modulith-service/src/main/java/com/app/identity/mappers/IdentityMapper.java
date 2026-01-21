@@ -2,10 +2,9 @@ package com.app.identity.mappers;
 
 import com.app.identity.entities.Address;
 import com.app.identity.entities.User;
-import com.app.order.payloads.AddressDTO;
-import com.app.order.payloads.UserDTO;
+import com.app.identity.payloads.AddressDTO;
+import com.app.identity.payloads.UserDTO;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)

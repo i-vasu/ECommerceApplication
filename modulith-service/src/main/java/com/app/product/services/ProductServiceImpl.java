@@ -3,67 +3,71 @@ package com.app.product.services;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.Files;
 import com.app.product.ProductService;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.time.LocalDateTime;
 
 import com.app.product.mappers.ProductMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.app.identity.repositories.UserRepo;
+import com.app.order.repositories.OrderRepo;
 
-import com.app.product.entites.Category;
-import com.app.product.entites.Product;
+import com.app.product.entities.Category;
+import com.app.product.entities.Product;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
 import com.app.product.payloads.ProductDTO;
 import com.app.product.payloads.ProductResponse;
+import com.app.product.payloads.ProductSyncEvent;
 import com.app.product.repositories.CategoryRepo;
 import com.app.product.repositories.ProductRepo;
+import com.app.review.payloads.ProductReviewDTO;
+import com.app.review.entities.ProductReview;
+import com.app.core.async.EventProducer;
 import java.io.IOException;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
+@RequiredArgsConstructor
 @Transactional
 @Service
 public class ProductServiceImpl implements ProductService {
 
-	@Autowired
-	private ProductRepo productRepo;
-
-	@Autowired
-	private CategoryRepo categoryRepo;
-
-	@Autowired
-	private ProductMapper productMapper;
-
-	@Autowired
-	private StringRedisTemplate redisTemplate;
+	private final ProductRepo productRepo;
+	private final CategoryRepo categoryRepo;
+	private final ProductMapper productMapper;
+	private final StringRedisTemplate redisTemplate;
+	private final EventProducer eventProducer;
+	private final UserRepo userRepo;
+	private final OrderRepo orderRepo;
 
 	@Override
 	@CacheEvict(value = "products", allEntries = true)
 	public ProductDTO addProduct(Long categoryId, Product product) {
 
-		Category category = categoryRepo.findById(categoryId)
+		var category = categoryRepo.findById(categoryId)
 				.orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
 
-		boolean isProductNotPresent = true;
+		var isProductNotPresent = true;
+		var products = category.getProducts();
 
-		List<Product> products = category.getProducts();
-
-		for (int i = 0; i < products.size(); i++) {
-			if (products.get(i).getProductName().equals(product.getProductName())
-					&& products.get(i).getDescription().equals(product.getDescription())) {
-
+		for (var p : products) {
+			if (p.getProductName().equals(product.getProductName())
+					&& p.getDescription().equals(product.getDescription())) {
 				isProductNotPresent = false;
 				break;
 			}
@@ -71,14 +75,12 @@ public class ProductServiceImpl implements ProductService {
 
 		if (isProductNotPresent) {
 			product.setImage("default.png");
-
 			product.setCategory(category);
 
-			double specialPrice = product.getPrice() - ((product.getDiscount() * 0.01) * product.getPrice());
+			var specialPrice = product.getPrice() - ((product.getDiscount() * 0.01) * product.getPrice());
 			product.setSpecialPrice(specialPrice);
 
-			Product savedProduct = productRepo.save(product);
-
+			var savedProduct = productRepo.save(product);
 			return productMapper.productToProductDTO(savedProduct);
 		} else {
 			throw new APIException("Product already exists !!!");
@@ -89,18 +91,16 @@ public class ProductServiceImpl implements ProductService {
 	@Cacheable(value = "products", key = "#pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
 
-		Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
 				: Sort.by(sortBy).descending();
 
-		Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageProducts = productRepo.findAll(pageDetails);
+		var products = pageProducts.getContent();
 
-		Page<Product> pageProducts = productRepo.findAll(pageDetails);
-
-		List<Product> products = pageProducts.getContent();
-
-		List<ProductDTO> productDTOs = products.stream()
+		var productDTOs = products.stream()
 				.map(productMapper::productToProductDTO)
-				.collect(Collectors.toList());
+				.toList();
 
 		return new ProductResponse(
 				productDTOs,
@@ -116,25 +116,23 @@ public class ProductServiceImpl implements ProductService {
 	public ProductResponse searchByCategory(Long categoryId, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder) {
 
-		Category category = categoryRepo.findById(categoryId)
+		var category = categoryRepo.findById(categoryId)
 				.orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
 
-		Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
 				: Sort.by(sortBy).descending();
 
-		Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageProducts = productRepo.findAll(pageDetails);
+		var products = pageProducts.getContent();
 
-		Page<Product> pageProducts = productRepo.findAll(pageDetails);
-
-		List<Product> products = pageProducts.getContent();
-
-		if (products.size() == 0) {
+		if (products.isEmpty()) {
 			throw new APIException(category.getCategoryName() + " category doesn't contain any products !!!");
 		}
 
-		List<ProductDTO> productDTOs = products.stream()
+		var productDTOs = products.stream()
 				.map(productMapper::productToProductDTO)
-				.collect(Collectors.toList());
+				.toList();
 
 		return new ProductResponse(
 				productDTOs,
@@ -149,22 +147,20 @@ public class ProductServiceImpl implements ProductService {
 	@Cacheable(value = "products", key = "'search-' + #keyword + '-' + #pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder) {
-		Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
 				: Sort.by(sortBy).descending();
 
-		Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageProducts = productRepo.searchByKeyword(keyword, pageDetails);
+		var products = pageProducts.getContent();
 
-		Page<Product> pageProducts = productRepo.searchByKeyword(keyword, pageDetails);
-
-		List<Product> products = pageProducts.getContent();
-
-		if (products.size() == 0) {
+		if (products.isEmpty()) {
 			throw new APIException("Products not found with keyword: " + keyword);
 		}
 
-		List<ProductDTO> productDTOs = products.stream()
+		var productDTOs = products.stream()
 				.map(productMapper::productToProductDTO)
-				.collect(Collectors.toList());
+				.toList();
 
 		return new ProductResponse(
 				productDTOs,
@@ -175,155 +171,138 @@ public class ProductServiceImpl implements ProductService {
 				pageProducts.isLast());
 	}
 
-	@Autowired
-	private com.app.core.async.EventProducer eventProducer;
-
 	@Override
-	@org.springframework.cache.annotation.Caching(evict = {
+	@Caching(evict = {
 			@CacheEvict(value = "products", allEntries = true),
 			@CacheEvict(value = "product", key = "#productId")
 	})
 	public ProductDTO updateProduct(Long productId, Product product) {
-		Product productFromDB = productRepo.findById(productId)
+		var productFromDB = productRepo.findById(productId)
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
-
-		if (productFromDB == null) {
-			throw new APIException("Product not found with productId: " + productId);
-		}
 
 		product.setImage(productFromDB.getImage());
 		product.setProductId(productId);
 		product.setCategory(productFromDB.getCategory());
 
-		double specialPrice = product.getPrice() - ((product.getDiscount() * 0.01) * product.getPrice());
+		var specialPrice = product.getPrice() - ((product.getDiscount() * 0.01) * product.getPrice());
 		product.setSpecialPrice(specialPrice);
 
-		Product savedProduct = productRepo.save(product);
+		var savedProduct = productRepo.save(product);
 
-		// Publish Event to DragonflyDB (Stream)
 		try {
-			com.app.product.payloads.ProductSyncEvent event = new com.app.product.payloads.ProductSyncEvent(productId,
-					"UPDATED");
-			// Using the new EventProducer
+			var event = new ProductSyncEvent(productId, "UPDATED");
 			eventProducer.publish("product_events", event);
 		} catch (Exception e) {
-			System.err.println("Failed to publish product update event to Redis: " + e.getMessage());
+			log.error("Failed to publish product update event to Redis: {}", e.getMessage());
 		}
 
 		return productMapper.productToProductDTO(savedProduct);
 	}
 
 	@Override
-	@org.springframework.cache.annotation.Caching(evict = {
-			@CacheEvict(value = "products", allEntries = true),
-			@CacheEvict(value = "product", key = "#productId")
-	})
 	public ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException {
-		// Media management is handled by ERPNext
 		throw new APIException("Direct image upload is disabled. Please manage media via ERPNext.");
 	}
 
 	@Override
-	@org.springframework.cache.annotation.Caching(evict = {
-			@CacheEvict(value = "products", allEntries = true),
-			@CacheEvict(value = "product", key = "#productId")
-	})
 	public ProductDTO addMedia(Long productId, MultipartFile file, String type) throws IOException {
-		// Media management is handled by ERPNext
 		throw new APIException("Direct media upload is disabled. Please manage media via ERPNext.");
 	}
 
 	@Override
-	@org.springframework.cache.annotation.Caching(evict = {
+	@Caching(evict = {
 			@CacheEvict(value = "products", allEntries = true),
 			@CacheEvict(value = "product", key = "#productId")
 	})
-	public ProductDTO addReview(Long productId, com.app.review.payloads.ProductReviewDTO reviewDTO) {
-		Product product = productRepo.findById(productId)
+	public ProductDTO addReview(Long productId, ProductReviewDTO reviewDTO) {
+		var product = productRepo.findById(productId)
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
-		com.app.review.entities.ProductReview review = new com.app.review.entities.ProductReview();
+		var review = new ProductReview();
 		review.setProduct(product);
-		// Note: User is not set here as we don't have access to UserRepo.
-		// If User is required, it must be fetched via reviewDTO.getUserId() and
-		// UserRepo.
-		review.setRating(reviewDTO.getRating());
-		review.setComment(reviewDTO.getComment());
-		review.setCreatedAt(java.time.LocalDateTime.now());
+		review.setRating(reviewDTO.rating());
+		review.setComment(reviewDTO.comment());
+		review.setCreatedAt(LocalDateTime.now());
+
+		// Identify User from Security Context
+		var auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+			String email = auth.getName();
+			userRepo.findByEmail(email).ifPresent(user -> {
+				review.setUserId(user.getUserId());
+				review.setUserName(user.getFirstName() + " " + user.getLastName());
+
+				// Verify Purchase
+				boolean isVerified = orderRepo.existsByEmailAndProductId(email, productId);
+				review.setVerifiedPurchase(isVerified);
+			});
+		}
 
 		product.getReviews().add(review);
 
-		Product updatedProduct = productRepo.save(product);
+		var updatedProduct = productRepo.save(product);
 		return productMapper.productToProductDTO(updatedProduct);
 	}
 
 	@Override
 	public List<String> getAllCategories() {
-		// ✅ OPTIMIZED: Database projection (5x faster, 90% less memory)
 		return categoryRepo.findAllCategoryNames();
 	}
 
 	@Override
 	public List<ProductDTO> getProductsByCategory(String category) {
-		Category cat = categoryRepo.findByCategoryName(category);
+		var cat = categoryRepo.findByCategoryName(category);
 		if (cat == null) {
 			throw new ResourceNotFoundException("Category", "categoryName", category);
 		}
-		List<Product> products = productRepo.findByCategory(cat);
-		return products.stream().map(productMapper::productToProductDTO).collect(Collectors.toList());
+		var products = productRepo.findByCategory(cat);
+		return products.stream()
+				.map(productMapper::productToProductDTO)
+				.toList();
 	}
 
+	@Override
 	public Path getProductImagePath(String fileName) throws FileNotFoundException {
-		// In modular monolith, we use a centralized media directory
-		Path path = Paths.get("data/media/products", fileName);
-		if (!java.nio.file.Files.exists(path)) {
+		var path = Paths.get("data/media/products", fileName);
+		if (!Files.exists(path)) {
 			throw new FileNotFoundException("Image not found: " + fileName);
 		}
 		return path;
 	}
 
-	public java.io.InputStream getProductImage(String fileName) throws FileNotFoundException {
-		throw new UnsupportedOperationException("Use getProductImagePath for zero-copy serving");
-	}
-
 	@Override
-	@org.springframework.cache.annotation.Caching(evict = {
+	@Caching(evict = {
 			@CacheEvict(value = "products", allEntries = true),
 			@CacheEvict(value = "product", key = "#productId")
 	})
 	public String deleteProduct(Long productId) {
-
-		Product product = productRepo.findById(productId)
+		var product = productRepo.findById(productId)
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
-		// Publish Event to DragonflyDB (Redis)
-		// Publish Event to DragonflyDB (Stream)
 		try {
-			com.app.product.payloads.ProductSyncEvent event = new com.app.product.payloads.ProductSyncEvent(productId,
-					"DELETED");
+			var event = new ProductSyncEvent(productId, "DELETED");
 			eventProducer.publish("product_events", event);
 		} catch (Exception e) {
-			System.err.println("Failed to publish product delete event to Redis: " + e.getMessage());
+			log.error("Failed to publish product delete event to Redis: {}", e.getMessage());
 		}
 
 		productRepo.delete(product);
-
 		return "Product with productId: " + productId + " deleted successfully !!!";
 	}
 
 	@Override
 	@Cacheable(value = "product", key = "#productId")
 	public ProductDTO getProductById(Long productId) {
-		Product product = productRepo.findById(productId)
+		var product = productRepo.findById(productId)
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 		return productMapper.productToProductDTO(product);
 	}
 
 	@Override
 	public List<ProductDTO> getProductsByIds(List<Long> productIds) {
-		List<Product> products = productRepo.findAllById(productIds);
+		var products = productRepo.findAllById(productIds);
 		return products.stream()
 				.map(productMapper::productToProductDTO)
-				.collect(Collectors.toList());
+				.toList();
 	}
 }

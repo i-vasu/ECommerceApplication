@@ -1,8 +1,8 @@
 package com.app.order.mappers;
 
-import com.app.order.entites.Order;
-import com.app.order.entites.OrderItem;
-import com.app.order.entites.Payment;
+import com.app.order.entities.Order;
+import com.app.order.entities.OrderItem;
+import com.app.order.entities.Payment;
 import com.app.order.payloads.OrderDTO;
 import com.app.order.payloads.OrderItemDTO;
 import com.app.order.payloads.PaymentDTO;

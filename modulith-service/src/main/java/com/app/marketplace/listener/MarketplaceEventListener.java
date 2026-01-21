@@ -3,7 +3,10 @@ package com.app.marketplace.listener;
 import com.app.marketplace.adapter.AmazonAdapter;
 import com.app.marketplace.adapter.FlipkartAdapter;
 import com.app.marketplace.adapter.OndcAdapter;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -15,7 +18,7 @@ import java.util.Map;
 @Service
 public class MarketplaceEventListener implements StreamListener<String, MapRecord<String, String, String>> {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MarketplaceEventListener.class);
+    private static final Logger log = LoggerFactory.getLogger(MarketplaceEventListener.class);
 
     @Autowired
     private AmazonAdapter amazonAdapter;
@@ -40,7 +43,8 @@ public class MarketplaceEventListener implements StreamListener<String, MapRecor
                 // Order Paid -> Stock Reduced -> Push to Amazon
                 log.info("Processing Order Event in Marketplace: {}", payload);
                 // Parse 'OrderPaidEvent' (we need the DTO class or just generic map)
-                Map<String, Object> event = objectMapper.readValue(payload, Map.class);
+                Map<String, Object> event = objectMapper.readValue(payload, new TypeReference<Map<String, Object>>() {
+                });
                 Object orderId = event.get("orderId");
                 // In real logic: fetch order items, get sku, decrement stock
                 // For POC: just log

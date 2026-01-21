@@ -1,6 +1,6 @@
 package com.app.cart;
 
-import com.app.order.entites.CartItem;
+import com.app.order.entities.CartItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;

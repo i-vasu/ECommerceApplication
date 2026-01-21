@@ -12,26 +12,37 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.Map;
+import java.security.MessageDigest;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import com.app.marketplace.repository.RawEventRepository;
+import com.app.marketplace.repository.DeadLetterEventRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.app.marketplace.model.RawEvent;
+import com.app.marketplace.model.DeadLetterEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/marketplace/webhooks")
 public class WebhookController implements MarketplaceWebhookApi {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(WebhookController.class);
+    private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     private final AmazonAdapter amazonAdapter;
     private final FlipkartAdapter flipkartAdapter;
     private final OndcAdapter ondcAdapter;
-    private final com.app.marketplace.repository.RawEventRepository rawEventRepository;
-    private final com.app.marketplace.repository.DeadLetterEventRepository deadLetterEventRepository;
+    private final RawEventRepository rawEventRepository;
+    private final DeadLetterEventRepository deadLetterEventRepository;
     private final OrderDispatchService orderDispatchService;
     private final SignatureVerificationService signatureVerificationService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
-    private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final StringRedisTemplate redisTemplate;
 
     @org.springframework.beans.factory.annotation.Value("${marketplace.amazon.secret}")
     private String amazonSecret;
@@ -43,12 +54,12 @@ public class WebhookController implements MarketplaceWebhookApi {
     private String ondcSecret;
 
     public WebhookController(AmazonAdapter amazonAdapter, FlipkartAdapter flipkartAdapter, OndcAdapter ondcAdapter,
-            com.app.marketplace.repository.RawEventRepository rawEventRepository,
-            com.app.marketplace.repository.DeadLetterEventRepository deadLetterEventRepository,
+            RawEventRepository rawEventRepository,
+            DeadLetterEventRepository deadLetterEventRepository,
             OrderDispatchService orderDispatchService,
             SignatureVerificationService signatureVerificationService,
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper,
-            org.springframework.data.redis.core.StringRedisTemplate redisTemplate) {
+            ObjectMapper objectMapper,
+            StringRedisTemplate redisTemplate) {
         this.amazonAdapter = amazonAdapter;
         this.flipkartAdapter = flipkartAdapter;
         this.ondcAdapter = ondcAdapter;
@@ -76,7 +87,7 @@ public class WebhookController implements MarketplaceWebhookApi {
             return ResponseEntity.ok("Duplicate event");
         }
 
-        redisTemplate.opsForValue().set(idempotencyKey, "RECEIVED", java.time.Duration.ofHours(24));
+        redisTemplate.opsForValue().set(idempotencyKey, "RECEIVED", Duration.ofHours(24));
 
         // 1. Persistence
         saveRawEvent(channel, payload);
@@ -122,7 +133,7 @@ public class WebhookController implements MarketplaceWebhookApi {
 
     private void saveToDLQ(String channel, Map<String, Object> payload, Exception e) {
         try {
-            com.app.marketplace.model.DeadLetterEvent dlq = new com.app.marketplace.model.DeadLetterEvent();
+            DeadLetterEvent dlq = new DeadLetterEvent();
             dlq.setChannel(channel);
             dlq.setPayload(objectMapper.writeValueAsString(payload));
             dlq.setErrorReason(e.getMessage());
@@ -141,7 +152,7 @@ public class WebhookController implements MarketplaceWebhookApi {
             return payload.get("orderId").toString();
 
         try {
-            return java.security.MessageDigest.getInstance("MD5")
+            return MessageDigest.getInstance("MD5")
                     .digest(objectMapper.writeValueAsBytes(payload)).toString();
         } catch (Exception e) {
             return String.valueOf(payload.hashCode());
@@ -150,7 +161,7 @@ public class WebhookController implements MarketplaceWebhookApi {
 
     private void saveRawEvent(String channel, Map<String, Object> payload) {
         try {
-            com.app.marketplace.model.RawEvent event = new com.app.marketplace.model.RawEvent();
+            RawEvent event = new RawEvent();
             event.setChannel(channel);
             event.setPayload(objectMapper.writeValueAsString(payload));
             event.setStatus("RECEIVED");

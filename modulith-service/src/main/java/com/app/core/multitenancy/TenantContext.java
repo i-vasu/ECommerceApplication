@@ -1,7 +1,5 @@
 package com.app.core.multitenancy;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * Thread-safe context for holding the current tenant identifier.
  * Uses InheritableThreadLocal to ensure the tenant context is propagated to

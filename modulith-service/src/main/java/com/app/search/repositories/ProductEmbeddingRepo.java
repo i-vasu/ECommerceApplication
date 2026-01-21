@@ -1,6 +1,6 @@
 package com.app.search.repositories;
 
-import com.app.product.entites.Product;
+import com.app.product.entities.Product;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;

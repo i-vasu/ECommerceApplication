@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.app.product.entites.Product;
+import com.app.product.entities.Product;
 
 @Entity
 @Table(name = "product_reviews")
@@ -26,5 +26,6 @@ public class ProductReview {
     private String userName;
     private int rating;
     private String comment;
+    private boolean isVerifiedPurchase = false;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

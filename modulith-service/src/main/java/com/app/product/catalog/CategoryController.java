@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.product.config.AppConstants;
-import com.app.product.entites.Category;
+import com.app.product.entities.Category;
 import com.app.product.payloads.CategoryDTO;
 import com.app.product.payloads.CategoryResponse;
 import com.app.product.catalog.CategoryService;

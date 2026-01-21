@@ -8,6 +8,9 @@ import org.springframework.http.ResponseEntity;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import org.springframework.core.ParameterizedTypeReference;
+import com.app.core.multitenancy.Tenant;
+import com.app.core.multitenancy.TenantManagementService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,18 +32,18 @@ public class ERPNextSetupService {
     private String adminPassword;
 
     @Autowired
-    private com.app.core.multitenancy.TenantManagementService tenantService;
+    private TenantManagementService tenantService;
 
     public String setup() {
         StringBuilder report = new StringBuilder();
 
-        List<com.app.core.multitenancy.Tenant> tenants = tenantService.getActiveTenants();
+        List<Tenant> tenants = tenantService.getActiveTenants();
         if (tenants.isEmpty()) {
             report.append("No active tenants found. Running setup on default localhost:8000.\n");
             // Fallback to default logic if no tenants
         }
 
-        for (com.app.core.multitenancy.Tenant tenant : tenants) {
+        for (Tenant tenant : tenants) {
             report.append("--- Setting up Tenant: ").append(tenant.getTenantId()).append(" ---\n");
             try {
                 String siteUrl = tenant.getErpNextUrl();
@@ -79,11 +82,12 @@ public class ERPNextSetupService {
             creds.put("usr", adminUsername);
             creds.put("pwd", adminPassword);
 
-            ResponseEntity<Map> response = restClient.post()
+            ResponseEntity<Map<String, Object>> response = restClient.post()
                     .uri(baseUrl + "/api/method/login")
                     .body(creds)
                     .retrieve()
-                    .toEntity(Map.class);
+                    .toEntity(new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 List<String> cookies = response.getHeaders().get("Set-Cookie");
@@ -96,11 +100,6 @@ public class ERPNextSetupService {
             log.error("Login failed for " + baseUrl, e);
         }
         return null;
-    }
-
-    // Deprecated single-site login
-    private String login() {
-        return login(erpNextUrl);
     }
 
     private String ensureDocType(String baseUrl, String cookie, String docTypeName, boolean isStandard) {

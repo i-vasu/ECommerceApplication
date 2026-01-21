@@ -2,7 +2,6 @@ package com.app.order.user;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,57 +12,56 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.app.identity.entities.Address;
-import com.app.order.payloads.AddressDTO;
+import com.app.identity.payloads.AddressDTO;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1")
 @SecurityRequirement(name = "E-Commerce Application")
+@RequiredArgsConstructor
 public class AddressController implements AddressApi {
 
-	@Autowired
-	private AddressService addressService;
+	private final AddressService addressService;
 
 	@PostMapping("/address")
 	@Override
 	public ResponseEntity<AddressDTO> createAddress(@Valid @RequestBody AddressDTO addressDTO) {
-		AddressDTO savedAddressDTO = addressService.createAddress(addressDTO);
-
-		return new ResponseEntity<AddressDTO>(savedAddressDTO, HttpStatus.CREATED);
+		var savedAddressDTO = addressService.createAddress(addressDTO);
+		return new ResponseEntity<>(savedAddressDTO, HttpStatus.CREATED);
 	}
 
 	@GetMapping("/addresses")
 	@Override
-	public ResponseEntity<org.springframework.data.domain.Page<AddressDTO>> getAddresses(org.springframework.data.domain.Pageable pageable) {
-		org.springframework.data.domain.Page<AddressDTO> addressDTOs = addressService.getAddresses(pageable);
+	public ResponseEntity<Page<AddressDTO>> getAddresses(Pageable pageable) {
+		var addressDTOs = addressService.getAddresses(pageable);
 		return new ResponseEntity<>(addressDTOs, HttpStatus.OK);
 	}
 
 	@GetMapping("/addresses/{addressId}")
 	@Override
 	public ResponseEntity<AddressDTO> getAddress(@PathVariable Long addressId) {
-		AddressDTO addressDTO = addressService.getAddress(addressId);
-
-		return new ResponseEntity<AddressDTO>(addressDTO, HttpStatus.FOUND);
+		var addressDTO = addressService.getAddress(addressId);
+		return new ResponseEntity<>(addressDTO, HttpStatus.FOUND);
 	}
 
 	@PutMapping("/addresses/{addressId}")
 	@Override
 	public ResponseEntity<AddressDTO> updateAddress(@PathVariable Long addressId, @RequestBody Address address) {
-		AddressDTO addressDTO = addressService.updateAddress(addressId, address);
-
-		return new ResponseEntity<AddressDTO>(addressDTO, HttpStatus.OK);
+		var addressDTO = addressService.updateAddress(addressId, address);
+		return new ResponseEntity<>(addressDTO, HttpStatus.OK);
 	}
 
 	@DeleteMapping("/addresses/{addressId}")
 	@Override
 	public ResponseEntity<String> deleteAddress(@PathVariable Long addressId) {
-		String status = addressService.deleteAddress(addressId);
-
-		return new ResponseEntity<String>(status, HttpStatus.OK);
+		var status = addressService.deleteAddress(addressId);
+		return new ResponseEntity<>(status, HttpStatus.OK);
 	}
 }

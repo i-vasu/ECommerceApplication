@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
 
 import java.util.Optional;
 import java.util.ArrayList;
@@ -21,8 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import com.app.core.ResourceNotFoundException;
-import com.app.product.entites.Category;
-import com.app.product.entites.Product;
+import com.app.product.entities.Category;
+import com.app.product.entities.Product;
 import com.app.product.mappers.ProductMapper;
 import com.app.product.payloads.ProductDTO;
 import com.app.product.repositories.CategoryRepo;
@@ -64,8 +63,9 @@ class ProductServiceTest {
         savedProduct.setProductId(1L);
         savedProduct.setProductName("Test Product");
 
-        ProductDTO expectedDTO = new ProductDTO();
-        expectedDTO.setProductId(1L);
+        ProductDTO expectedDTO = new ProductDTO(
+                1L, "Test Product", "CODE123", null, "Desc", 10, 100.0, 10.0, 90.0,
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
 
         when(categoryRepo.findById(categoryId)).thenReturn(Optional.of(category));
         when(productRepo.save(any(Product.class))).thenReturn(savedProduct);
@@ -76,7 +76,7 @@ class ProductServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(1L, result.getProductId());
+        assertEquals(1L, result.productId());
         verify(productRepo).save(product);
     }
 
@@ -88,18 +88,18 @@ class ProductServiceTest {
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> productService.getProductById(99L));
     }
-    
+
     @Test
     void deleteProduct_shouldDeleteAndPublishEvent() {
         // Arrange
         Product product = new Product();
         product.setProductId(1L);
-        
+
         when(productRepo.findById(1L)).thenReturn(Optional.of(product));
-        
+
         // Act
         productService.deleteProduct(1L);
-        
+
         // Assert
         verify(productRepo).delete(product);
         // Verify Redis publish

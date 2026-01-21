@@ -1,17 +1,11 @@
 package com.app.customer_service.controllers;
 
-import com.app.order.entites.SupportTicket;
+import com.app.order.entities.SupportTicket;
 import com.app.customer_service.repositories.SupportTicketRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import com.app.order.payloads.TicketDTO;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -29,7 +23,7 @@ public class SupportController implements SupportApi {
         ticket.setStatus("OPEN");
         ticket.setCreatedAt(java.time.LocalDateTime.now());
 
-        com.app.order.entites.TicketMessage message = new com.app.order.entites.TicketMessage();
+        com.app.order.entities.TicketMessage message = new com.app.order.entities.TicketMessage();
         message.setTicket(ticket);
         message.setSenderType("USER");
         message.setSenderId(ticketDTO.getUserEmail());
@@ -43,7 +37,7 @@ public class SupportController implements SupportApi {
 
     @Override
     public ResponseEntity<SupportTicket> replyToTicket(@PathVariable Long ticketId,
-            @RequestBody com.app.order.entites.TicketMessage message) {
+            @RequestBody com.app.order.entities.TicketMessage message) {
         SupportTicket ticket = ticketRepo.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
@@ -62,7 +56,8 @@ public class SupportController implements SupportApi {
     }
 
     @Override
-    public ResponseEntity<org.springframework.data.domain.Page<SupportTicket>> getUserTickets(@PathVariable String email, org.springframework.data.domain.Pageable pageable) {
+    public ResponseEntity<org.springframework.data.domain.Page<SupportTicket>> getUserTickets(
+            @PathVariable String email, org.springframework.data.domain.Pageable pageable) {
         return ResponseEntity.ok(ticketRepo.findByUserEmail(email, pageable));
     }
 

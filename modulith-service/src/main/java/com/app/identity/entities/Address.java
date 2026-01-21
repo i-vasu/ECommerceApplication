@@ -3,6 +3,7 @@ package com.app.identity.entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -11,9 +12,6 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "addresses")
@@ -46,6 +44,18 @@ public class Address {
 	@NotBlank
 	@Size(min = 6, message = "Pincode must contain atleast 6 characters")
 	private String pincode;
+
+	@Column(name = "is_default_shipping")
+	private boolean isDefaultShipping = false;
+
+	@Column(name = "is_default_billing")
+	private boolean isDefaultBilling = false;
+
+	@Column(name = "label")
+	private String label = "HOME"; // HOME, WORK, OTHER
+
+	@Column(name = "receiver_phone_number")
+	private String receiverPhoneNumber;
 
 	@ManyToMany(mappedBy = "addresses")
 	private List<User> users = new ArrayList<>();
@@ -136,5 +146,37 @@ public class Address {
 
 	public void setUsers(List<User> users) {
 		this.users = users;
+	}
+
+	public boolean isDefaultShipping() {
+		return isDefaultShipping;
+	}
+
+	public void setDefaultShipping(boolean defaultShipping) {
+		isDefaultShipping = defaultShipping;
+	}
+
+	public boolean isDefaultBilling() {
+		return isDefaultBilling;
+	}
+
+	public void setDefaultBilling(boolean defaultBilling) {
+		isDefaultBilling = defaultBilling;
+	}
+
+	public String getLabel() {
+		return label;
+	}
+
+	public void setLabel(String label) {
+		this.label = label;
+	}
+
+	public String getReceiverPhoneNumber() {
+		return receiverPhoneNumber;
+	}
+
+	public void setReceiverPhoneNumber(String receiverPhoneNumber) {
+		this.receiverPhoneNumber = receiverPhoneNumber;
 	}
 }

@@ -3,7 +3,7 @@ package com.app.commerce.pricing;
 import com.app.commerce.pricing.contracts.OrderSummary;
 import com.app.commerce.pricing.contracts.OrderTotal;
 import com.app.commerce.pricing.contracts.OrderTotalInput;
-import com.app.order.entites.Cart;
+import com.app.order.entities.Cart;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,9 @@ public class OrderTotalService {
         OrderTotalInput input = OrderTotalInput.builder()
                 .id(cart.getCartId())
                 .email(cart.getUser() != null ? cart.getUser().getEmail() : "guest")
-                .currencyCode("INR") // Default for now
+                .couponCode(cart.getCouponCode())
+                // In a full implementation, we would resolve addressId to country/state/zip
+                .currencyCode("INR")
                 .build();
 
         // 2. Init Summary

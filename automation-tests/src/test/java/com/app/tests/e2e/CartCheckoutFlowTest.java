@@ -1,6 +1,5 @@
 package com.app.tests.e2e;
 
-import com.app.tests.fixtures.TestDataFactory;
 import com.app.tests.utils.AuthHelper;
 import com.app.tests.utils.CustomAssertions;
 import io.restassured.response.Response;

@@ -1,6 +1,6 @@
 package com.app.order.repositories;
 
-import com.app.order.entites.Cart;
+import com.app.order.entities.Cart;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

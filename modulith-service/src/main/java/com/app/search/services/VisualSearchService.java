@@ -1,20 +1,17 @@
 package com.app.search.services;
 
 import com.app.product.payloads.ProductDTO;
-import com.app.product.entites.Product;
 import com.app.product.repositories.ProductRepo;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import ai.djl.ModelException;
 import ai.djl.inference.Predictor;
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.ImageFactory;
 import ai.djl.modality.cv.transform.Resize;
-import ai.djl.modality.cv.transform.ToTensor;
 import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ModelZoo;
 import ai.djl.repository.zoo.ZooModel;
@@ -24,7 +21,6 @@ import ai.djl.translate.Translator;
 import ai.djl.translate.TranslatorContext;
 import ai.djl.translate.Batchifier;
 import ai.djl.ndarray.NDList;
-import ai.djl.ndarray.NDArray;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,22 +28,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
-import java.util.stream.Collectors;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
-@Slf4j
+@Log4j2
+@RequiredArgsConstructor
 public class VisualSearchService {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    private ProductRepo productRepo;
+    private final JdbcTemplate jdbcTemplate;
+    private final ProductRepo productRepo;
+    private final RestClient restClient;
 
     // DJL Model details (ResNet50 is standard)
     private ZooModel<Image, float[]> model;
 
-    public VisualSearchService() {
+    @jakarta.annotation.PostConstruct
+    public void init() {
         try {
             // Initialize model on startup
             this.model = loadModel();
@@ -61,11 +58,9 @@ public class VisualSearchService {
         Translator<Image, float[]> translator = new Translator<Image, float[]>() {
             @Override
             public NDList processInput(TranslatorContext ctx, Image input) {
-                // Resize to 224x224 (ResNet standard) and convert to Tensor
-                NDArray array = input.toNDArray(ctx.getNDManager());
+                var array = input.toNDArray(ctx.getNDManager());
                 try {
-                     // Resize expects NDArray
-                     array = new Resize(224, 224).transform(array);
+                    array = new Resize(224, 224).transform(array);
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to resize image", e);
                 }
@@ -74,22 +69,20 @@ public class VisualSearchService {
 
             @Override
             public float[] processOutput(TranslatorContext ctx, NDList list) {
-                // Return the flatten embedding
                 return list.singletonOrThrow().toFloatArray();
             }
-            
-            // Required for interface implementation
+
             @Override
             public Batchifier getBatchifier() {
-               return Batchifier.STACK;
+                return Batchifier.STACK;
             }
         };
 
         Criteria<Image, float[]> criteria = Criteria.builder()
                 .setTypes(Image.class, float[].class)
-                .optModelUrls("djl://ai.djl.pytorch/resnet50") // Auto-download ResNet50
+                .optArtifactId("resnet50")
                 .optEngine("PyTorch")
-                .optOptions(Map.of("layers", "50")) // Fixed: optConfig -> optOptions
+                .optOptions(Map.of("layers", "50"))
                 .optTranslator(translator)
                 .optProgress(new ProgressBar())
                 .build();
@@ -104,12 +97,11 @@ public class VisualSearchService {
         }
 
         try {
-            Image img = ImageFactory.getInstance().fromInputStream(new ByteArrayInputStream(imageBytes));
-            
-            float[] embedding = extractFeatureVector(img);
-            if (embedding == null) return new ArrayList<>();
+            var img = ImageFactory.getInstance().fromInputStream(new ByteArrayInputStream(imageBytes));
+            var embedding = extractFeatureVector(img);
+            if (embedding == null)
+                return new ArrayList<>();
 
-            // Perform Vector Search in Postgres (ParadeDB/pgvector)
             return findSimilarProducts(embedding);
 
         } catch (Exception e) {
@@ -125,50 +117,45 @@ public class VisualSearchService {
     }
 
     private List<ProductDTO> findSimilarProducts(float[] embedding) {
-        // pgvector query: SELECT * FROM products ORDER BY feature_vector <-> '[0.1, 0.2, ...]' LIMIT 5
-        
-        // Convert array to string format for SQL: '[0.1,0.2,...]'
-        String vectorStr = Arrays.toString(embedding); 
+        var vectorStr = Arrays.toString(embedding);
 
-        // Native Query
-        String sql = "SELECT product_id, product_name, item_code, price, image, description " +
-                     "FROM products " +
-                     "ORDER BY feature_vector <-> ?::vector LIMIT 5";
+        var sql = "SELECT product_id, product_name, item_code, price, image, description " +
+                "FROM products " +
+                "ORDER BY feature_vector <-> ?::vector LIMIT 5";
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            ProductDTO dto = new ProductDTO();
-            dto.setProductId(rs.getLong("product_id"));
-            dto.setProductName(rs.getString("product_name"));
-            dto.setItemCode(rs.getString("item_code"));
-            dto.setPrice(rs.getDouble("price"));
-            dto.setImage(rs.getString("image"));
-            dto.setDescription(rs.getString("description"));
-            return dto;
-        }, vectorStr);
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new ProductDTO(
+                rs.getLong("product_id"),
+                rs.getString("product_name"),
+                rs.getString("item_code"),
+                rs.getString("image"),
+                rs.getString("description"),
+                0, // quantity not in this projection
+                rs.getDouble("price"),
+                0.0, // discount not in this projection
+                rs.getDouble("price"), // specialPrice default
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                null), vectorStr); // averageRating
     }
-    
-    @Autowired
-    private org.springframework.web.client.RestClient restClient;
 
-    // Method to be called during Product Sync to generate and save vector
     public void updateProductVector(Long productId, String imageUrl) {
-        if (imageUrl == null || imageUrl.isBlank()) return;
+        if (imageUrl == null || imageUrl.isBlank())
+            return;
 
         try {
-            // Calculate embeddings
-             byte[] imageBytes = restClient.get()
+            var imageBytes = restClient.get()
                     .uri(imageUrl)
                     .retrieve()
                     .body(byte[].class);
 
             if (imageBytes != null) {
-                Image img = ImageFactory.getInstance().fromInputStream(new ByteArrayInputStream(imageBytes));
-                float[] embedding = extractFeatureVector(img);
-                
+                var img = ImageFactory.getInstance().fromInputStream(new ByteArrayInputStream(imageBytes));
+                var embedding = extractFeatureVector(img);
+
                 if (embedding != null) {
-                    // Update DB using Native Query
-                    String vectorStr = Arrays.toString(embedding);
-                    String sql = "UPDATE products SET feature_vector = ?::vector WHERE product_id = ?";
+                    var vectorStr = Arrays.toString(embedding);
+                    var sql = "UPDATE products SET feature_vector = ?::vector WHERE product_id = ?";
                     jdbcTemplate.update(sql, vectorStr, productId);
                     log.info("Updated Visual Embedding for Product ID: {}", productId);
                 }

@@ -1,34 +1,30 @@
 package com.app.admin.services;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.app.product.entites.Product;
-import com.app.product.entites.ProductVariant;
+import com.app.product.entities.Product;
+import com.app.product.entities.ProductVariant;
 import com.app.product.integration.SyncGateway;
 import com.app.product.repositories.ProductRepo;
 import com.app.product.repositories.ProductVariantRepo;
-
-import lombok.extern.slf4j.Slf4j;
+import com.app.core.multitenancy.Tenant;
+import com.app.core.multitenancy.ERPNextCredentialProvider;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.cache.CacheManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ERPNextProductSyncService {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ERPNextProductSyncService.class);
+    private static final Logger log = LoggerFactory.getLogger(ERPNextProductSyncService.class);
 
     @Autowired
     private RestClient restClient;
@@ -40,26 +36,28 @@ public class ERPNextProductSyncService {
     private ProductVariantRepo variantRepo;
 
     @Autowired
-    private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    private StringRedisTemplate redisTemplate;
 
     @Autowired
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
-
-    @Autowired
-    private com.app.core.multitenancy.ERPNextCredentialProvider credentialProvider;
+    private ERPNextCredentialProvider credentialProvider;
 
     @Autowired
     private SyncGateway syncGateway;
-    
-    @Autowired
-    private org.springframework.cache.CacheManager cacheManager;
 
-    public void syncItems(com.app.core.multitenancy.Tenant tenant) {
+    @Autowired
+    private CacheManager cacheManager;
+
+    public void syncItems(Tenant tenant) {
         log.info("Initiating Product Sync for Tenant: {} via Spring Integration Flow...", tenant.getTenantId());
 
-        // Resolve effective credentials (fallback to global if tenant-specific are missing or empty)
-        String effectiveApiKey = (tenant.getErpNextApiKey() != null && !tenant.getErpNextApiKey().isBlank()) ? tenant.getErpNextApiKey() : credentialProvider.getApiKey();
-        String effectiveApiSecret = (tenant.getErpNextApiSecret() != null && !tenant.getErpNextApiSecret().isBlank()) ? tenant.getErpNextApiSecret() : credentialProvider.getApiSecret();
+        // Resolve effective credentials (fallback to global if tenant-specific are
+        // missing or empty)
+        String effectiveApiKey = (tenant.getErpNextApiKey() != null && !tenant.getErpNextApiKey().isBlank())
+                ? tenant.getErpNextApiKey()
+                : credentialProvider.getApiKey();
+        String effectiveApiSecret = (tenant.getErpNextApiSecret() != null && !tenant.getErpNextApiSecret().isBlank())
+                ? tenant.getErpNextApiSecret()
+                : credentialProvider.getApiSecret();
         String effectiveUrl = tenant.getErpNextUrl();
         if (effectiveUrl == null || effectiveUrl.isBlank()) {
             effectiveUrl = credentialProvider.getBaseUrl();
@@ -84,7 +82,7 @@ public class ERPNextProductSyncService {
         syncStock(tenant);
     }
 
-    public void syncStock(com.app.core.multitenancy.Tenant tenant) {
+    public void syncStock(Tenant tenant) {
         String effectiveApiKey = tenant.getErpNextApiKey() != null ? tenant.getErpNextApiKey()
                 : credentialProvider.getApiKey();
         String effectiveApiSecret = tenant.getErpNextApiSecret() != null ? tenant.getErpNextApiSecret()
@@ -139,10 +137,12 @@ public class ERPNextProductSyncService {
                         }
                     }
                     log.info("Synced stock levels for {} items from ERPNext", rawList.size());
-                    
+
                     // Invalidate Cache to reflect stock updates
-                    if (cacheManager.getCache("products") != null) cacheManager.getCache("products").clear();
-                    if (cacheManager.getCache("product") != null) cacheManager.getCache("product").clear();
+                    if (cacheManager.getCache("products") != null)
+                        cacheManager.getCache("products").clear();
+                    if (cacheManager.getCache("product") != null)
+                        cacheManager.getCache("product").clear();
                 }
             }
         } catch (Exception e) {
@@ -161,7 +161,8 @@ public class ERPNextProductSyncService {
 
             ResponseEntity<Map<String, Object>> response = restClient.get()
                     .uri(url)
-                    .header("Authorization", "token " + credentialProvider.getApiKey() + ":" + credentialProvider.getApiSecret())
+                    .header("Authorization",
+                            "token " + credentialProvider.getApiKey() + ":" + credentialProvider.getApiSecret())
                     .retrieve()
                     .toEntity(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
                     });
@@ -171,69 +172,21 @@ public class ERPNextProductSyncService {
                 if (dataObj instanceof List<?> rawList && !rawList.isEmpty()) {
                     Map<?, ?> bin = (Map<?, ?>) rawList.get(0);
                     Double qty = getDouble(bin.get("actual_qty"));
-                    
+
                     // Update Cache while we have the fresh value
                     String redisKey = "inventory:stock:" + itemCode;
                     redisTemplate.opsForValue().set(redisKey, String.valueOf(qty.intValue()));
-                    
+
                     return qty.intValue();
                 }
             }
             return 0; // Item likely has no stock entry yet
         } catch (Exception e) {
             log.error("Failed to fetch stock for {}: {}", itemCode, e.getMessage());
-            // Fallback to Redis if API fails? Or return 0? 
+            // Fallback to Redis if API fails? Or return 0?
             // For now, fail safe 0.
             return 0;
         }
-    }
-
-    private void saveOrUpdateVariant(Map<String, Object> itemData, String parentItemCode) {
-        String itemCode = (String) itemData.get("name");
-        Product parent = productRepo.findByItemCode(parentItemCode);
-
-        if (parent == null) {
-            log.warn("Parent product {} not found for variant {}. Skipping.", parentItemCode, itemCode);
-            return;
-        }
-
-        ProductVariant variant = variantRepo.findByItemCode(itemCode);
-        if (variant == null) {
-            variant = new ProductVariant();
-            variant.setItemCode(itemCode);
-            variant.setProduct(parent);
-        }
-
-        // In a real scenario, you'd fetch attributes like Color, Size from another API
-        // or fields
-        // For now, we'll try to infer or set defaults
-        variant.setStockQuantity(100);
-
-        // Sync Attributes
-        if (itemData.containsKey("material")) {
-            variant.setMaterial((String) itemData.get("material"));
-        }
-
-        // Extract size/color from itemName if possible (e.g. "T-Shirt - Red - XL")
-        String itemName = (String) itemData.get("item_name");
-        if (itemName != null && itemName.contains("-")) {
-            String[] parts = itemName.split("-");
-            if (parts.length >= 2)
-                variant.setColor(parts[1].trim());
-            if (parts.length >= 3)
-                variant.setSize(parts[2].trim());
-        }
-
-        variantRepo.save(variant);
-        log.info("Synced variant: {} for parent: {}", itemCode, parentItemCode);
-    }
-
-    private String formatImageUrl(String image) {
-        if (image != null && !image.startsWith("http")) {
-            // Use dynamic base URL
-            return credentialProvider.getBaseUrl() + image;
-        }
-        return image;
     }
 
     private Double getDouble(Object obj) {

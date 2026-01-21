@@ -7,11 +7,16 @@ import com.app.shipping.ShipmentService;
 import com.app.order.services.ERPNextService;
 import com.app.product.ProductService;
 import com.app.inventory.InventoryReservationService;
+import com.app.product.payloads.ProductDTO;
+import com.app.commerce.states.OrderStatus;
+import com.app.commerce.states.OrderStateMachine;
+import com.app.order.async.OrderProducer;
+import com.app.core.async.EventProducer;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 import com.app.order.mappers.OrderMapper;
 import org.springframework.context.ApplicationEventPublisher;
@@ -19,15 +24,14 @@ import org.springframework.stereotype.Service;
 import com.app.order.OrderCreatedEvent;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
-import org.jspecify.annotations.NonNull;
 
-import com.app.order.entites.Cart;
-import com.app.order.entites.CartItem;
+import com.app.order.entities.Cart;
+import com.app.order.entities.CartItem;
 import com.app.order.repositories.CartRepo;
-import com.app.order.entites.Order;
-import com.app.order.entites.OrderItem;
-import com.app.order.entites.Payment;
-import com.app.product.entites.Product;
+import com.app.order.entities.Order;
+import com.app.order.entities.OrderItem;
+import com.app.order.entities.Payment;
+import com.app.product.entities.Product;
 import com.app.order.payloads.OrderDTO;
 import com.app.order.payloads.OrderItemDTO;
 import com.app.order.payloads.OrderResponse;
@@ -35,144 +39,100 @@ import com.app.order.repositories.CartItemRepo;
 import com.app.order.repositories.OrderRepo;
 import com.app.order.repositories.OrderItemRepo;
 import com.app.order.repositories.PaymentRepo;
-import com.app.order.repositories.PaymentRepo;
 import com.app.identity.repositories.UserRepo;
 import com.app.product.repositories.ProductRepo;
 
 import org.springframework.transaction.annotation.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import java.io.IOException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Service
 public class OrderServiceImpl implements OrderService {
 
-	@Autowired
-	public UserRepo userRepo;
-
-	@Autowired
-	private ApplicationEventPublisher eventPublisher;
-
-	@Autowired
-	public CartRepo cartRepo;
-
-	@Autowired
-	public OrderRepo orderRepo;
-
-	@Autowired
-	private PaymentRepo paymentRepo;
-
-	@Autowired
-	public OrderItemRepo orderItemRepo;
-
-	@Autowired
-	public CartItemRepo cartItemRepo;
-
-	@Autowired
-	public UserService userService;
-
-	@Autowired
-	public CartService cartService;
-
-	@Autowired
-	public ERPNextService erpNextService;
-
-	@Autowired
-	private OrderMapper orderMapper;
-
-	@Autowired
-	private PaymentService paymentService;
-
-	@Autowired
-	private ShipmentService shipmentService;
-
-	@Autowired
-	private InventoryReservationService inventoryReservationService;
-
-	@Autowired
-	private ProductRepo productRepo;
-
-	@Autowired
-	private com.app.order.async.OrderProducer orderProducer;
-
-	@Autowired
-	private com.app.core.async.EventProducer eventProducer;
-
-	@Autowired
-	private com.app.commerce.states.OrderStateMachine stateMachine;
+	private final UserRepo userRepo;
+	private final ApplicationEventPublisher eventPublisher;
+	private final CartRepo cartRepo;
+	private final OrderRepo orderRepo;
+	private final PaymentRepo paymentRepo;
+	private final OrderItemRepo orderItemRepo;
+	private final CartItemRepo cartItemRepo;
+	private final UserService userService;
+	private final CartService cartService;
+	private final ERPNextService erpNextService;
+	private final OrderMapper orderMapper;
+	private final PaymentService paymentService;
+	private final ShipmentService shipmentService;
+	private final InventoryReservationService inventoryReservationService;
+	private final ProductRepo productRepo;
+	private final OrderProducer orderProducer;
+	private final EventProducer eventProducer;
+	private final OrderStateMachine stateMachine;
 
 	@Override
 	@Transactional
 	public OrderDTO placeOrder(String emailId, Long cartId, String paymentMethod) {
 
-		Cart cart = cartRepo.findCartByEmailAndCartId(emailId, cartId);
+		var cart = cartRepo.findCartByEmailAndCartId(emailId, cartId);
 
 		if (cart == null) {
 			throw new ResourceNotFoundException("Cart", "cartId", cartId);
 		}
 
-		List<CartItem> cartItems = cart.getCartItems();
-		if (cartItems.size() == 0) {
+		var cartItems = cart.getCartItems();
+		if (cartItems.isEmpty()) {
 			throw new APIException("Cart is empty");
 		}
 
-		// 1. Reserve Stock Atomically (Redis)
 		List<CartItem> reservedItems = new ArrayList<>();
 
 		try {
-			for (CartItem item : cartItems) {
-				String itemCode = item.getItemCode();
-				boolean reserved = inventoryReservationService.reserveStock(itemCode, item.getQuantity());
+			for (var item : cartItems) {
+				var itemCode = item.getItemCode();
+				var reserved = inventoryReservationService.reserveStock(itemCode, item.getQuantity());
 				if (reserved) {
 					reservedItems.add(item);
 				} else {
-                    // Start Rollback of previously reserved items
-                    for (CartItem rBox : reservedItems) {
-				        inventoryReservationService.releaseStock(rBox.getItemCode(), rBox.getQuantity());
-			        }
-                    throw new APIException("Out of Stock (or Reservation Failed) for item: " + itemCode);
-                }
+					for (var rBox : reservedItems) {
+						inventoryReservationService.releaseStock(rBox.getItemCode(), rBox.getQuantity());
+					}
+					throw new APIException("Out of Stock (or Reservation Failed) for item: " + itemCode);
+				}
 			}
 		} catch (Exception e) {
-			for (CartItem item : reservedItems) {
+			for (var item : reservedItems) {
 				inventoryReservationService.releaseStock(item.getItemCode(), item.getQuantity());
 			}
 			throw e;
 		}
 
-		// 2. Proceed with DB Order Creation
-		Order order = new Order();
+		var order = new Order();
 		try {
 			order.setEmail(emailId);
 			order.setOrderDate(LocalDate.now());
-
 			order.setTotalAmount(cart.getTotalPrice());
-			
-            // Use strict State ENUM
-            order.setOrderStatus(com.app.commerce.states.OrderStatus.PENDING);
+			order.setOrderStatus(OrderStatus.PENDING);
 
-			Payment payment = new Payment();
+			var payment = new Payment();
 			payment.setOrder(order);
 			payment.setPaymentMethod(paymentMethod);
 
-			payment = paymentRepo.save(payment);
+			var savedPayment = paymentRepo.save(payment);
+			order.setPayment(savedPayment);
 
-			order.setPayment(payment);
+			var savedOrder = orderRepo.save(order);
 
-			Order savedOrder = orderRepo.save(order);
+			List<OrderItem> orderItemsList = new ArrayList<>();
 
-			List<OrderItem> orderItems = new ArrayList<>();
+			for (var cartItem : cartItems) {
+				var orderItem = new OrderItem();
 
-			for (CartItem cartItem : cartItems) {
-				OrderItem orderItem = new OrderItem();
-
-				// Fetch Product
-				Product product = productRepo.findById(cartItem.getProductId())
+				var product = productRepo.findById(cartItem.getProductId())
 						.orElseThrow(
 								() -> new ResourceNotFoundException("Product", "productId", cartItem.getProductId()));
 
@@ -183,53 +143,40 @@ public class OrderServiceImpl implements OrderService {
 				orderItem.setDiscount(cartItem.getDiscount());
 				orderItem.setOrderedPrice(cartItem.getProductPrice());
 				orderItem.setOrder(savedOrder);
-				orderItems.add(orderItem);
+				orderItemsList.add(orderItem);
 			}
 
-			orderItems = orderItemRepo.saveAll(orderItems);
-			savedOrder.setOrderItems(orderItems);
-            
-            // Advance State if payment successful (Simplified flow for now)
-            if (!"RAZORPAY".equalsIgnoreCase(paymentMethod)) {
-                // If COD/Other, assume captured for now logic, or keep PENDING
-                // stateMachine.transition(savedOrder.getOrderStatus(), OrderStatus.PAYMENT_CAPTURED); 
-                // Don't transition yet, let async process do it.
-                
-                // Decoupled: Send to DragonflyDB Queue
- 				orderProducer.sendOrder(savedOrder.getOrderId());
-            }
+			var savedOrderItems = orderItemRepo.saveAll(orderItemsList);
+			savedOrder.setOrderItems(savedOrderItems);
+
+			if (!"RAZORPAY".equalsIgnoreCase(paymentMethod)) {
+				orderProducer.sendOrder(savedOrder.getOrderId());
+			}
 
 			cart.getCartItems().forEach(item -> {
 				cartService.deleteProductFromCart(cartId, item.getProductId());
 			});
 
-			OrderDTO orderDTO = orderMapper.orderToOrderDTO(savedOrder);
-			orderItems.forEach(item -> orderDTO.getOrderItems().add(orderMapper.orderItemToOrderItemDTO(item)));
-
-			eventPublisher.publishEvent(new OrderCreatedEvent(
-					savedOrder.getOrderId(),
-					savedOrder.getEmail(),
-					savedOrder.getTotalAmount() != null ? java.math.BigDecimal.valueOf(savedOrder.getTotalAmount())
-							: java.math.BigDecimal.ZERO));
-
-			return orderDTO;
+			return orderMapper.orderToOrderDTO(savedOrder);
 
 		} catch (Exception e) {
-			for (CartItem item : reservedItems) {
+			for (var item : reservedItems) {
 				inventoryReservationService.releaseStock(item.getItemCode(), item.getQuantity());
 			}
+			log.error("Order placement failed: {}", e.getMessage());
 			throw new APIException("Order placement failed: " + e.getMessage());
 		}
 	}
 
 	@Override
 	public List<OrderDTO> getOrdersByUser(String emailId) {
-		List<Order> orders = orderRepo.findAllByEmail(emailId);
+		var orders = orderRepo.findAllByEmail(emailId);
 
-		List<OrderDTO> orderDTOs = orders.stream().map(orderMapper::orderToOrderDTO)
-				.collect(Collectors.toList());
+		var orderDTOs = orders.stream()
+				.map(orderMapper::orderToOrderDTO)
+				.toList();
 
-		if (orderDTOs.size() == 0) {
+		if (orderDTOs.isEmpty()) {
 			throw new APIException("No orders placed yet by the user with email: " + emailId);
 		}
 
@@ -239,7 +186,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public OrderDTO getOrder(String emailId, Long orderId) {
 
-		Order order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
+		var order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
 
 		if (order == null) {
 			throw new ResourceNotFoundException("Order", "orderId", orderId);
@@ -251,24 +198,22 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public OrderResponse getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
 
-		Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
 				: Sort.by(sortBy).descending();
 
-		Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageOrders = orderRepo.findAll(pageDetails);
+		var orders = pageOrders.getContent();
 
-		Page<Order> pageOrders = orderRepo.findAll(pageDetails);
+		var orderDTOs = orders.stream()
+				.map(orderMapper::orderToOrderDTO)
+				.toList();
 
-		List<Order> orders = pageOrders.getContent();
-
-		List<OrderDTO> orderDTOs = orders.stream().map(orderMapper::orderToOrderDTO)
-				.collect(Collectors.toList());
-
-		if (orderDTOs.size() == 0) {
+		if (orderDTOs.isEmpty()) {
 			throw new APIException("No orders placed yet by the users");
 		}
 
-		OrderResponse orderResponse = new OrderResponse();
-
+		var orderResponse = new OrderResponse();
 		orderResponse.setContent(orderDTOs);
 		orderResponse.setPageNumber(pageOrders.getNumber());
 		orderResponse.setPageSize(pageOrders.getSize());
@@ -282,24 +227,22 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	@Transactional
 	public OrderDTO updateOrder(String emailId, Long orderId, String orderStatusStr) {
-		Order order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
+		var order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
 		if (order == null) {
 			throw new ResourceNotFoundException("Order", "orderId", orderId);
 		}
 
-        // Validate Transition using State Machine
-        try {
-            com.app.commerce.states.OrderStatus current = order.getOrderStatus();
-            com.app.commerce.states.OrderStatus next = com.app.commerce.states.OrderStatus.valueOf(orderStatusStr);
-            
-            // Enforce Rules
-            stateMachine.transition(current, next);
-            
-            order.setOrderStatus(next);
-            
-        } catch (IllegalArgumentException e) {
-             throw new APIException("Invalid Status: " + orderStatusStr);
-        }
+		try {
+			var current = order.getOrderStatus();
+			var next = OrderStatus.valueOf(orderStatusStr);
+
+			stateMachine.transition(current, next);
+			order.setOrderStatus(next);
+
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid Status for Order ID {}: {}", orderId, orderStatusStr);
+			throw new APIException("Invalid Status: " + orderStatusStr);
+		}
 
 		return orderMapper.orderToOrderDTO(order);
 	}
@@ -307,79 +250,89 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	@Transactional
 	public OrderDTO placeMarketplaceOrder(OrderDTO orderDTO) {
-		Order order = new Order();
-		order.setEmail(orderDTO.getEmail());
+		var order = new Order();
+		order.setEmail(orderDTO.email());
 		order.setOrderDate(LocalDate.now());
-		order.setTotalAmount(orderDTO.getTotalAmount() != null ? orderDTO.getTotalAmount() : 0.0);
-        
-        // Marketplace orders might start at PROCESSED or SHIPPED
-        try {
-		    order.setOrderStatus(
-                orderDTO.getOrderStatus() != null ? com.app.commerce.states.OrderStatus.valueOf(orderDTO.getOrderStatus()) : com.app.commerce.states.OrderStatus.PENDING);
-        } catch (Exception e) {
-            order.setOrderStatus(com.app.commerce.states.OrderStatus.PENDING);
-        }
+		order.setTotalAmount(orderDTO.totalAmount() != null ? orderDTO.totalAmount() : 0.0);
 
-		Payment payment = new Payment();
+		try {
+			order.setOrderStatus(
+					orderDTO.orderStatus() != null
+							? OrderStatus.valueOf(orderDTO.orderStatus())
+							: OrderStatus.PENDING);
+		} catch (Exception e) {
+			order.setOrderStatus(OrderStatus.PENDING);
+		}
+
+		var payment = new Payment();
 		payment.setOrder(order);
 		payment.setPaymentMethod("Marketplace");
-		payment = paymentRepo.save(payment);
-		order.setPayment(payment);
+		var savedPayment = paymentRepo.save(payment);
+		order.setPayment(savedPayment);
 
-		Order savedOrder = orderRepo.save(order);
+		var savedOrder = orderRepo.save(order);
 
-		List<OrderItem> orderItems = new ArrayList<>();
-		if (orderDTO.getOrderItems() != null) {
-			for (OrderItemDTO itemDTO : orderDTO.getOrderItems()) {
-				OrderItem orderItem = new OrderItem();
+		List<OrderItem> orderItemsList = new ArrayList<>();
+		if (orderDTO.orderItems() != null) {
+			for (var itemDTO : orderDTO.orderItems()) {
+				var orderItem = new OrderItem();
 
-				Long prodId = itemDTO.getProduct() != null ? itemDTO.getProduct().getProductId() : null;
+				var prodId = itemDTO.product() != null ? itemDTO.product().productId() : null;
+				var itemCode = itemDTO.product() != null ? itemDTO.product().itemCode() : null;
+
+				Product product = null;
+
 				if (prodId != null) {
-					Product product = productRepo.findById(prodId)
+					product = productRepo.findById(prodId)
 							.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", prodId));
+				} else if (itemCode != null) {
+					product = productRepo.findByItemCode(itemCode);
+				}
+
+				if (product != null) {
 					orderItem.setProduct(product);
+				} else {
+					log.warn(
+							"Marketplace Order Item Product Not Found for Item Code: {} (Order email: {}). Proceeding without linking to internal Product.",
+							itemCode, order.getEmail());
 				}
 
 				orderItem.setProductName(
-						itemDTO.getProduct() != null ? itemDTO.getProduct().getProductName() : "Unknown");
-				orderItem.setQuantity(itemDTO.getQuantity());
-				orderItem.setDiscount(itemDTO.getDiscount());
-				orderItem.setOrderedPrice(itemDTO.getOrderedProductPrice());
+						itemDTO.product() != null ? itemDTO.product().productName() : "Unknown");
+				orderItem.setQuantity(itemDTO.quantity());
+				orderItem.setDiscount(itemDTO.discount());
+				orderItem.setOrderedPrice(itemDTO.orderedProductPrice());
 				orderItem.setOrder(savedOrder);
-				orderItems.add(orderItem);
+				orderItemsList.add(orderItem);
 			}
 		}
 
-		orderItems = orderItemRepo.saveAll(orderItems);
-		savedOrder.setOrderItems(orderItems);
+		var savedOrderItems = orderItemRepo.saveAll(orderItemsList);
+		savedOrder.setOrderItems(savedOrderItems);
 
 		orderProducer.sendOrder(savedOrder.getOrderId());
 
-		OrderDTO result = orderMapper.orderToOrderDTO(savedOrder);
-		orderItems.forEach(item -> result.getOrderItems().add(orderMapper.orderItemToOrderItemDTO(item)));
-
-		return result;
+		return orderMapper.orderToOrderDTO(savedOrder);
 	}
 
 	@Override
 	@Transactional
 	public OrderDTO cancelOrder(String emailId, Long orderId) {
-		Order order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
+		var order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
 
 		if (order == null) {
 			throw new ResourceNotFoundException("Order", "orderId", orderId);
 		}
 
-        // State Machine Check
-        if (!stateMachine.canCancel(order.getOrderStatus())) {
-             throw new APIException("Order cannot be cancelled in state: " + order.getOrderStatus());
-        }
+		if (!stateMachine.canCancel(order.getOrderStatus())) {
+			throw new APIException("Order cannot be cancelled in state: " + order.getOrderStatus());
+		}
 
 		if (order.getShipment() != null) {
 			try {
 				shipmentService.cancelShipment(order.getShipment().getShipmentId());
 			} catch (Exception e) {
-				System.err.println(">>> Error cancelling shipment: " + e.getMessage());
+				log.error("Error cancelling shipment {}: {}", order.getShipment().getShipmentId(), e.getMessage());
 			}
 		}
 
@@ -388,21 +341,22 @@ public class OrderServiceImpl implements OrderService {
 				paymentService.initiateRefund(order.getPayment().getPgPaymentId(), null,
 						"Customer requested cancellation");
 			} catch (Exception e) {
-				System.err.println(">>> Error initiating refund: " + e.getMessage());
+				log.error("Error initiating refund for payment {}: {}", order.getPayment().getPgPaymentId(),
+						e.getMessage());
 			}
 		}
 
 		if (order.getErpNextOrderName() != null) {
 			try {
-                // Async Cancellation
-                eventProducer.publish("cancellation_events", order.getErpNextOrderName());
+				eventProducer.publish("cancellation_events", order.getErpNextOrderName());
 			} catch (Exception e) {
-				System.err.println(">>> Error queuing cancellation for ERPNext: " + e.getMessage());
+				log.error("Error queuing cancellation for ERPNext Order {}: {}", order.getErpNextOrderName(),
+						e.getMessage());
 			}
 		}
 
-		order.setOrderStatus(com.app.commerce.states.OrderStatus.CANCELLED);
-		Order savedOrder = orderRepo.save(order);
+		order.setOrderStatus(OrderStatus.CANCELLED);
+		var savedOrder = orderRepo.save(order);
 
 		return orderMapper.orderToOrderDTO(savedOrder);
 	}

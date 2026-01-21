@@ -1,6 +1,6 @@
 package com.app.shipping;
 
-import com.app.order.entites.Shipment;
+import com.app.order.entities.Shipment;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;

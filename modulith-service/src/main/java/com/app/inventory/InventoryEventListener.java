@@ -10,17 +10,7 @@ public class InventoryEventListener {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(InventoryEventListener.class);
 
-    private final InventoryReservationService inventoryService;
-
-    public InventoryEventListener(InventoryReservationService inventoryService) {
-        this.inventoryService = inventoryService;
-        // TODO:
-        // - [ ] Standardize on stable Java 25 / Spring 7 (No Preview)
-        // - [ ] Select optimized JDK distribution (Liberica JDK for CRaC)
-        // - [x] Implement Unified API Versioning (/api/v1)
-        // - [ ] Verify compilation and startup on Java 25 (Delombok workaround)
-        // - [x] Implement cross-module communication via Spring Modulith Events
-        // - [/] Phase 3: High-Performance Optimization (CRaC, Resilience, Zero-Copy)
+    public InventoryEventListener() {
     }
 
     @ApplicationModuleListener

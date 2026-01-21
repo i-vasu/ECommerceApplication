@@ -5,7 +5,7 @@ import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Component;
 
-import com.app.order.entites.Order;
+import com.app.order.entities.Order;
 import com.app.order.repositories.OrderRepo;
 import com.app.order.services.ERPNextService;
 

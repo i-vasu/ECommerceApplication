@@ -5,8 +5,8 @@ import com.app.commerce.pricing.contracts.OrderSummary;
 import com.app.commerce.pricing.contracts.OrderTotal;
 import com.app.commerce.pricing.contracts.OrderTotalInput;
 import com.app.order.repositories.CartRepo;
-import com.app.order.entites.Cart;
-import com.app.order.entites.CartItem;
+import com.app.order.entities.Cart;
+import com.app.order.entities.CartItem;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

@@ -1,15 +1,15 @@
 package com.app.order.user;
 
-import java.util.List;
-
 import com.app.identity.entities.Address;
-import com.app.order.payloads.AddressDTO;
+import com.app.identity.payloads.AddressDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AddressService {
 
 	AddressDTO createAddress(AddressDTO addressDTO);
 
-	org.springframework.data.domain.Page<AddressDTO> getAddresses(org.springframework.data.domain.Pageable pageable);
+	Page<AddressDTO> getAddresses(Pageable pageable);
 
 	AddressDTO getAddress(Long addressId);
 

@@ -14,8 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.app.identity.entities.Address;
-import com.app.order.entites.Order;
-import com.app.order.entites.OrderItem;
+import com.app.order.entities.Order;
+import com.app.order.entities.OrderItem;
 import com.app.identity.entities.User;
 import com.app.core.ResourceNotFoundException;
 import com.app.order.external.ShiprocketClient;

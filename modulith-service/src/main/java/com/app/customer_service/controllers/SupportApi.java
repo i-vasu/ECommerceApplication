@@ -1,18 +1,16 @@
 package com.app.customer_service.controllers;
 
-import com.app.order.entites.SupportTicket;
+import com.app.order.entities.SupportTicket;
 import com.app.order.payloads.TicketDTO;
-import com.app.order.entites.TicketMessage;
+import com.app.order.entities.TicketMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @Tag(name = "Support Ticket", description = "Customer Support Ticket Management")
 @SecurityRequirement(name = "E-Commerce Application")

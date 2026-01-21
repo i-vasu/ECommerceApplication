@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,8 +21,11 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.validation.constraints.Email;
-import com.app.order.entites.Cart;
+import com.app.order.entities.Cart;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -63,8 +70,8 @@ public class User {
 	@Column(name = "reward_points")
 	private Integer rewardPoints = 0;
 
-    @Column(name = "customer_group")
-    private String customerGroup = "RETAIL"; // Default to RETAIL
+	@Column(name = "customer_group")
+	private String customerGroup = "RETAIL"; // Default to RETAIL
 
 	@OneToOne(mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, orphanRemoval = true)
 	private Cart cart;
@@ -79,14 +86,40 @@ public class User {
 	private String resetToken;
 
 	@Column(name = "reset_token_expiry")
-	private java.time.LocalDateTime resetTokenExpiry;
+	private LocalDateTime resetTokenExpiry;
+
+	@Column(name = "avatar_url")
+	private String avatarUrl;
+
+	@Column(name = "date_of_birth")
+	private LocalDate dateOfBirth;
+
+	private String gender;
+
+	@ElementCollection
+	@CollectionTable(name = "user_preferences", joinColumns = @JoinColumn(name = "user_id"))
+	@MapKeyColumn(name = "pref_key")
+	@Column(name = "pref_value")
+	private Map<String, String> preferences = new HashMap<>();
+
+	@ManyToMany
+	@JoinTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "friend_id"))
+	private Set<User> friends = new HashSet<>();
+
+	@ElementCollection
+	@CollectionTable(name = "user_payment_methods", joinColumns = @JoinColumn(name = "user_id"))
+	@Column(name = "vault_token")
+	private Set<String> savedPaymentMethods = new HashSet<>();
+
+	@Column(name = "account_status")
+	private String accountStatus = "ACTIVE"; // ACTIVE, DEACTIVATED
 
 	public User() {
 	}
 
 	public User(Long userId, String firstName, String lastName, String mobileNumber, String email, String password,
 			Set<Role> roles, List<Address> addresses, Integer rewardPoints, Cart cart, String verificationCode,
-			boolean isVerified, String resetToken, java.time.LocalDateTime resetTokenExpiry) {
+			boolean isVerified, String resetToken, LocalDateTime resetTokenExpiry) {
 		this.userId = userId;
 		this.firstName = firstName;
 		this.lastName = lastName;
@@ -207,11 +240,67 @@ public class User {
 		this.resetToken = resetToken;
 	}
 
-	public java.time.LocalDateTime getResetTokenExpiry() {
+	public LocalDateTime getResetTokenExpiry() {
 		return resetTokenExpiry;
 	}
 
-	public void setResetTokenExpiry(java.time.LocalDateTime resetTokenExpiry) {
+	public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
 		this.resetTokenExpiry = resetTokenExpiry;
+	}
+
+	public String getAvatarUrl() {
+		return avatarUrl;
+	}
+
+	public void setAvatarUrl(String avatarUrl) {
+		this.avatarUrl = avatarUrl;
+	}
+
+	public LocalDate getDateOfBirth() {
+		return dateOfBirth;
+	}
+
+	public void setDateOfBirth(LocalDate dateOfBirth) {
+		this.dateOfBirth = dateOfBirth;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public Map<String, String> getPreferences() {
+		return preferences;
+	}
+
+	public void setPreferences(Map<String, String> preferences) {
+		this.preferences = preferences;
+	}
+
+	public Set<User> getFriends() {
+		return friends;
+	}
+
+	public void setFriends(Set<User> friends) {
+		this.friends = friends;
+	}
+
+	public Set<String> getSavedPaymentMethods() {
+		return savedPaymentMethods;
+	}
+
+	public void setSavedPaymentMethods(Set<String> savedPaymentMethods) {
+		this.savedPaymentMethods = savedPaymentMethods;
+	}
+
+	public String getAccountStatus() {
+		return accountStatus;
+	}
+
+	public void setAccountStatus(String accountStatus) {
+		this.accountStatus = accountStatus;
 	}
 }

@@ -3,7 +3,6 @@ package com.app.marketplace.adapter;
 import com.app.order.payloads.OrderDTO;
 import com.app.marketplace.service.NormalizationEngine;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -17,9 +16,6 @@ public class AmazonAdapter implements MarketplaceAdapter {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AmazonAdapter.class);
 
     private final NormalizationEngine normalizationEngine;
-
-    // In a real scenario, this would be injected value
-    private final String spApiSecret = "AMAZON_SECRET";
 
     @Override
     public List<OrderDTO> fetchOrders() {

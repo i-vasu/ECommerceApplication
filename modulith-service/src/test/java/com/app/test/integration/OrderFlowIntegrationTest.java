@@ -1,8 +1,9 @@
 package com.app.test.integration;
 
-import com.app.order.entites.Order;
-import com.app.order.entites.OrderItem;
-import com.app.product.entites.Product;
+import com.app.commerce.states.OrderStatus;
+import com.app.order.entities.Order;
+import com.app.order.entities.OrderItem;
+import com.app.product.entities.Product;
 import com.app.identity.entities.User;
 import com.app.order.repositories.OrderRepo;
 import com.app.product.repositories.ProductRepo;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,7 +60,7 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         // When: Order is created
         Order order = new Order();
         order.setEmail(user.getEmail());
-        order.setOrderStatus("PLACED");
+        order.setOrderStatus(OrderStatus.PENDING);
         order.setTotalAmount(99.99);
 
         OrderItem orderItem = new OrderItem();
@@ -75,7 +75,9 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
 
         // Then: Order is persisted correctly
         assertThat(savedOrder.getOrderId()).isNotNull();
-        assertThat(savedOrder.getOrderStatus()).isEqualTo("PLACED");
+        // 3. Verify Order Created
+        Order orderFromRepo = orderRepo.findAll().get(0);
+        assertThat(orderFromRepo.getOrderStatus()).isEqualTo(OrderStatus.PENDING); // Changed to enum comparison
         assertThat(savedOrder.getTotalAmount()).isEqualTo(99.99);
         assertThat(savedOrder.getOrderItems()).hasSize(1);
 
@@ -91,7 +93,7 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         for (int i = 0; i < 5; i++) {
             Order order = new Order();
             order.setEmail("user" + i + "@test.com");
-            order.setOrderStatus("PLACED");
+            order.setOrderStatus(OrderStatus.PENDING);
             order.setTotalAmount(100.0);
             orderRepo.save(order);
         }

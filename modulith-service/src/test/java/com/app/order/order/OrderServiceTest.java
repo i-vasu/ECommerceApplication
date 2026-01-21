@@ -18,9 +18,9 @@ import com.app.cart.CartService;
 import com.app.core.APIException;
 import com.app.identity.repositories.UserRepo;
 import com.app.inventory.InventoryReservationService;
-import com.app.order.entites.Cart;
-import com.app.order.entites.CartItem;
-import com.app.order.entites.Payment;
+import com.app.order.entities.Cart;
+import com.app.order.entities.CartItem;
+import com.app.order.entities.Payment;
 import com.app.order.mappers.OrderMapper;
 import com.app.order.repositories.CartRepo;
 import com.app.order.repositories.OrderRepo;
@@ -32,28 +32,39 @@ import com.app.product.repositories.ProductRepo;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
-    @Mock private UserRepo userRepo;
-    @Mock private ApplicationEventPublisher eventPublisher;
-    @Mock private CartRepo cartRepo;
-    @Mock private OrderRepo orderRepo;
-    @Mock private PaymentRepo paymentRepo;
-    @Mock private OrderItemRepo orderItemRepo;
-    @Mock private CartService cartService;
-    @Mock private ERPNextService erpNextService;
-    @Mock private OrderMapper orderMapper;
-    @Mock private InventoryReservationService inventoryReservationService;
-    @Mock private ProductRepo productRepo;
-    
+    @Mock
+    private UserRepo userRepo;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private CartRepo cartRepo;
+    @Mock
+    private OrderRepo orderRepo;
+    @Mock
+    private PaymentRepo paymentRepo;
+    @Mock
+    private OrderItemRepo orderItemRepo;
+    @Mock
+    private CartService cartService;
+    @Mock
+    private ERPNextService erpNextService;
+    @Mock
+    private OrderMapper orderMapper;
+    @Mock
+    private InventoryReservationService inventoryReservationService;
+    @Mock
+    private ProductRepo productRepo;
+
     @InjectMocks
     private OrderServiceImpl orderService;
-    
+
     @Test
     void placeOrder_shouldReleaseStock_whenOrderCreationFails() {
         // Arrange
         String email = "test@test.com";
         Long cartId = 1L;
         String payMethod = "COD";
-        
+
         Cart cart = new Cart();
         cart.setCartId(cartId);
         cart.setTotalPrice(100.0);
@@ -63,17 +74,17 @@ class OrderServiceTest {
         item.setProductId(10L);
         item.setProductPrice(50.0);
         cart.setCartItems(Collections.singletonList(item));
-        
+
         when(cartRepo.findCartByEmailAndCartId(email, cartId)).thenReturn(cart);
         // Reserve success
         when(inventoryReservationService.reserveStock("ITEM-1", 2)).thenReturn(true);
         // DB Failure simulation (e.g. Payment save fails)
         when(paymentRepo.save(any(Payment.class))).thenThrow(new RuntimeException("DB Error"));
-        
+
         // Act & Assert
         // Expect APIException which wraps the runtime exception
         assertThrows(APIException.class, () -> orderService.placeOrder(email, cartId, payMethod));
-        
+
         // Assert Stock Release
         verify(inventoryReservationService).releaseStock("ITEM-1", 2);
     }

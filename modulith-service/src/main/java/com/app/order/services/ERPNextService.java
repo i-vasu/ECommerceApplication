@@ -1,11 +1,12 @@
 package com.app.order.services;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -14,30 +15,36 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.app.search.services.SearchService;
 import com.app.product.payloads.ProductDTO;
-import com.app.order.entites.Order;
-import com.app.order.entites.OrderItem;
+import com.app.order.entities.Order;
+import com.app.order.entities.OrderItem;
+import com.app.order.entities.Shipment;
 import com.app.identity.entities.User;
+import com.app.order.repositories.OrderRepo;
+import com.app.order.repositories.ShipmentRepo;
+import com.app.core.async.EventProducer;
+import com.app.core.events.OrderStatusEvent;
+import com.app.commerce.states.OrderStatus;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import org.springframework.scheduling.annotation.Async;
+import org.slf4j.MDC;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
+@RequiredArgsConstructor
 @Service
 public class ERPNextService {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ERPNextService.class);
-
-    @Autowired
-    @org.springframework.beans.factory.annotation.Qualifier("erpNextRestClient")
-    private RestClient restClient;
-
-    @Autowired
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
-
-    @Autowired
-    private com.app.order.repositories.OrderRepo orderRepo;
-
-    @Autowired(required = false)
-    private SearchService searchService;
-
-    @Autowired
-    private com.app.core.async.EventProducer eventProducer;
+    @Qualifier("erpNextRestClient")
+    private final RestClient restClient;
+    private final ObjectMapper objectMapper;
+    private final OrderRepo orderRepo;
+    private final ShipmentRepo shipmentRepo;
+    private final SearchService searchService;
+    private final EventProducer eventProducer;
 
     @Value("${erpnext.api.base-url:http://localhost:8000}/api/resource/Item")
     private String erpNextUrl;
@@ -56,7 +63,7 @@ public class ERPNextService {
         if (apiKey == null || apiKey.isEmpty())
             return;
         try {
-            String customerUrl = erpNextUrl.replace("Item", "Customer");
+            var customerUrl = erpNextUrl.replace("Item", "Customer");
             Map<String, Object> customer = new HashMap<>();
             customer.put("customer_name", user.getFirstName() + " " + user.getLastName());
             customer.put("customer_type", "Individual");
@@ -70,9 +77,9 @@ public class ERPNextService {
                     .body(customer)
                     .retrieve()
                     .toBodilessEntity();
-            System.out.println(">>> Customer created in ERPNext for: " + user.getEmail());
+            log.info("Customer created in ERPNext for: {}", user.getEmail());
         } catch (Exception e) {
-            System.err.println(">>> Error creating customer in ERPNext: " + e.getMessage());
+            log.error("Error creating customer in ERPNext: {}", e.getMessage());
         }
     }
 
@@ -80,52 +87,51 @@ public class ERPNextService {
         if (apiKey == null || apiKey.isEmpty() || itemCode == null)
             return true;
         try {
-            String binUrl = erpNextUrl.replace("resource/Item", "method/frappe.client.get_value");
-            String url = binUrl + "?doctype=Bin&filters={\"item_code\":\"" + itemCode + "\"}&fieldname=actual_qty";
+            var binUrl = erpNextUrl.replace("resource/Item", "method/frappe.client.get_value");
+            var url = binUrl + "?doctype=Bin&filters={\"item_code\":\"" + itemCode + "\"}&fieldname=actual_qty";
 
-            String response = restClient.get()
+            var response = restClient.get()
                     .uri(url)
                     .header("Authorization", getAuthHeader())
                     .retrieve()
                     .body(String.class);
 
-            JsonNode root = objectMapper.readTree(response);
-            double actualQty = root.has("message") && root.get("message").has("actual_qty")
+            var root = objectMapper.readTree(response);
+            var actualQty = root.has("message") && root.get("message").has("actual_qty")
                     ? root.get("message").get("actual_qty").asDouble()
                     : 0.0;
 
             return actualQty >= quantity;
         } catch (Exception e) {
-            System.err.println(">>> Error checking stock in ERPNext: " + e.getMessage());
+            log.error("Error checking stock in ERPNext: {}", e.getMessage());
             return true;
         }
     }
 
-    @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "erpnext", fallbackMethod = "createSalesOrderFallback")
-    @io.github.resilience4j.retry.annotation.Retry(name = "erpnext")
-    @org.springframework.scheduling.annotation.Async
+    @CircuitBreaker(name = "erpnext", fallbackMethod = "createSalesOrderFallback")
+    @Retry(name = "erpnext")
+    @Async
     public void createSalesOrderAsync(Order order) {
         if (apiKey == null || apiKey.isEmpty()) {
             log.warn("ERPNext API key not configured. Skipping sales order creation for Order: {}", order.getOrderId());
             return;
         }
 
-        org.slf4j.MDC.put("orderId", String.valueOf(order.getOrderId()));
+        MDC.put("orderId", String.valueOf(order.getOrderId()));
         log.info("Creating Sales Order in ERPNext for Order: {}", order.getOrderId());
 
         try {
-            // First, ensure Customer exists
             createCustomerIfNotExists(order);
 
             Map<String, Object> salesOrder = new HashMap<>();
             salesOrder.put("doctype", "Sales Order");
-            salesOrder.put("customer", order.getEmail()); // Using email as customer name/ID
-            salesOrder.put("transaction_date", java.time.LocalDate.now().toString());
-            salesOrder.put("delivery_date", java.time.LocalDate.now().plusDays(7).toString());
-            salesOrder.put("po_no", String.valueOf(order.getOrderId())); // Reference to our Order ID
+            salesOrder.put("customer", order.getEmail());
+            salesOrder.put("transaction_date", LocalDate.now().toString());
+            salesOrder.put("delivery_date", LocalDate.now().plusDays(7).toString());
+            salesOrder.put("po_no", String.valueOf(order.getOrderId()));
 
             List<Map<String, Object>> items = new ArrayList<>();
-            for (OrderItem orderItem : order.getOrderItems()) {
+            for (var orderItem : order.getOrderItems()) {
                 Map<String, Object> item = new HashMap<>();
                 item.put("item_code",
                         orderItem.getItemCode() != null ? orderItem.getItemCode() : orderItem.getProductName());
@@ -134,10 +140,10 @@ public class ERPNextService {
                 items.add(item);
             }
             salesOrder.put("items", items);
-            salesOrder.put("docstatus", 1); // Submit the document immediately
+            salesOrder.put("docstatus", 1);
 
-            String salesOrderUrl = erpNextUrl.replace("Item", "Sales Order");
-            JsonNode response = restClient.post()
+            var salesOrderUrl = erpNextUrl.replace("Item", "Sales Order");
+            var response = restClient.post()
                     .uri(salesOrderUrl)
                     .header("Authorization", getAuthHeader())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -146,7 +152,7 @@ public class ERPNextService {
                     .body(JsonNode.class);
 
             if (response != null && response.has("data") && response.get("data").has("name")) {
-                String erpName = response.get("data").get("name").asText();
+                var erpName = response.get("data").get("name").asText();
                 order.setErpNextOrderName(erpName);
                 orderRepo.save(order);
                 log.info("Sales Order created successfully in ERPNext. Order: {} -> ERPNext: {}", order.getOrderId(),
@@ -154,32 +160,31 @@ public class ERPNextService {
             }
         } catch (Exception e) {
             log.error("Failed to create Sales Order in ERPNext for Order: {}", order.getOrderId(), e);
-            throw e; // Re-throw to trigger circuit breaker
+            throw e;
         } finally {
-            org.slf4j.MDC.remove("orderId");
+            MDC.remove("orderId");
         }
     }
 
     private void createCustomerIfNotExists(Order order) {
         try {
-            // Check if customer exists
-            String customerUrl = erpNextUrl.replace("Item", "Customer") + "/" + order.getEmail();
+            var customerUrl = erpNextUrl.replace("Item", "Customer") + "/" + order.getEmail();
             try {
                 restClient.get().uri(customerUrl).header("Authorization", getAuthHeader()).retrieve()
                         .toBodilessEntity();
-                return; // Customer exists
+                return;
             } catch (Exception e) {
-                // Customer likely doesn't exist, proceed to create
+                // Ignore
             }
 
             Map<String, Object> customer = new HashMap<>();
-            customer.put("customer_name", order.getEmail()); // Use email as name if real name unavailable
+            customer.put("customer_name", order.getEmail());
             customer.put("customer_type", "Individual");
             customer.put("customer_group", "All Customer Groups");
             customer.put("territory", "All Territories");
             customer.put("email_id", order.getEmail());
 
-            String createUrl = erpNextUrl.replace("Item", "Customer");
+            var createUrl = erpNextUrl.replace("Item", "Customer");
             restClient.post()
                     .uri(createUrl)
                     .header("Authorization", getAuthHeader())
@@ -193,50 +198,52 @@ public class ERPNextService {
         }
     }
 
-    // Fallback method when ERPNext is unavailable
     private void createSalesOrderFallback(Order order, Exception e) {
         log.error("ERPNext circuit breaker activated. Fallback triggered for Order: {}. Reason: {}",
                 order.getOrderId(), e.getMessage());
-        // In production, you might:
-        // 1. Publish to DLQ for manual intervention
-        // 2. Store in a "pending sync" table
-        // 3. Send alert to operations team
     }
 
     public void syncProductsFromERPNext() {
         if (apiKey == null || apiKey.isEmpty())
             return;
         try {
-            String url = erpNextUrl
+            var url = erpNextUrl
                     + "?fields=[\"item_code\",\"item_name\",\"description\",\"standard_rate\",\"image\"]";
-            String response = restClient.get()
+            var response = restClient.get()
                     .uri(url)
                     .header("Authorization", getAuthHeader())
                     .retrieve()
                     .body(String.class);
 
-            JsonNode root = objectMapper.readTree(response);
-            JsonNode data = root.get("data");
+            var root = objectMapper.readTree(response);
+            var data = root.get("data");
             List<ProductDTO> products = new ArrayList<>();
             if (data.isArray()) {
-                for (JsonNode node : data) {
-                    ProductDTO p = new ProductDTO();
-                    p.setItemCode(node.get("item_code").asText());
-                    p.setProductName(node.get("item_name").asText());
-                    p.setDescription(node.has("description") ? node.get("description").asText() : "");
-                    p.setPrice(node.has("standard_rate") ? node.get("standard_rate").asDouble() : 0.0);
-                    p.setImage(node.has("image") ? node.get("image").asText() : "default.png");
-                    // Assign a stable Long ID based on hash if needed for DTO requirements
-                    p.setProductId((long) node.get("item_code").asText().hashCode());
+                for (var node : data) {
+                    var itemCode = node.get("item_code").asText();
+                    var p = new ProductDTO(
+                            (long) itemCode.hashCode(),
+                            node.get("item_name").asText(),
+                            itemCode,
+                            node.has("image") ? node.get("image").asText() : "default.png",
+                            node.has("description") ? node.get("description").asText() : "",
+                            0,
+                            node.has("standard_rate") ? node.get("standard_rate").asDouble() : 0.0,
+                            0.0,
+                            node.has("standard_rate") ? node.get("standard_rate").asDouble() : 0.0,
+                            new ArrayList<>(),
+                            new ArrayList<>(),
+                            new ArrayList<>(),
+                            null);
                     products.add(p);
                 }
             }
             if (searchService != null) {
                 searchService.indexProducts(products);
             }
-            System.out.println(">>> Synced " + products.size() + " items from ERPNext.");
+            log.info("Synced {} items from ERPNext.", products.size());
         } catch (Exception e) {
-            System.err.println(">>> Error syncing products: " + e.getMessage());
+            log.error("Error syncing products: {}", e.getMessage());
         }
     }
 
@@ -244,53 +251,45 @@ public class ERPNextService {
         if (apiKey == null || apiKey.isEmpty())
             return;
 
-        List<Order> pendingOrders = orderRepo.findOngoingOrders();
+        var pendingOrders = orderRepo.findOngoingOrders();
 
-        for (Order order : pendingOrders) {
+        for (var order : pendingOrders) {
             try {
-                String erpSalesOrderUrl = erpNextUrl.replace("Item", "Sales Order");
-                String url = erpSalesOrderUrl + "/" + order.getErpNextOrderName();
-                JsonNode response = restClient.get()
+                var erpSalesOrderUrl = erpNextUrl.replace("Item", "Sales Order");
+                var url = erpSalesOrderUrl + "/" + order.getErpNextOrderName();
+                var response = restClient.get()
                         .uri(url)
                         .header("Authorization", getAuthHeader())
                         .retrieve()
                         .body(JsonNode.class);
 
-                    if (response != null && response.has("data")) {
-                    String erpStatus = response.get("data").get("status").asText();
-                    com.app.commerce.states.OrderStatus localStatus = mapErpStatus(erpStatus);
+                if (response != null && response.has("data")) {
+                    var erpStatus = response.get("data").get("status").asText();
+                    var localStatus = mapErpStatus(erpStatus);
 
                     if (localStatus != order.getOrderStatus()) {
                         order.setOrderStatus(localStatus);
 
-                        // Capture Tracking Info if Shipped/Delivered
-                        // ERPNext Delivery Note usually holds this, or custom fields in Sales Order
-                        // For simplicity, we check if "tracking_number" exists in Sales Order custom
-                        // field
                         if (response.get("data").has("tracking_number")) {
-                            // Logic to create/update Shipment entity
                             updateShipmentInfo(order, response.get("data"));
                         }
 
                         orderRepo.save(order);
-                        System.out.println(">>> Order " + order.getOrderId() + " status updated to " + localStatus);
-                        
-                        // Publish Event
+                        log.info("Order {} status updated to {}", order.getOrderId(), localStatus);
+
                         try {
-                            com.app.core.events.OrderStatusEvent event = new com.app.core.events.OrderStatusEvent(
-                                order.getOrderId(), order.getEmail(), localStatus.getValue(), 
-                                (order.getShipment() != null) ? order.getShipment().getAwbNumber() : null,
-                                (order.getShipment() != null) ? order.getShipment().getCarrier() : null
-                            );
+                            var event = new OrderStatusEvent(
+                                    order.getOrderId(), order.getEmail(), localStatus.getValue(),
+                                    (order.getShipment() != null) ? order.getShipment().getAwbNumber() : null,
+                                    (order.getShipment() != null) ? order.getShipment().getCarrier() : null);
                             eventProducer.publish("order_status_events", event);
                         } catch (Exception px) {
-                            System.err.println("Failed to publish status event: " + px.getMessage());
+                            log.error("Failed to publish status event: {}", px.getMessage());
                         }
                     }
                 }
             } catch (Exception e) {
-                System.err
-                        .println(">>> Error fetching status for order " + order.getOrderId() + ": " + e.getMessage());
+                log.error("Error fetching status for order {}: {}", order.getOrderId(), e.getMessage());
             }
         }
     }
@@ -299,7 +298,7 @@ public class ERPNextService {
         if (apiKey == null || apiKey.isEmpty())
             return;
         try {
-            String url = erpNextUrl.replace("Item", "Sales Order") + "/" + erpOrderName;
+            var url = erpNextUrl.replace("Item", "Sales Order") + "/" + erpOrderName;
             Map<String, Object> body = new HashMap<>();
             body.put("status", "Cancelled");
 
@@ -310,22 +309,19 @@ public class ERPNextService {
                     .body(body)
                     .retrieve()
                     .toBodilessEntity();
-            System.out.println(">>> Order " + erpOrderName + " cancelled in ERPNext.");
+            log.info("Order {} cancelled in ERPNext.", erpOrderName);
         } catch (Exception e) {
-            System.err.println(">>> Error cancelling Sales Order in ERPNext: " + e.getMessage());
+            log.error("Error cancelling Sales Order in ERPNext: {}", e.getMessage());
         }
     }
 
-    @Autowired
-    private com.app.order.repositories.ShipmentRepo shipmentRepo;
-
     private void updateShipmentInfo(Order order, JsonNode salesOrderData) {
         try {
-            com.app.order.entites.Shipment shipment = order.getShipment();
+            var shipment = order.getShipment();
             if (shipment == null) {
-                shipment = new com.app.order.entites.Shipment();
+                shipment = new Shipment();
                 shipment.setOrder(order);
-                shipment.setCarrier("ERPNext"); // Default carrier if from ERP
+                shipment.setCarrier("ERPNext");
                 shipment.setStatus("SHIPPED");
                 order.setShipment(shipment);
             }
@@ -337,7 +333,6 @@ public class ERPNextService {
                 shipment.setCourierName(salesOrderData.get("courier_name").asText());
             }
 
-            // If we have specific shipment ID from ERP
             if (salesOrderData.has("delivery_note")) {
                 shipment.setExternalShipmentId(salesOrderData.get("delivery_note").asText());
             }
@@ -349,13 +344,13 @@ public class ERPNextService {
         }
     }
 
-    private com.app.commerce.states.OrderStatus mapErpStatus(String erpStatus) {
+    private OrderStatus mapErpStatus(String erpStatus) {
         return switch (erpStatus.toUpperCase()) {
-            case "COMPLETED" -> com.app.commerce.states.OrderStatus.DELIVERED;
-            case "CANCELLED" -> com.app.commerce.states.OrderStatus.CANCELLED;
-            case "DRAFT" -> com.app.commerce.states.OrderStatus.PENDING;
-            case "ON HOLD" -> com.app.commerce.states.OrderStatus.PROCESSING; // Fallback
-            default -> com.app.commerce.states.OrderStatus.PROCESSING;
+            case "COMPLETED" -> OrderStatus.DELIVERED;
+            case "CANCELLED" -> OrderStatus.CANCELLED;
+            case "DRAFT" -> OrderStatus.PENDING;
+            case "ON HOLD" -> OrderStatus.PROCESSING; // Fallback
+            default -> OrderStatus.PROCESSING;
         };
     }
 }

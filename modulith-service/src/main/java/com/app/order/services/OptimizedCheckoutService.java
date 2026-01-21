@@ -13,7 +13,7 @@ import com.app.identity.AddressValidationService.AddressValidation;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.app.order.entites.Cart;
+import com.app.order.entities.Cart;
 import com.app.identity.entities.Address;
 
 /**

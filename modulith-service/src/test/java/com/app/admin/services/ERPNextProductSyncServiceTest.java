@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.client.RestClient;
@@ -87,7 +86,7 @@ class ERPNextProductSyncServiceTest {
                 eq("gKey"),
                 eq("gSecret"));
     }
-    
+
     @Test
     void syncItems_shouldFixUrl_whenMissingProtocol() {
         // Arrange
@@ -96,10 +95,10 @@ class ERPNextProductSyncServiceTest {
         tenant.setErpNextUrl("localhost:8000"); // Missing http
         tenant.setErpNextApiKey("k");
         tenant.setErpNextApiSecret("s");
-        
+
         // Act
         syncService.syncItems(tenant);
-        
+
         // Assert: Check that http:// is prepended
         verify(syncGateway).startSync(eq("MANUAL_TRIGGER_t3"),
                 eq("http://localhost:8000/api/resource/Item"),

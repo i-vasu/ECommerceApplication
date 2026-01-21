@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.order.entites.Order;
-import com.app.order.entites.Payment;
+import com.app.order.entities.Order;
+import com.app.order.entities.Payment;
 import com.app.core.ResourceNotFoundException;
 import com.app.order.payloads.PaymentDTO;
 import com.app.order.repositories.PaymentRepo;
@@ -18,6 +18,11 @@ import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
 import com.app.order.payloads.OrderPaidEvent;
+import com.app.payment.mappers.PaymentMapper;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.app.core.async.EventProducer;
+import com.app.commerce.states.OrderStatus;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
@@ -35,16 +40,16 @@ public class PaymentServiceImpl implements PaymentService {
     private PaymentRepo paymentRepo;
 
     @Autowired
-    private com.app.payment.mappers.PaymentMapper paymentMapper;
+    private PaymentMapper paymentMapper;
 
     @Autowired
-    private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    private StringRedisTemplate redisTemplate;
 
     @Autowired
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
     @Autowired
-    private com.app.core.async.EventProducer eventProducer;
+    private EventProducer eventProducer;
 
     @Override
     @Transactional
@@ -59,7 +64,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepo.save(payment);
 
         Order order = payment.getOrder();
-        order.setOrderStatus(com.app.commerce.states.OrderStatus.PAYMENT_CAPTURED);
+        order.setOrderStatus(OrderStatus.PAYMENT_CAPTURED);
         orderRepo.save(order);
 
         // Publish Events for Async Workflows (Replacing RabbitMQ with DragonflyDB
@@ -72,19 +77,23 @@ public class PaymentServiceImpl implements PaymentService {
                     order.getTotalAmount(),
                     pgPaymentId);
 
-            eventProducer.publish("payment_events", event); // Unified stream for Payment/Order Events? 
+            eventProducer.publish("payment_events", event); // Unified stream for Payment/Order Events?
             // Wait, previous code used "order-events". StreamConfig used "orders_stream".
-            // I should stick to constants in RedisStreamConfig if possible, or just string literals consistent with plan.
+            // I should stick to constants in RedisStreamConfig if possible, or just string
+            // literals consistent with plan.
             // Plan said "payment_success_stream" or shared.
-            // Let's use "payment_events" for clarity, or "orders_stream" if we want unified timeline.
+            // Let's use "payment_events" for clarity, or "orders_stream" if we want unified
+            // timeline.
             // NotificationConsumer listens to "orders_stream" (Order Placed).
             // It should also listen to "payment_events".
-            
-            // I'll use "payment_events". I need to update RedisStreamConfig to listen to this too?
-            // NotificationConsumer logic (Line 23) checked `if (streamKey.contains("orders_stream"))`.
+
+            // I'll use "payment_events". I need to update RedisStreamConfig to listen to
+            // this too?
+            // NotificationConsumer logic (Line 23) checked `if
+            // (streamKey.contains("orders_stream"))`.
             // I'll update NotificationConsumer to handle payment events too.
             // For now, publish to "payment_events".
-            
+
         } catch (Exception e) {
             System.err.println("Failed to publish payment event: " + e.getMessage());
         }
@@ -144,10 +153,10 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         try {
-             // Validate signature using Razorpay Utils
-             // The secret is injected via @Value("${razorpay.key.secret}")
+            // Validate signature using Razorpay Utils
+            // The secret is injected via @Value("${razorpay.key.secret}")
             if (this.secret == null || this.secret.isEmpty()) {
-                 throw new RuntimeException("Razorpay secret not configured");
+                throw new RuntimeException("Razorpay secret not configured");
             }
 
             JSONObject options = new JSONObject();
@@ -177,12 +186,12 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public Map<String, Object> initiateRefund(String paymentId, Long amount, String notes) {
         try {
-            org.json.JSONObject refundRequest = new org.json.JSONObject();
+            JSONObject refundRequest = new JSONObject();
             if (amount != null) {
                 refundRequest.put("amount", amount);
             }
             if (notes != null && !notes.isEmpty()) {
-                org.json.JSONObject notesJson = new org.json.JSONObject();
+                JSONObject notesJson = new JSONObject();
                 notesJson.put("reason", notes);
                 refundRequest.put("notes", notesJson);
             }
@@ -190,7 +199,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             com.razorpay.Refund refund = razorpayClient.payments.refund(paymentId, refundRequest);
 
-            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            Map<String, Object> response = new HashMap<>();
             response.put("refund_id", refund.get("id"));
             response.put("payment_id", refund.get("payment_id"));
             response.put("amount", refund.get("amount"));
@@ -204,11 +213,11 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public java.util.Map<String, Object> getPaymentDetails(String paymentId) {
+    public Map<String, Object> getPaymentDetails(String paymentId) {
         try {
             com.razorpay.Payment payment = razorpayClient.payments.fetch(paymentId);
 
-            java.util.Map<String, Object> details = new java.util.HashMap<>();
+            Map<String, Object> details = new HashMap<>();
             details.put("id", payment.get("id"));
             details.put("amount", payment.get("amount"));
             details.put("currency", payment.get("currency"));

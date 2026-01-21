@@ -1,6 +1,6 @@
 package com.app.customer_service.repositories;
 
-import com.app.order.entites.SupportTicket;
+import com.app.order.entities.SupportTicket;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 

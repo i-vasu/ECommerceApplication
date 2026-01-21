@@ -5,7 +5,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.app.product.entites.Product;
+import com.app.product.entities.Product;
+import com.app.product.entities.Category;
+
+import java.util.List;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface ProductRepo extends JpaRepository<Product, Long> {
@@ -16,11 +21,11 @@ public interface ProductRepo extends JpaRepository<Product, Long> {
 
 	Product findByItemCode(String itemCode);
 
-	java.util.List<Product> findByCategory(com.app.product.entites.Category category);
-	
+	List<Product> findByCategory(Category category);
+
 	// ParadeDB BM25 Search Query
-    // Syntax: WHERE index_name @@@ 'query_string'
-	@org.springframework.data.jpa.repository.Query(value = "SELECT * FROM products p WHERE products_search_idx @@@ :keyword", nativeQuery = true)
-	Page<Product> searchByKeyword(@org.springframework.data.repository.query.Param("keyword") String keyword, Pageable pageable);
+	// Syntax: WHERE index_name @@@ 'query_string'
+	@Query(value = "SELECT * FROM products p WHERE products_search_idx @@@ :keyword", nativeQuery = true)
+	Page<Product> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
 }

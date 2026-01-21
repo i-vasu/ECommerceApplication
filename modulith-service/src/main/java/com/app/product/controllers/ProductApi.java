@@ -1,6 +1,6 @@
 package com.app.product.controllers;
 
-import com.app.product.entites.Product;
+import com.app.product.entities.Product;
 import com.app.product.payloads.ProductDTO;
 import com.app.product.payloads.ProductResponse;
 import com.app.review.payloads.ProductReviewDTO;

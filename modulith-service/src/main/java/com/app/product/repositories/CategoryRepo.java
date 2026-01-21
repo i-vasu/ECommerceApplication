@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.app.product.entites.Category;
+import com.app.product.entities.Category;
 
 import java.util.List;
 

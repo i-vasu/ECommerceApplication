@@ -15,15 +15,18 @@ import lombok.AllArgsConstructor;
 public class OrderTotalInput {
     // Current Cart/Order ID
     private Long id;
-    
+
     // User Email (for personalized discounts)
     private String email;
-    
+
     // Address (for Tax/Shipping)
     private String shippingCountry;
     private String shippingState;
     private String shippingZip;
-    
+
     // Currency
     private String currencyCode;
+
+    // Coupon Code
+    private String couponCode;
 }

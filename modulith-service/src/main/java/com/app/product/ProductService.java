@@ -1,13 +1,15 @@
 package com.app.product;
 
-import java.io.FileNotFoundException;
+import java.util.List;
+import java.nio.file.Path;
 import java.io.IOException;
-import org.jspecify.annotations.Nullable;
+import java.io.FileNotFoundException;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.app.product.entites.Product;
+import com.app.product.entities.Product;
 import com.app.product.payloads.ProductDTO;
 import com.app.product.payloads.ProductResponse;
+import com.app.review.payloads.ProductReviewDTO;
 
 public interface ProductService {
 
@@ -24,9 +26,9 @@ public interface ProductService {
 
 	ProductDTO addMedia(Long productId, MultipartFile file, String type) throws IOException;
 
-	ProductDTO addReview(Long productId, com.app.review.payloads.ProductReviewDTO reviewDTO);
+	ProductDTO addReview(Long productId, ProductReviewDTO reviewDTO);
 
-	java.nio.file.Path getProductImagePath(String fileName) throws FileNotFoundException;
+	Path getProductImagePath(String fileName) throws FileNotFoundException;
 
 	ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder);
@@ -35,9 +37,9 @@ public interface ProductService {
 
 	ProductDTO getProductById(Long productId);
 
-	java.util.List<ProductDTO> getProductsByIds(java.util.List<Long> productIds);
+	List<ProductDTO> getProductsByIds(List<Long> productIds);
 
-	java.util.List<String> getAllCategories();
+	List<String> getAllCategories();
 
-	java.util.List<ProductDTO> getProductsByCategory(String category);
+	List<ProductDTO> getProductsByCategory(String category);
 }

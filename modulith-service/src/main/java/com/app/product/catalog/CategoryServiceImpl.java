@@ -11,8 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.app.product.entites.Category;
-import com.app.product.entites.Product;
+import com.app.product.entities.Category;
+import com.app.product.entities.Product;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
 import com.app.product.payloads.CategoryDTO;

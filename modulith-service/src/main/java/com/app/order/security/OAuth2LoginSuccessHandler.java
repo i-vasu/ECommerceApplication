@@ -50,6 +50,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         String email = oauth2User.getAttribute("email");
         String name = oauth2User.getAttribute("name");
+        String picture = oauth2User.getAttribute("picture"); // Google
+        if (picture == null) {
+            picture = oauth2User.getAttribute("avatar_url"); // GitHub
+        }
 
         if (email == null) {
             // Fallback for Github if 'email' is private/null, use login with mock domain
@@ -84,6 +88,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
             user.setPassword(""); // Empty password for OAuth users
             user.setVerified(true);
+            user.setAvatarUrl(picture);
 
             Role userRole = roleRepo.findById(AppConstants.USER_ID).orElse(null);
             if (userRole != null) {

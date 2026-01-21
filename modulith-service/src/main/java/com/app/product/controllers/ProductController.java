@@ -1,12 +1,10 @@
 package com.app.product.controllers;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,16 +17,29 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.app.product.config.AppConstants;
-import com.app.product.entites.Product;
+import com.app.product.entities.Product;
 import com.app.product.payloads.ProductDTO;
 import com.app.product.payloads.ProductResponse;
 import com.app.product.ProductService;
+import com.app.core.multitenancy.TenantRepository;
+import com.app.admin.services.ERPNextProductSyncService;
+import com.app.admin.services.ERPNextSetupService;
+import com.app.core.multitenancy.TenantContext;
+import com.app.core.multitenancy.Tenant;
+import com.app.core.ResourceNotFoundException;
+import com.app.analytics.services.AnalyticsService;
+import com.app.review.payloads.ProductReviewDTO;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 import java.io.IOException;
+import java.util.List;
+import java.nio.file.Path;
+import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.file.StandardOpenOption;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -39,13 +50,13 @@ public class ProductController implements ProductApi {
 	private ProductService productService;
 
 	@Autowired
-	private com.app.core.multitenancy.TenantRepository tenantRepository;
+	private TenantRepository tenantRepository;
 
 	@Autowired
-	private com.app.admin.services.ERPNextProductSyncService syncService;
+	private ERPNextProductSyncService syncService;
 
 	@Autowired
-	private com.app.admin.services.ERPNextSetupService setupService;
+	private ERPNextSetupService setupService;
 
 	@PostMapping("/admin/setup/erpnext")
 	public ResponseEntity<String> setupERPNext() {
@@ -54,9 +65,9 @@ public class ProductController implements ProductApi {
 
 	@PostMapping("/admin/products/sync")
 	public ResponseEntity<String> syncProducts() {
-		String tenantId = com.app.core.multitenancy.TenantContext.getTenantId();
-		com.app.core.multitenancy.Tenant tenant = tenantRepository.findByTenantId(tenantId)
-				.orElseThrow(() -> new com.app.core.ResourceNotFoundException("Tenant", "id", tenantId));
+		String tenantId = TenantContext.getTenantId();
+		Tenant tenant = tenantRepository.findByTenantId(tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Tenant", "id", tenantId));
 
 		syncService.syncItems(tenant);
 		return new ResponseEntity<String>("Sync initiated for tenant: " + tenantId, HttpStatus.OK);
@@ -84,7 +95,7 @@ public class ProductController implements ProductApi {
 	}
 
 	@Autowired
-	private com.app.analytics.services.AnalyticsService analyticsService;
+	private AnalyticsService analyticsService;
 
 	@GetMapping("/public/products/{productId}")
 	@Override
@@ -102,15 +113,15 @@ public class ProductController implements ProductApi {
 	}
 
 	@GetMapping("/public/products/trending")
-	public ResponseEntity<java.util.List<ProductDTO>> getTrendingProducts() {
-		java.util.List<ProductDTO> trending = analyticsService.getTrendingProducts();
+	public ResponseEntity<List<ProductDTO>> getTrendingProducts() {
+		List<ProductDTO> trending = analyticsService.getTrendingProducts();
 		return new ResponseEntity<>(trending, HttpStatus.OK);
 	}
 
 	@PostMapping("/public/products/batch")
 	@Override
-	public ResponseEntity<java.util.List<ProductDTO>> getProductsByIds(@RequestBody java.util.List<Long> productIds) {
-		java.util.List<ProductDTO> products = productService.getProductsByIds(productIds);
+	public ResponseEntity<List<ProductDTO>> getProductsByIds(@RequestBody List<Long> productIds) {
+		List<ProductDTO> products = productService.getProductsByIds(productIds);
 		return new ResponseEntity<>(products, HttpStatus.OK);
 	}
 
@@ -145,13 +156,13 @@ public class ProductController implements ProductApi {
 	@GetMapping(value = "/public/products/image/{imageName}", produces = MediaType.IMAGE_JPEG_VALUE)
 	public void serveImage(@PathVariable("imageName") String imageName, HttpServletResponse response)
 			throws IOException {
-		java.nio.file.Path imagePath = productService.getProductImagePath(imageName);
+		Path imagePath = productService.getProductImagePath(imageName);
 
-		try (java.nio.channels.FileChannel fileChannel = java.nio.channels.FileChannel.open(imagePath,
-				java.nio.file.StandardOpenOption.READ)) {
+		try (FileChannel fileChannel = FileChannel.open(imagePath,
+				StandardOpenOption.READ)) {
 			long size = fileChannel.size();
 			response.setContentLengthLong(size);
-			fileChannel.transferTo(0, size, java.nio.channels.Channels.newChannel(response.getOutputStream()));
+			fileChannel.transferTo(0, size, Channels.newChannel(response.getOutputStream()));
 		}
 	}
 
@@ -187,7 +198,7 @@ public class ProductController implements ProductApi {
 	@PostMapping("/public/products/{productId}/reviews")
 	@Override
 	public ResponseEntity<ProductDTO> addReview(@PathVariable Long productId,
-			@RequestBody com.app.review.payloads.ProductReviewDTO reviewDTO) {
+			@RequestBody ProductReviewDTO reviewDTO) {
 		ProductDTO updatedProduct = productService.addReview(productId, reviewDTO);
 		return new ResponseEntity<>(updatedProduct, HttpStatus.CREATED);
 	}

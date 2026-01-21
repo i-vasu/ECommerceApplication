@@ -21,28 +21,36 @@ public class ERPNextSyncConfig {
         return IntegrationFlow.from("syncRequestChannel")
                 .enrichHeaders(h -> h.headerExpression("Authorization",
                         "'token ' + headers['erpNextApiKey'] + ':' + headers['erpNextApiSecret']"))
-                .handle(Http.outboundGateway(m -> 
-                        m.getHeaders().get("erpNextUrl") + "?fields=[\"name\",\"item_name\",\"description\",\"standard_rate\",\"image\",\"item_group\",\"has_variants\",\"variant_of\",\"brand\"]&limit_page_length=100")
+                .handle(Http.outboundGateway(m -> m.getHeaders().get("erpNextUrl")
+                        + "?fields=[\"name\",\"item_name\",\"description\",\"standard_rate\",\"image\",\"item_group\",\"has_variants\",\"variant_of\",\"brand\"]&limit_page_length=100")
                         .httpMethod(HttpMethod.GET)
                         .expectedResponseType(Map.class)
                         .charset("UTF-8"))
-                .<Map<String, Object>, List<Map<String, Object>>>transform(
-                        payload -> {
-                            if (payload.get("data") instanceof List<?> list) {
-                                return (List<Map<String, Object>>) list;
-                            }
-                            return List.of();
-                        })
+                .<Map<String, Object>, List<Map<String, Object>>>transform(this::extractDataList)
                 .split() // Split into individual items
                 .channel(c -> c.executor(Executors.newVirtualThreadPerTaskExecutor())) // Virtual Threads for parallel
                                                                                        // processing
                 .handle((payload, headers) -> {
                     if (payload instanceof Map<?, ?> itemData) {
-                        // Process item and its media
-                        dataFlowService.processItemWithMedia((Map<String, Object>) itemData);
+                        dataFlowService.processItemWithMedia(castToMap(itemData));
                     }
                     return null;
                 })
                 .get();
+    }
+
+    private List<Map<String, Object>> extractDataList(Map<String, Object> payload) {
+        if (payload.get("data") instanceof List<?> list) {
+            return list.stream()
+                    .filter(Map.class::isInstance)
+                    .map(this::castToMap)
+                    .toList();
+        }
+        return List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> castToMap(Object obj) {
+        return (Map<String, Object>) obj;
     }
 }

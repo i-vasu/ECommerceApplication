@@ -1,5 +1,7 @@
 package com.app.marketing.services;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -7,9 +9,6 @@ import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Service;
 import com.app.identity.repositories.UserRepo;
 import com.app.identity.entities.User;
-import com.app.marketing.services.MarketingService;
-import java.util.List;
-import java.util.HashMap;
 
 @Service
 public class BlogEventListener implements StreamListener<String, MapRecord<String, String, String>> {
@@ -30,7 +29,7 @@ public class BlogEventListener implements StreamListener<String, MapRecord<Strin
 
         // Broadcast to all users
         // Note: In a real system, you might paginate this or push to a separate email
-        // worker queue
+        // worker queue to avoid memory issues with large datasets.
         List<User> users = userRepo.findAll();
 
         for (User user : users) {

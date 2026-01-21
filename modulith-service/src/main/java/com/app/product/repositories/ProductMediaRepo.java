@@ -1,7 +1,7 @@
 package com.app.product.repositories;
 
-import com.app.product.entites.Product;
-import com.app.product.entites.ProductMedia;
+import com.app.product.entities.Product;
+import com.app.product.entities.ProductMedia;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

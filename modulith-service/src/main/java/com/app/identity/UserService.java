@@ -1,6 +1,8 @@
 package com.app.identity;
 
-import com.app.order.payloads.UserDTO;
+import java.util.List;
+
+import com.app.identity.payloads.UserDTO;
 import com.app.order.payloads.UserResponse;
 
 public interface UserService {
@@ -21,4 +23,10 @@ public interface UserService {
 	void resetPassword(String token, String newPassword);
 
 	void transferRewardPoints(Long senderId, String recipient, int points);
+
+	List<UserDTO> getFriends(Long userId);
+
+	void addFriend(Long userId, String friendEmail);
+
+	void deactivateAccount(Long userId);
 }

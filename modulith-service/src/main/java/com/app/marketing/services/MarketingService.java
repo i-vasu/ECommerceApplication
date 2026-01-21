@@ -1,13 +1,14 @@
 package com.app.marketing.services;
 
 import com.app.order.payloads.OrderPaidEvent;
+import java.util.Map;
 
 public interface MarketingService {
-    void sendOrderSuccessEvent(OrderPaidEvent event);
+        void sendOrderSuccessEvent(OrderPaidEvent event);
 
-    void sendCampaignEmail(String campaignName, String recipientEmail, String subject, String templateName,
-            java.util.Map<String, Object> variables);
+        void sendCampaignEmail(String campaignName, String recipientEmail, String subject, String templateName,
+                        Map<String, Object> variables);
 
-    void sendCampaignWhatsApp(String campaignName, String mobileNumber, String messageTemplate,
-            java.util.Map<String, String> variables);
+        void sendCampaignWhatsApp(String campaignName, String mobileNumber, String messageTemplate,
+                        Map<String, String> variables);
 }
