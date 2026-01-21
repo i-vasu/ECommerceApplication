@@ -18,7 +18,7 @@
 	</parent>
 
 	<properties>
-		<java.version>25</java.version>
+		<java.version>21</java.version>
 		<spring-cloud.version>2025.1.0</spring-cloud.version>
 		<spring-ai.version>2.0.0-M1</spring-ai.version>
 		<spring-modulith.version>2.0.0</spring-modulith.version>
@@ -175,8 +175,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler.version}</version>
 				<configuration>
-					<source>25</source>
-					<target>25</target>
+					<source>21</source>
+					<target>21</target>
 				</configuration>
 			</plugin>
 			<plugin>
