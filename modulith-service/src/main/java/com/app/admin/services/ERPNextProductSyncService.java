@@ -8,14 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.app.product.entities.Product;
 import com.app.product.entities.ProductVariant;
 import com.app.product.integration.SyncGateway;
-import com.app.product.repositories.ProductRepo;
 import com.app.product.repositories.ProductVariantRepo;
 import com.app.core.multitenancy.Tenant;
 import com.app.core.multitenancy.ERPNextCredentialProvider;
-import org.springframework.core.ParameterizedTypeReference;
+import com.app.core.multitenancy.ERPNextCredentialProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.cache.CacheManager;
 import org.slf4j.Logger;
@@ -28,9 +26,6 @@ public class ERPNextProductSyncService {
 
     @Autowired
     private RestClient restClient;
-
-    @Autowired
-    private ProductRepo productRepo;
 
     @Autowired
     private ProductVariantRepo variantRepo;
@@ -170,7 +165,7 @@ public class ERPNextProductSyncService {
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Object dataObj = response.getBody().get("data");
                 if (dataObj instanceof List<?> rawList && !rawList.isEmpty()) {
-                    Map<?, ?> bin = (Map<?, ?>) rawList.get(0);
+                    Map<?, ?> bin = (Map<?, ?>) rawList.getFirst();
                     Double qty = getDouble(bin.get("actual_qty"));
 
                     // Update Cache while we have the fresh value

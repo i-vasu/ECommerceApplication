@@ -1,6 +1,7 @@
 package com.app.tests.e2e;
 
 import io.restassured.http.ContentType;
+import com.app.tests.e2e.BaseE2ETest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.MethodOrderer;
@@ -29,7 +30,7 @@ public class CommerceFlowTest extends BaseE2ETest {
                 .get("/api/v1/public/products") // Updated URL to v1
                 .then()
                 .statusCode(200);
-                // .body("content.size()", greaterThanOrEqualTo(0));
+        // .body("content.size()", greaterThanOrEqualTo(0));
     }
 
     @Test

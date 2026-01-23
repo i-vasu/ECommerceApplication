@@ -41,7 +41,7 @@ public class AddressValidationTest {
                     .contentType("application/json")
                     .body(checkoutPayload)
                     .when()
-                    .post(ORDER_SERVICE + "/api/checkout")
+                    .post(ORDER_SERVICE + "/api/public/users/admin@test.com/carts/1/payments/COD/order")
                     .then()
                     .statusCode(anyOf(is(400), is(422), is(404)))
                     .body("error", anyOf(
@@ -166,7 +166,7 @@ public class AddressValidationTest {
                     .contentType("application/json")
                     .body(payload)
                     .when()
-                    .post(ORDER_SERVICE + "/api/checkout")
+                    .post(ORDER_SERVICE + "/api/public/users/admin@test.com/carts/1/payments/COD/order")
                     .then()
                     .statusCode(anyOf(is(400), is(422)))
                     .body("error", notNullValue());
@@ -233,7 +233,7 @@ public class AddressValidationTest {
                     .contentType("application/json")
                     .body(checkoutPayload)
                     .when()
-                    .post(ORDER_SERVICE + "/api/checkout")
+                    .post(ORDER_SERVICE + "/api/public/users/admin@test.com/carts/1/payments/COD/order")
                     .then()
                     .statusCode(anyOf(is(200), is(400), is(422), is(404)))
                     .body(anyOf(

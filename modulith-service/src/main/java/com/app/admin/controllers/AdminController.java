@@ -10,14 +10,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.app.product.ProductService;
-import com.app.customer_service.repositories.SupportTicketRepo;
-import com.app.order.entities.SupportTicket;
-import com.app.order.entities.TicketMessage;
+import com.app.customer_service.services.SupportService;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
-import java.time.LocalDateTime;
 
 @Controller
 @RequestMapping("/admin")
@@ -32,7 +29,7 @@ public class AdminController {
     private ProductService productService;
 
     @Autowired
-    private SupportTicketRepo ticketRepo;
+    private SupportService supportService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -58,7 +55,7 @@ public class AdminController {
         try {
             var pageable = PageRequest.of(page, 20,
                     Sort.by("createdAt").descending());
-            var tickets = ticketRepo.findAll(pageable);
+            var tickets = supportService.getAllTickets(pageable);
             model.addAttribute("tickets", tickets);
             model.addAttribute("currentPage", page);
             model.addAttribute("totalPages", tickets.getTotalPages());
@@ -75,7 +72,7 @@ public class AdminController {
     public String supportDetails(@PathVariable Long id, Model model) {
         model.addAttribute("pageTitle", "Ticket Details");
         try {
-            var ticket = ticketRepo.findById(id).orElseThrow(() -> new RuntimeException("Ticket not found"));
+            var ticket = supportService.getTicketById(id);
             model.addAttribute("ticket", ticket);
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
@@ -87,19 +84,7 @@ public class AdminController {
     @PostMapping("/support/{id}/reply")
     public String replyToTicket(@PathVariable Long id, @RequestParam String message) {
         try {
-            var ticket = ticketRepo.findById(id).orElseThrow(() -> new RuntimeException("Ticket not found"));
-            TicketMessage msg = new TicketMessage();
-            msg.setTicket(ticket);
-            msg.setSenderType("ADMIN");
-            msg.setSenderId("Admin"); // Ideally get from SecurityContext
-            msg.setMessage(message);
-            msg.setTimestamp(LocalDateTime.now());
-
-            ticket.getMessages().add(msg);
-            if (!"CLOSED".equals(ticket.getStatus())) {
-                ticket.setStatus("IN_PROGRESS");
-            }
-            ticketRepo.save(ticket);
+            supportService.adminReplyToTicket(id, message, "Admin");
         } catch (Exception e) {
             // log error
         }

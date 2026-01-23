@@ -11,6 +11,9 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.crac.Context;
+import org.crac.Resource;
+import org.crac.Core;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 
 /**
@@ -19,7 +22,22 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
  * ObjectMapper for security
  */
 @Configuration
-public class RedisConfig {
+public class RedisConfig implements Resource {
+
+    @jakarta.annotation.PostConstruct
+    public void register() {
+        Core.getGlobalContext().register(this);
+    }
+
+    @Override
+    public void beforeCheckpoint(Context<? extends Resource> context) throws Exception {
+        // Close connections before checkpoint
+    }
+
+    @Override
+    public void afterRestore(Context<? extends Resource> context) throws Exception {
+        // Re-init if necessary
+    }
 
     @Value("${spring.data.redis.host:localhost}")
     private String redisHost;

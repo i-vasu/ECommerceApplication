@@ -74,12 +74,14 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers("/api/v1/public/**", "/api/v1/forgot-password",
                                                                 "/api/v1/reset-password",
-                                                                "/api/v1/verify-email")
+                                                                "/api/v1/verify-email",
+                                                                "/api/webhooks/erpnext/**",
+                                                                "/api/webhooks/razorpay")
                                                 .permitAll()
                                                 .requestMatchers("/actuator/**").permitAll()
-                                                .requestMatchers("/api/user/**").hasAnyAuthority("USER", "ADMIN")
-                                                .requestMatchers("/api/admin/**").hasAuthority("ADMIN") // API admin
-                                                                                                        // endpoints
+                                                .requestMatchers("/api/v1/user/**").hasAnyAuthority("USER", "ADMIN")
+                                                .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN") // API admin
+                                                                                                           // endpoints
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                                                 (request, response, authException) -> response.sendError(

@@ -1,7 +1,40 @@
 {
+    # Global options
     admin off
 }
 
-http://localhost {
-    reverse_proxy erpnext-nginx:80
+# vaabhi API Gateway
+:8080 {
+    # Logging
+    log {
+        output stdout
+    }
+
+    # Route Version 1 (application/vnd.vaabhi.v1+json)
+    @version1 {
+        header Accept application/vnd.vaabhi.v1+json
+    }
+    
+    # Route Version 2 (Future proofing)
+    @version2 {
+        header Accept application/vnd.vaabhi.v2+json
+    }
+
+    # Default routing to backend service
+    handle /api/* {
+        # You can add rate limiting here with plugins if needed
+        reverse_proxy localhost:8081
+    }
+
+    # Static File Server for Frontend (Future)
+    handle /* {
+        root * /var/www/html
+        file_server
+    }
+
+    # Error handling
+    handle_errors {
+        rewrite * /{err.status_code}.json
+        file_server
+    }
 }

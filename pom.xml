@@ -40,15 +40,63 @@
 		<maven-surefire.version>3.5.2</maven-surefire.version>
 		<maven-compiler.version>3.13.0</maven-compiler.version>
 		<spotless.version>2.44.2</spotless.version>
+		<lombok.version>1.18.42</lombok.version>
+		<jackson-3.version>3.0.3</jackson-3.version>
+		<log4j-3.version>3.0.0-beta3</log4j-3.version>
+		<!-- Override Spring Boot's Log4j2 version to target Log4j 3 -->
+		<log4j2.version>3.0.0-beta3</log4j2.version>
 	</properties>
 
 	<modules>
 		<module>automation-tests</module>
 		<module>modulith-service</module>
+		<module>modulith-kernel</module>
+		<module>modulith-product</module>
+		<module>modulith-order</module>
+		<module>modulith-identity</module>
 	</modules>
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- Jackson 3 Cloud-Native Stack -->
+			<dependency>
+				<groupId>tools.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson-3.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>tools.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>${jackson-3.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>tools.jackson.dataformat</groupId>
+				<artifactId>jackson-dataformat-smile</artifactId>
+				<version>${jackson-3.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>tools.jackson.datatype</groupId>
+				<artifactId>jackson-datatype-jsr310</artifactId>
+				<version>3.0.0-rc1</version>
+			</dependency>
+
+			<!-- Log4j 3 Support -->
+			<dependency>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-core</artifactId>
+				<version>${log4j-3.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-api</artifactId>
+				<version>2.24.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-slf4j2-impl</artifactId>
+				<version>2.24.1</version>
+			</dependency>
+
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-dependencies</artifactId>
@@ -140,6 +188,26 @@
 				<artifactId>pytorch-model-zoo</artifactId>
 				<version>0.31.0</version>
 			</dependency>
+			<dependency>
+				<groupId>com.app</groupId>
+				<artifactId>modulith-kernel</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.app</groupId>
+				<artifactId>modulith-product</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.app</groupId>
+				<artifactId>modulith-order</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.app</groupId>
+				<artifactId>modulith-identity</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
     
@@ -171,6 +239,26 @@
 				<configuration>
 					<source>25</source>
 					<target>25</target>
+					<compilerArgs>
+						<arg>--enable-preview</arg>
+					</compilerArgs>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok-mapstruct-binding</artifactId>
+							<version>0.2.0</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>${mapstruct.version}</version>
+						</path>
+					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -187,4 +275,13 @@
 			</plugin>
 		</plugins>
 	</build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
 </project>

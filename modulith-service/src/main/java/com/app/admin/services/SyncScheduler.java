@@ -29,8 +29,7 @@ public class SyncScheduler {
     public void scheduleProductSync() {
         var tenants = tenantManagementService.getActiveTenants();
         for (var tenant : tenants) {
-            TenantContext.setTenantId(tenant.getTenantId());
-            try {
+            TenantContext.runWithTenant(tenant.getTenantId(), () -> {
                 if (redisLockService.tryLock("lock:sync:products:" + tenant.getTenantId(),
                         Duration.ofMinutes(5))) {
                     try {
@@ -40,9 +39,7 @@ public class SyncScheduler {
                         redisLockService.unlock("lock:sync:products:" + tenant.getTenantId());
                     }
                 }
-            } finally {
-                TenantContext.clear();
-            }
+            });
         }
     }
 

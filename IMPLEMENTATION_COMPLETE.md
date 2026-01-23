@@ -1,7 +1,10 @@
+taraget < 1sec startup time
+
 Java 25
 
 CRaC liberica JDK 25
 Compact Object Headers
+Class Data Sharing (CDS)
 Module Import Declarations
 Scoped Values
 Generational Shenandoah

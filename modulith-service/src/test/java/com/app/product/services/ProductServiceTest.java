@@ -65,7 +65,7 @@ class ProductServiceTest {
 
         ProductDTO expectedDTO = new ProductDTO(
                 1L, "Test Product", "CODE123", null, "Desc", 10, 100.0, 10.0, 90.0,
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, new java.util.HashMap<>());
 
         when(categoryRepo.findById(categoryId)).thenReturn(Optional.of(category));
         when(productRepo.save(any(Product.class))).thenReturn(savedProduct);

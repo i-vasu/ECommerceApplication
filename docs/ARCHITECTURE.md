@@ -1,57 +1,154 @@
-# E-Commerce Microservices Architecture Documentation
+# Module Architecture Guide
 
-This document provides a high-level overview of the system architecture, component interactions, and core business flows.
+## Overview
 
-## 1. High-Level Architecture (UML Deployment Diagram)
+This document describes the modular architecture of the Vaabhi e-commerce application and the mechanisms in place to enforce architectural boundaries.
 
-The system follows a microservices architecture pattern, utilizing Spring Cloud for infrastructure concerns and independent services for business domains.
+## Module Structure
 
-### Core Components:
-- **API Gateway**: Entry point for all client requests. Handles routing and security.
-- **Discovery Server (Eureka)**: Service registry for dynamic service discovery.
-- **Product Service**: Manages catalog, categories, and inventory. Integrates with ERPNext for master data sync.
-- **Order Service**: Manages shopping carts and order lifecycle. Integrates with Razorpay for payments and ERPNext for order fulfillment sync.
-- **Persistence**: Separate PostgreSQL instances for services (logical/physical separation).
-- **Cache**: Redis for product catalog caching and session management.
+The application is organized into **6 functional modules** plus a parent aggregator:
 
-![System Architecture](../high_level_architecture.png)
+```
+fashion-store-parent (root POM)
+├── modulith-kernel       - Shared infrastructure
+├── modulith-identity     - User & Identity domain
+├── modulith-product      - Product & Catalog domain
+├── modulith-order        - Order & Commerce domain
+├── modulith-service      - Main executable application
+└── automation-tests      - Integration tests
+```
 
----
+### Module Dependencies
 
-## 2. Core Scenarios & Flows
+The dependency hierarchy flows as follows:
 
-### 2.1 Checkout Process (UML Sequence Diagram)
+```
+modulith-kernel (no domain dependencies)
+    ↑
+    ├─ modulith-identity (depends on kernel only)
+    │      ↑
+    ├─ modulith-product (depends on kernel + identity)
+    │      ↑
+    └─ modulith-order (depends on kernel + identity + product)
+           ↑
+    modulith-service (orchestrates all modules)
+```
 
-The checkout process involves inter-service communication to ensure consistency between orders and product data.
+**Key Principle**: Dependencies flow **upward** only. Lower-level modules never depend on higher-level modules.
 
-![Checkout Flow](../order_checkout_flow.png)
+## Cross-Module Communication
 
-1. **Cart Creation**: User adds items to cart in `Order Service`.
-2. **Product Validation**: `Order Service` fetches latest prices/stock via `ProductClient` (Feign).
-3. **Order Finalization**: User submits order.
-4. **Payment**: Integration with Razorpay.
-5. **Fulfillment Sync**: Completed order is pushed to `ERPNext`.
+### Service Contracts
 
-### 2.2 ERPNext Product Synchronization
+To enable cross-module communication without tight coupling, we use **contract interfaces** defined in `modulith-kernel`:
 
-The `Product Service` acts as the downstream consumer for master data managed in ERPNext.
+#### Available Contracts
 
-![Sync Flow](../erpnext_sync_flow.png)
+**`com.app.core.contracts.UserServiceContract`**
+- Enables other modules to query user information
+- Implemented by `modulith-identity`
+- Used by `modulith-order` and `modulith-product`
 
-1. **Sync Trigger**: Admin triggers manually or automated polling/webhook.
-2. **Data Fetch**: `ERPNextProductSyncService` calls ERPNext Item APIs.
-3. **Local Persistence**: Items are saved/updated in the local PostgreSQL.
+**`com.app.core.contracts.EmailServiceContract`**
+- Enables modules to send emails
+- Implemented by `modulith-identity`
+- Used by `modulith-order`
 
----
+**`com.app.core.contracts.MarketingServiceContract`**
+- Enables modules to trigger marketing campaigns
+- Implemented by `modulith-identity`
+- Used by `modulith-order`
 
-## 3. Technology Stack
+### Event-Driven Communication
 
-| Layer | Technology |
-|-------|------------|
-| Language | Java 21 (Virtual Threads) |
-| Framework | Spring Boot 3.4.1, Spring Cloud |
-| Security | Keycloak (OIDC), OAuth2 Resource Server |
-| Database | PostgreSQL 15 |
-| Cache | Redis |
-| Observability | Prometheus, Grafana |
-| Integration | Feign, REST, ERPNext, Razorpay |
+For async cross-module communication, use domain events:
+
+**`OrderPaidEvent`** (`com.app.core.events.OrderPaidEvent`)
+- Published by: `modulith-order`
+- Consumed by: `modulith-identity` (MarketingEventListener)
+
+**`USER_REGISTERED`** (via Redis Streams)
+- Published by: `modulith-identity`
+- Consumed by: `modulith-order` (CartEventListener)
+
+## Architecture Testing with ArchUnit
+
+### Overview
+
+We use **ArchUnit** to automatically enforce architectural rules. Tests are located in:
+
+```
+modulith-service/src/test/java/com/app/architecture/
+├── ModulithArchitectureTest.java
+└── LayeredArchitectureTest.java
+```
+
+### Running Architecture Tests
+
+```bash
+cd modulith-service
+mvn test -Dtest=ModulithArchitectureTest
+mvn test -Dtest=LayeredArchitectureTest
+```
+
+### Enforced Rules
+
+#### Module Boundary Rules
+
+1. **No Cyclic Dependencies**
+   - Modules must not depend on each other in a cycle
+   - Enforced by: `modulesShouldBeFreeOfCycles()`
+
+2. **Kernel Independence**
+   - `modulith-kernel` must not depend on any domain module
+   - Enforced by: `kernelShouldNotDependOnDomainModules()`
+
+3. **Identity Independence**
+   - `modulith-identity` must not depend on `order` or `product`
+   - Enforced by: `identityShouldNotDependOnOrderOrProduct()`
+
+4. **Product Independence**
+   - `modulith-product` must not depend on `order`
+   - Enforced by: `productShouldNotDependOnOrder()`
+
+#### Layered Architecture Rules
+
+1. **Controllers → Services**
+   - Controllers may only access Services layer
+   
+2. **Services → Repositories**
+   - Only Services may access Repositories
+
+3. **No Layer Skipping**
+   - Controllers cannot directly access Repositories
+
+## Best Practices
+
+### When Adding New Features
+
+1. **Identify the Correct Module**
+   - User management → `modulith-identity`
+   - Product catalog → `modulith-product`
+   - Orders/payments → `modulith-order`
+   - Infrastructure → `modulith-kernel`
+
+2. **Avoid Direct Dependencies**
+   - Use contract interfaces for synchronous calls
+   - Use events for asynchronous communication
+   - Never import service implementations from other modules
+
+3. **Expose via DTOs**
+   - Never expose entities across module boundaries
+   - Create DTOs in each module's `payloads` package
+   - Use MapStruct for DTO mapping
+
+4. **Run Architecture Tests**
+   ```bash
+   mvn test -Dtest=*ArchitectureTest
+   ```
+
+## Questions?
+
+For architecture decisions, consult the team lead or refer to:
+- `/task.md` - Implementation roadmap
+- ArchUnit test failures - Immediate feedback on violations

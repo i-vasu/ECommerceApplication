@@ -3,6 +3,7 @@ package com.app.tests.fashion;
 import com.app.tests.utils.AuthHelper;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
 
