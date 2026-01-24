@@ -2,7 +2,7 @@ package com.app.tests.fashion.lifecycle;
 
 import com.app.tests.utils.AuthHelper;
 import org.junit.jupiter.api.*;
-
+import io.restassured.response.Response;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
@@ -41,7 +41,7 @@ public class OrderLifecycleCompleteTest {
                 }
                 """;
 
-        var response = given()
+        Response response = given()
                 .spec(AuthHelper.authenticatedRequest())
                 .contentType("application/json")
                 .body(orderPayload)

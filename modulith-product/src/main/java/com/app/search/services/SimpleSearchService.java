@@ -1,0 +1,30 @@
+package com.app.search.services;
+
+import com.app.product.payloads.ProductDTO;
+import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.ArrayList;
+
+@Service
+public class SimpleSearchService implements SearchService {
+
+    @Override
+    public void indexProduct(ProductDTO product) {
+        // Simple implementation for now
+    }
+
+    @Override
+    public void indexProducts(List<ProductDTO> products) {
+        // Simple implementation for now
+    }
+
+    @Override
+    public List<ProductDTO> searchProducts(String query) {
+        return new ArrayList<>();
+    }
+
+    @Override
+    public void deleteProduct(String productId) {
+        // Simple implementation for now
+    }
+}

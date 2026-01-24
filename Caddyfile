@@ -1,17 +1,40 @@
 {
     # Global options
-    email vasu2srinivas29@gmail.com
+    admin off
 }
 
-localhost {
-    # Consolidated Modulith Service
-    handle /api/* {
-        reverse_proxy modulith-service:8080
+# vaabhi API Gateway
+:8080 {
+    # Logging
+    log {
+        output stdout
+    }
+
+    # Route Version 1 (application/vnd.vaabhi.v1+json)
+    @version1 {
+        header Accept application/vnd.vaabhi.v1+json
     }
     
-    # Storefront (Running on host port 3001)
-    # If Caddy is in Docker, and storefront is on host, we use host.docker.internal
+    # Route Version 2 (Future proofing)
+    @version2 {
+        header Accept application/vnd.vaabhi.v2+json
+    }
+
+    # Default routing to backend service
+    handle /api/* {
+        # You can add rate limiting here with plugins if needed
+        reverse_proxy localhost:8081
+    }
+
+    # Static File Server for Frontend (Future)
     handle /* {
-        reverse_proxy host.docker.internal:3001
+        root * /var/www/html
+        file_server
+    }
+
+    # Error handling
+    handle_errors {
+        rewrite * /{err.status_code}.json
+        file_server
     }
 }

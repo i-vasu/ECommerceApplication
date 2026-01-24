@@ -9,9 +9,12 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.crac.Context;
+import org.crac.Resource;
+import org.crac.Core;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 
 /**
  * Redis Configuration
@@ -19,7 +22,22 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * ObjectMapper for security
  */
 @Configuration
-public class RedisConfig {
+public class RedisConfig implements Resource {
+
+    @jakarta.annotation.PostConstruct
+    public void register() {
+        Core.getGlobalContext().register(this);
+    }
+
+    @Override
+    public void beforeCheckpoint(Context<? extends Resource> context) throws Exception {
+        // Close connections before checkpoint
+    }
+
+    @Override
+    public void afterRestore(Context<? extends Resource> context) throws Exception {
+        // Re-init if necessary
+    }
 
     @Value("${spring.data.redis.host:localhost}")
     private String redisHost;
@@ -43,15 +61,7 @@ public class RedisConfig {
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
 
-        // ✅ Value serializer with custom ObjectMapper for security
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.activateDefaultTyping(
-                BasicPolymorphicTypeValidator.builder()
-                        .allowIfBaseType(Object.class)
-                        .build(),
-                ObjectMapper.DefaultTyping.NON_FINAL);
-
-        RedisSerializer<Object> serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        RedisSerializer<Object> serializer = RedisSerializer.json();
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
 

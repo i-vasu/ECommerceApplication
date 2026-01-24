@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.core.annotation.Order;
 
 import com.app.core.security.JWTFilter;
 import com.app.order.security.OAuth2LoginSuccessHandler;
@@ -27,53 +28,89 @@ import jakarta.servlet.http.HttpServletResponse;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private UserDetailsServiceImpl userDetailsServiceImpl;
+        @Autowired
+        private UserDetailsServiceImpl userDetailsServiceImpl;
 
-    @Autowired
-    private OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+        @Autowired
+        private OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
 
-    @Bean
-    @Primary
-    public SecurityFilterChain filterChain(HttpSecurity http, JWTFilter jwtFilter) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/api/register/**", "/api/login")
-                        .permitAll()
-                        .requestMatchers("/api/public/**", "/api/forgot-password", "/api/reset-password",
-                                "/api/verify-email")
-                        .permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/api/user/**").hasAnyAuthority("USER", "ADMIN")
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-                                "Unauthorized")))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2Login(oauth2 -> oauth2.successHandler(oauth2LoginSuccessHandler));
+        @Bean
+        @Order(1)
+        public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .securityMatcher("/admin/**")
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/admin/login", "/admin/css/**", "/admin/js/**",
+                                                                "/admin/images/**")
+                                                .permitAll()
+                                                .requestMatchers("/admin/**").hasAuthority("ADMIN"))
+                                .formLogin(form -> form
+                                                .loginPage("/admin/login")
+                                                .loginProcessingUrl("/admin/login")
+                                                .defaultSuccessUrl("/admin/dashboard", true)
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/admin/logout")
+                                                .logoutSuccessUrl("/admin/login?logout")
+                                                .permitAll())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                                .csrf(csrf -> csrf.disable()); // Simplify for now
 
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        http.authenticationProvider(daoAuthenticationProvider());
+                http.authenticationProvider(daoAuthenticationProvider());
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public DaoAuthenticationProvider daoAuthenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsServiceImpl);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
+        @Bean
+        @Order(2)
+        public SecurityFilterChain apiFilterChain(HttpSecurity http, JWTFilter jwtFilter) throws Exception {
+                http
+                                .securityMatcher("/api/**", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/**")
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**",
+                                                                "/api/v1/register/**", "/api/v1/login")
+                                                .permitAll()
+                                                .requestMatchers("/api/v1/public/**", "/api/v1/forgot-password",
+                                                                "/api/v1/reset-password",
+                                                                "/api/v1/verify-email",
+                                                                "/api/webhooks/erpnext/**",
+                                                                "/api/webhooks/razorpay")
+                                                .permitAll()
+                                                .requestMatchers("/actuator/**").permitAll()
+                                                .requestMatchers("/api/v1/user/**").hasAnyAuthority("USER", "ADMIN")
+                                                .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN") // API admin
+                                                                                                           // endpoints
+                                                .anyRequest().authenticated())
+                                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                                                (request, response, authException) -> response.sendError(
+                                                                HttpServletResponse.SC_UNAUTHORIZED,
+                                                                "Unauthorized")))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .oauth2Login(oauth2 -> oauth2.successHandler(oauth2LoginSuccessHandler));
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+                http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                http.authenticationProvider(daoAuthenticationProvider());
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
+                return http.build();
+        }
+
+        @Bean
+        public DaoAuthenticationProvider daoAuthenticationProvider() {
+                DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsServiceImpl);
+                provider.setPasswordEncoder(passwordEncoder());
+                return provider;
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+                return configuration.getAuthenticationManager();
+        }
 }

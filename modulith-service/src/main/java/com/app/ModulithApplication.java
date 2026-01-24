@@ -3,12 +3,12 @@ package com.app;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.modulith.Modulith;
 
 @SpringBootApplication
 @EnableScheduling
 @org.springframework.retry.annotation.EnableRetry
 @org.springframework.modulith.Modulithic
+@org.springframework.scheduling.annotation.EnableAsync
 public class ModulithApplication {
 
     public static void main(String[] args) {

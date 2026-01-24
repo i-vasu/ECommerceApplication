@@ -31,7 +31,7 @@ public class PaymentFailureTest {
         Response response = given()
                 .spec(AuthHelper.authenticatedRequest())
                 .when()
-                .post(ORDER_SERVICE + "/api/payments/create/" + testOrderId)
+                .post(ORDER_SERVICE + "/api/v1/create/" + testOrderId)
                 .then()
                 .extract().response();
 
@@ -65,7 +65,8 @@ public class PaymentFailureTest {
                 .queryParam("razorpay_payment_id", mockPaymentId)
                 .queryParam("razorpay_signature", invalidSignature)
                 .when()
-                .post(ORDER_SERVICE + "/api/payments/verify/" + testOrderId)
+                .post(ORDER_SERVICE + "/api/v1/verify?orderId=" + testOrderId + "&paymentId=" + mockPaymentId
+                        + "&signature=" + invalidSignature)
                 .then()
                 .statusCode(anyOf(is(400), is(403)))
                 .body("error", anyOf(
