@@ -67,34 +67,24 @@ public class ProductServiceImpl implements ProductService {
 		var category = categoryRepo.findById(categoryId)
 				.orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
 
-		var isProductNotPresent = true;
-		var products = category.getProducts();
-
-		for (var p : products) {
-			if (p.getProductName().equals(product.getProductName())
-					&& p.getDescription().equals(product.getDescription())) {
-				isProductNotPresent = false;
-				break;
-			}
-		}
-
-		if (isProductNotPresent) {
-			product.setImage("default.png");
-			product.setCategory(category);
-
-			// BigDecimal calculation: price * (1 - discount/100)
-			java.math.BigDecimal discountFactor = java.math.BigDecimal.ONE.subtract(
-					product.getDiscount().multiply(java.math.BigDecimal.valueOf(0.01)));
-			java.math.BigDecimal specialPrice = product.getPrice().multiply(discountFactor)
-					.setScale(2, java.math.RoundingMode.HALF_UP);
-
-			product.setSpecialPrice(specialPrice);
-
-			var savedProduct = productRepo.save(product);
-			return productMapper.productToProductDTO(savedProduct);
-		} else {
+		if (productRepo.existsByProductNameAndDescriptionAndCategory(product.getProductName(), product.getDescription(),
+				category)) {
 			throw new APIException("Product already exists !!!");
 		}
+
+		product.setImage("default.png");
+		product.setCategory(category);
+
+		// BigDecimal calculation: price * (1 - discount/100)
+		java.math.BigDecimal discountFactor = java.math.BigDecimal.ONE.subtract(
+				product.getDiscount().multiply(java.math.BigDecimal.valueOf(0.01)));
+		java.math.BigDecimal specialPrice = product.getPrice().multiply(discountFactor)
+				.setScale(2, java.math.RoundingMode.HALF_UP);
+
+		product.setSpecialPrice(specialPrice);
+
+		var savedProduct = productRepo.save(product);
+		return productMapper.productToProductDTO(savedProduct);
 	}
 
 	@Override
