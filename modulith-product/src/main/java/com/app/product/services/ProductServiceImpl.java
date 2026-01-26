@@ -197,6 +197,35 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	@Cacheable(value = "products", key = "'facet-' + #keyword + '-' + #minPrice + '-' + #maxPrice + '-' + #pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
+	public ProductResponse facetedSearch(String keyword, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
+			Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+
+		if (pageSize > com.app.config.AppConstants.MAX_PAGE_SIZE) {
+			pageSize = com.app.config.AppConstants.MAX_PAGE_SIZE;
+		}
+
+		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+				: Sort.by(sortBy).descending();
+
+		var pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+		var pageProducts = productRepo.facetedSearchByKeyword(keyword, minPrice, maxPrice, pageDetails);
+		var products = pageProducts.getContent();
+
+		var productDTOs = products.stream()
+				.map(productMapper::productToProductDTO)
+				.toList();
+
+		return new ProductResponse(
+				productDTOs,
+				pageProducts.getNumber(),
+				pageProducts.getSize(),
+				pageProducts.getTotalElements(),
+				pageProducts.getTotalPages(),
+				pageProducts.isLast());
+	}
+
+	@Override
 	@Caching(evict = {
 			@CacheEvict(value = "products", allEntries = true),
 			@CacheEvict(value = "product", key = "#productId")
@@ -321,7 +350,7 @@ public class ProductServiceImpl implements ProductService {
 				dto.productId(), dto.productName(), dto.itemCode(), dto.image(), dto.description(),
 				dto.quantity(), dto.price(), dto.discount(), dto.specialPrice(),
 				dto.variants(), dto.media(), dto.reviews(), dto.averageRating(),
-				dto.socialPulse(), scarcity);
+				dto.socialPulse(), scarcity, null);
 	}
 
 	@Override

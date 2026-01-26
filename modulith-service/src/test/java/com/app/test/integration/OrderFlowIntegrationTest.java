@@ -45,7 +45,7 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         // Given: A product and user exist
         Product product = new Product();
         product.setProductName("Test Product");
-        product.setPrice(99.99);
+        product.setPrice(java.math.BigDecimal.valueOf(99.99));
         product.setQuantity(100);
         product.setDescription("Test Description"); // Added to satisfy @NotBlank
         product = productRepo.save(product);

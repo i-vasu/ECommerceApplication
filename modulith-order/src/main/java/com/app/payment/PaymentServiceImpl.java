@@ -77,6 +77,9 @@ public class PaymentServiceImpl implements PaymentService {
     @Autowired
     private com.app.core.services.RedisLockService lockService;
 
+    @Autowired
+    private EventProducer eventProducer;
+
     @Override
     @Transactional
     public void processPaymentCapture(String pgOrderId, String pgPaymentId) {
@@ -297,7 +300,7 @@ public class PaymentServiceImpl implements PaymentService {
             com.razorpay.Refund pgRefund = getRazorpayClient().payments.refund(paymentId, refundRequest);
 
             // Track refund in DB for financial reconciliation
-            Payment payment = paymentRepo.findByPgPaymentId(paymentId);
+            Payment payment = paymentRepo.findByPgPaymentId(paymentId).orElse(null);
             if (payment != null) {
                 Refund refund = new Refund();
                 refund.setOrder(payment.getOrder());

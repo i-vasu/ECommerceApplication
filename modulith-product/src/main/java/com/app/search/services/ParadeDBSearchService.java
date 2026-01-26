@@ -37,23 +37,27 @@ public class ParadeDBSearchService implements SearchService {
     }
 
     @Override
-    public List<ProductDTO> searchProducts(String query) {
-        log.info("Executing ParadeDB Hybrid Search (BM25 + Semantic) for: {}", query);
+    public List<ProductDTO> searchProducts(String query, Double minPrice, Double maxPrice) {
+        log.info("Executing ParadeDB Hybrid Search (BM25 + Semantic) for: {} [Price: {} - {}]", query, minPrice,
+                maxPrice);
 
-        // Hybrid Search Pattern:
-        // 1. BM25 for keyword accuracy.
-        // 2. Vector distance for semantic meaning.
-        // 3. Reciprocal Rank Fusion (RRF) for scoring.
+        StringBuilder sql = new StringBuilder("SELECT p.*, ");
+        sql.append("  paradedb.score(bm25.search('products_search_idx', ?)) as bm25_score, ");
+        sql.append("  (1 - (p.embedding <=> paradedb.embed(?)::vector)) as semantic_score ");
+        sql.append("FROM products p ");
+        sql.append("WHERE (p.description @@@ ? OR p.product_name @@@ ?) ");
 
-        String sql = "SELECT p.*, " +
-                "  paradedb.score(bm25.search('products_search_idx', ?)) as bm25_score, " +
-                "  (1 - (p.embedding <=> paradedb.embed(?)::vector)) as semantic_score " +
-                "FROM products p " +
-                "WHERE p.description @@@ ? OR p.product_name @@@ ? " +
-                "ORDER BY (bm25_score * 0.7 + semantic_score * 0.3) DESC LIMIT 50";
+        if (minPrice != null) {
+            sql.append(" AND p.price >= ").append(minPrice);
+        }
+        if (maxPrice != null) {
+            sql.append(" AND p.price <= ").append(maxPrice);
+        }
+
+        sql.append(" ORDER BY (bm25_score * 0.7 + semantic_score * 0.3) DESC LIMIT 50");
 
         try {
-            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
                 return new ProductDTO(
                         rs.getLong("id"),
                         rs.getString("product_name"),

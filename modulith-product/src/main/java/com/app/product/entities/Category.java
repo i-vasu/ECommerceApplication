@@ -15,6 +15,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.JoinColumn;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -31,4 +34,8 @@ public class Category {
 
 	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
 	private List<Product> products;
+
+	@OneToOne(cascade = CascadeType.ALL)
+	@JoinColumn(name = "size_chart_id")
+	private SizeChart sizeChart;
 }

@@ -8,6 +8,7 @@ public enum OrderStatus {
     SHIPPED("SHIPPED"),
     DELIVERED("DELIVERED"),
     CANCELLED("CANCELLED"),
+    REFUND_INITIATED("REFUND_INITIATED"),
     REFUNDED("REFUNDED");
 
     private final String status;

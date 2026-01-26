@@ -57,6 +57,10 @@ import org.springframework.data.domain.Sort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
+import com.app.order.async.OrderProducer;
+import com.app.core.async.EventProducer;
+import com.app.core.multitenancy.TenantContext;
+
 @Log4j2
 @Transactional(readOnly = true)
 @Service
@@ -81,40 +85,53 @@ public class OrderServiceImpl implements OrderService {
 	private final OrderHistoryRepo orderHistoryRepo;
 	private final MeterRegistry meterRegistry;
 	private final Tracer tracer;
+	private final ProductService productService;
+	private final ProductRepo productRepo;
+	private final OrderProducer orderProducer;
+	private final EventProducer eventProducer;
+	private final OrderStateMachine stateMachine;
 
-	private final Counter checkoutSuccessCounter;
-	private final Counter checkoutFailureCounter;
-	private final Timer checkoutTimer;
-
+	@org.springframework.beans.factory.annotation.Autowired
 	public OrderServiceImpl(UserRepo userRepo, ApplicationEventPublisher eventPublisher, CartRepo cartRepo,
-			OrderItemRepo orderItemRepo, OrderRepo orderRepo, PaymentRepo paymentRepo, ProductService productService,
+			OrderRepo orderRepo, PaymentRepo paymentRepo, OrderItemRepo orderItemRepo, CartItemRepo cartItemRepo,
+			UserService userService, CartService cartService, ERPNextService erpNextService, OrderMapper orderMapper,
 			PaymentService paymentService, ShipmentService shipmentService,
-			InventoryReservationService inventoryReservationService, ProductRepo productRepo,
-			OrderProducer orderProducer, EventProducer eventProducer, OrderStateMachine stateMachine,
-			OptimizedCheckoutService optimizedCheckoutService, AddressRepo addressRepo,
-			OrderHistoryRepo orderHistoryRepo,
-			MeterRegistry meterRegistry,
-			Tracer tracer) {
+			InventoryReservationService inventoryReservationService, OptimizedCheckoutService optimizedCheckoutService,
+			AddressRepo addressRepo, OrderHistoryRepo orderHistoryRepo, MeterRegistry meterRegistry, Tracer tracer,
+			ProductService productService, ProductRepo productRepo, OrderProducer orderProducer,
+			EventProducer eventProducer, OrderStateMachine stateMachine) {
 		this.userRepo = userRepo;
 		this.eventPublisher = eventPublisher;
 		this.cartRepo = cartRepo;
-		this.orderItemRepo = orderItemRepo;
 		this.orderRepo = orderRepo;
 		this.paymentRepo = paymentRepo;
-		this.productService = productService;
+		this.orderItemRepo = orderItemRepo;
+		this.cartItemRepo = cartItemRepo;
+		this.userService = userService;
+		this.cartService = cartService;
+		this.erpNextService = erpNextService;
+		this.orderMapper = orderMapper;
 		this.paymentService = paymentService;
 		this.shipmentService = shipmentService;
 		this.inventoryReservationService = inventoryReservationService;
-		this.productRepo = productRepo;
-		this.orderProducer = orderProducer;
-		this.eventProducer = eventProducer;
-		this.stateMachine = stateMachine;
 		this.optimizedCheckoutService = optimizedCheckoutService;
 		this.addressRepo = addressRepo;
 		this.orderHistoryRepo = orderHistoryRepo;
 		this.meterRegistry = meterRegistry;
 		this.tracer = tracer;
+		this.productService = productService;
+		this.productRepo = productRepo;
+		this.orderProducer = orderProducer;
+		this.eventProducer = eventProducer;
+		this.stateMachine = stateMachine;
+	}
 
+	private Counter checkoutSuccessCounter;
+	private Counter checkoutFailureCounter;
+	private Timer checkoutTimer;
+
+	@jakarta.annotation.PostConstruct
+	public void initMetrics() {
 		this.checkoutSuccessCounter = Counter.builder("ecommerce.checkout.success")
 				.description("Number of successful checkouts")
 				.register(meterRegistry);

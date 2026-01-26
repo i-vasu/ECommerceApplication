@@ -28,6 +28,7 @@ import com.app.commerce.states.OrderStatus;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.MDC;
 import com.app.core.multitenancy.ERPNextCredentialProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -179,7 +180,7 @@ public class ERPNextService {
 
     private void createCustomerIfNotExists(Order order) {
         try {
-            var customerUrl = erpNextUrl.replace("Item", "Customer") + "/" + order.getEmail();
+            var customerUrl = getErpNextUrl() + "/api/resource/Customer/" + order.getEmail();
             try {
                 restClient.get().uri(customerUrl).header("Authorization", getAuthHeader()).retrieve()
                         .toBodilessEntity();
@@ -195,7 +196,7 @@ public class ERPNextService {
             customer.put("territory", "All Territories");
             customer.put("email_id", order.getEmail());
 
-            var createUrl = erpNextUrl.replace("Item", "Customer");
+            var createUrl = getErpNextUrl() + "/api/resource/Customer";
             restClient.post()
                     .uri(createUrl)
                     .header("Authorization", getAuthHeader())
@@ -214,6 +215,8 @@ public class ERPNextService {
                 order.getOrderId(), e.getMessage());
     }
 
+    @CircuitBreaker(name = "erpnext")
+    @Retry(name = "erpnext")
     public void syncProductsFromERPNext() {
         if (getApiKey() == null || getApiKey().isEmpty())
             return;
@@ -260,6 +263,8 @@ public class ERPNextService {
                             new ArrayList<>(),
                             new ArrayList<>(),
                             null,
+                            new java.util.HashMap<>(),
+                            null,
                             new java.util.HashMap<>());
                     products.add(p);
                 }
@@ -268,6 +273,8 @@ public class ERPNextService {
                 searchService.indexProducts(products);
             }
             log.info("Synced {} items from ERPNext.", products.size());
+        } catch (Exception e) {
+            log.error("Failed to sync products from ERPNext: {}", e.getMessage());
         } finally {
             lockService.unlock(lockKey);
         }
@@ -295,9 +302,7 @@ public class ERPNextService {
                 if (response != null && response.has("data")) {
                     var erpStatus = response.get("data").get("status").asText();
                     var localStatus = mapErpStatus(erpStatus);
-
-                        processStatusChange(order, localStatus, response.get("data"));
-                    }
+                    processStatusChange(order, localStatus, response.get("data"));
                 }
             } catch (Exception e) {
                 log.error("Error fetching status for order {}: {}", order.getOrderId(), e.getMessage());
@@ -339,6 +344,8 @@ public class ERPNextService {
         }
     }
 
+    @CircuitBreaker(name = "erpnext")
+    @Retry(name = "erpnext")
     public void cancelSalesOrder(String erpOrderName) {
         if (getApiKey() == null || getApiKey().isEmpty())
             return;

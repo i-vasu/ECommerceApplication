@@ -1,31 +1,25 @@
 package com.app.order.services;
 
-import com.app.discount.CouponValidationService;
-import com.app.discount.CouponValidationService.CouponDiscount;
-import com.app.inventory.InventoryService;
 import com.app.inventory.InventoryService.InventoryLock;
-import com.app.shipping.TaxCalculationService;
 import com.app.shipping.TaxCalculationService.TaxCalculation;
-import com.app.shipping.ShippingCalculationService;
 import com.app.shipping.ShippingCalculationService.ShippingCost;
-import com.app.identity.AddressValidationService;
 import com.app.identity.AddressValidationService.AddressValidation;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.app.order.entities.Cart;
 import com.app.identity.entities.Address;
 import com.app.product.repositories.ProductRepo;
 import com.app.product.entities.Product;
-import com.app.order.entities.FlashSaleProduct;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Optimized Checkout Service
  * Uses CompletableFuture for parallel validations (stable API)
- * 
- * Performance: 800ms → 150ms (5x improvement)
  */
 @org.springframework.stereotype.Service
 @lombok.RequiredArgsConstructor
@@ -37,32 +31,23 @@ public class OptimizedCheckoutService {
     private final ProductRepo productRepo;
     private final com.app.order.services.FlashSaleService flashSaleService;
 
-    /**
-     * Broadleaf-compliant parallel checkout workflow.
-     */
     public CheckoutResult processCheckout(Cart cart, Address address, String couponCode) {
         long startTime = System.currentTimeMillis();
-        log.info("Starting Broadleaf-standard composable checkout for cart: {}", cart.getCartId());
 
-        try (var scope = new java.util.concurrent.StructuredTaskScope.ShutdownOnFailure()) {
-            
-            // Map activities to tasks for lookup
-            java.util.Map<String, java.util.concurrent.StructuredTaskScope.Subtask<?>> tasks = 
-                activities.stream().collect(java.util.stream.Collectors.toMap(
-                    a -> a.getName(),
-                    a -> scope.fork(() -> a.execute(cart, address))
-                ));
+        try {
+            Map<String, CompletableFuture<?>> futures = activities.stream()
+                    .collect(Collectors.toMap(
+                            a -> a.getName(),
+                            a -> CompletableFuture.supplyAsync(() -> a.execute(cart, address))));
 
-            java.util.concurrent.StructuredTaskScope.Subtask<List<String>> priceCheckSubtask = scope.fork(() -> {
-
-            java.util.concurrent.StructuredTaskScope.Subtask<List<String>> priceCheckSubtask = scope.fork(() -> {
+            CompletableFuture<List<String>> priceCheckFuture = CompletableFuture.supplyAsync(() -> {
                 List<String> discrepancies = new ArrayList<>();
                 for (com.app.order.entities.CartItem item : cart.getCartItems()) {
                     Product p = productRepo.findById(item.getProductId()).orElse(null);
                     if (p != null) {
                         var flashProduct = flashSaleService.getActiveFlashProduct(item.getProductId());
                         double currentTargetPrice = flashProduct.map(fp -> fp.getFlashPrice())
-                                .orElse(p.getSpecialPrice());
+                                .orElseGet(() -> p.getSpecialPrice() != null ? p.getSpecialPrice().doubleValue() : 0.0);
 
                         if (Math.abs(currentTargetPrice - item.getProductPrice()) > 0.01) {
                             discrepancies.add("Price changed for " + item.getProductName() +
@@ -73,63 +58,74 @@ public class OptimizedCheckoutService {
                 return discrepancies;
             });
 
-            // Join and throw any exceptions from subtasks
-            scope.join();
-            scope.throwIfFailed();
+            CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0]))
+                    .thenCombine(priceCheckFuture, (v, d) -> null)
+                    .get(10, TimeUnit.SECONDS);
 
-            // Extract results carefully (Broadleaf context mapping)
-            var inventory = (InventoryLock) tasks.get("inventory-lock").get();
-            var addressRes = (AddressValidation) tasks.get("address-validation").get();
-            var tax = (TaxCalculation) tasks.get("tax-calculation").get();
-            var shipping = (ShippingCost) tasks.get("shipping-calculation").get();
-            var promotion = (java.math.BigDecimal) tasks.get("promotion-evaluation").get();
-
-            double finalAmount = calculateFinalAmount(cart, tax, shipping, promotion);
-
-            CheckoutResult result = new CheckoutResult(
-                    inventory,
-                    addressRes,
-                    tax,
-                    shipping,
-                    promotion,
-                    finalAmount,
-                    priceCheckSubtask.get());
-
-            long duration = System.currentTimeMillis() - startTime;
-            log.info("Enterprise Checkout completed in {}ms", duration);
-
-            return result;
+            return new CheckoutResult(
+                    (InventoryLock) futures.get("inventory-lock").get(),
+                    (AddressValidation) futures.get("address-validation").get(),
+                    (TaxCalculation) futures.get("tax-calculation").get(),
+                    (ShippingCost) futures.get("shipping-calculation").get(),
+                    (java.math.BigDecimal) futures.get("promotion-evaluation").get(),
+                    calculateFinalAmount(cart, (TaxCalculation) futures.get("tax-calculation").get(),
+                            (ShippingCost) futures.get("shipping-calculation").get(),
+                            (java.math.BigDecimal) futures.get("promotion-evaluation").get()),
+                    priceCheckFuture.get());
 
         } catch (Exception e) {
-            log.error("Checkout failed: {}", e.getMessage(), e);
-            throw new CheckoutException("Checkout failed: " + e.getMessage(), e);
+            throw new RuntimeException("Checkout failed", e);
         }
     }
 
     private double calculateFinalAmount(Cart cart, TaxCalculation tax,
             ShippingCost shipping, java.math.BigDecimal discount) {
         double subtotal = cart.getTotalPrice();
-        double taxAmount = tax.totalAmount();
-        double shippingAmount = shipping.amount();
+        double taxAmount = tax != null ? tax.totalAmount() : 0;
+        double shippingAmount = shipping != null ? shipping.amount() : 0;
         double discountAmount = discount != null ? Math.abs(discount.doubleValue()) : 0;
-
         return subtotal + taxAmount + shippingAmount - discountAmount;
     }
 
-    // Result records - Expanded for Broadleaf Parity (95% Domain Correctness)
-    public record CheckoutResult(
-            InventoryLock inventory,
-            AddressValidation address,
-            TaxCalculation tax,
-            ShippingCost shipping,
-            java.math.BigDecimal promotionDiscount,
-            double finalAmount,
-            List<String> priceDiscrepancies) {
-    }
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CheckoutResult {
+        private InventoryLock inventory;
+        private AddressValidation address;
+        private TaxCalculation tax;
+        private ShippingCost shipping;
+        private java.math.BigDecimal promotionDiscount;
+        private double finalAmount;
+        private List<String> priceDiscrepancies;
 
-    public static class CheckoutException extends RuntimeException {
-        public CheckoutException(String message, Throwable cause) {
-            super(message, cause);
+        // Compatibility methods to act like a record temporarily or for the test
+        public InventoryLock inventory() {
+            return inventory;
+        }
+
+        public AddressValidation address() {
+            return address;
+        }
+
+        public TaxCalculation tax() {
+            return tax;
+        }
+
+        public ShippingCost shipping() {
+            return shipping;
+        }
+
+        public java.math.BigDecimal promotionDiscount() {
+            return promotionDiscount;
+        }
+
+        public double finalAmount() {
+            return finalAmount;
+        }
+
+        public List<String> priceDiscrepancies() {
+            return priceDiscrepancies;
         }
     }
 }

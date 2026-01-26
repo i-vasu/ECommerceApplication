@@ -28,4 +28,12 @@ public interface ProductRepo extends JpaRepository<Product, Long> {
 	@Query(value = "SELECT * FROM products p WHERE products_search_idx @@@ :keyword", nativeQuery = true)
 	Page<Product> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
+	@Query(value = "SELECT * FROM products p WHERE (:keyword IS NULL OR products_search_idx @@@ :keyword) " +
+			"AND (:minPrice IS NULL OR p.price >= :minPrice) " +
+			"AND (:maxPrice IS NULL OR p.price <= :maxPrice)", nativeQuery = true)
+	Page<Product> facetedSearchByKeyword(@Param("keyword") String keyword,
+			@Param("minPrice") java.math.BigDecimal minPrice,
+			@Param("maxPrice") java.math.BigDecimal maxPrice,
+			Pageable pageable);
+
 }

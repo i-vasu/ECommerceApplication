@@ -8,7 +8,7 @@ public interface SearchService {
 
     void indexProducts(List<ProductDTO> products);
 
-    List<ProductDTO> searchProducts(String query);
+    List<ProductDTO> searchProducts(String query, Double minPrice, Double maxPrice);
 
     void deleteProduct(String productId);
 }

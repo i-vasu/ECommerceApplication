@@ -3,12 +3,12 @@ package com.app.order.listeners;
 import com.app.core.events.OrderPaidEvent;
 import com.app.shipping.ShipmentService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
 @Component
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 public class OrderFulfillmentListener {
 

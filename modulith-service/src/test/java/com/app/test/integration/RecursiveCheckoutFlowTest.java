@@ -36,9 +36,11 @@ public class RecursiveCheckoutFlowTest {
     void testDeepCheckoutFlow() {
         // 1. Setup Cart
         Cart cart = new Cart();
+        com.app.identity.entities.User user = new com.app.identity.entities.User();
+        user.setEmail("test@fashion.com");
+        cart.setUser(user);
         cart.setCartId(1L);
         cart.setTotalPrice(10000.0);
-        cart.setEmail("test@fashion.com");
 
         CartItem item = new CartItem();
         item.setProductId(101L);

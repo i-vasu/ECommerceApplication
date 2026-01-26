@@ -33,6 +33,9 @@ public interface ProductService {
 	ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder);
 
+	ProductResponse facetedSearch(String keyword, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
+			Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
+
 	String deleteProduct(Long productId);
 
 	ProductDTO getProductById(Long productId);

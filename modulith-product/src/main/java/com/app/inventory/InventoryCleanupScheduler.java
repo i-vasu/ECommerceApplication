@@ -1,12 +1,12 @@
 package com.app.inventory;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 public class InventoryCleanupScheduler {
 

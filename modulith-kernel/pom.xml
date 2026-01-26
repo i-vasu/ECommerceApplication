@@ -159,6 +159,7 @@
         <dependency>
             <groupId>org.crac</groupId>
             <artifactId>crac</artifactId>
+            <version>1.5.0</version>
         </dependency>
 
         <!-- Test -->
@@ -167,7 +168,7 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+    </dependencies>
 
 	<build>
 		<plugins>

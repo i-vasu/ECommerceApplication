@@ -1,7 +1,7 @@
 package com.app.order.services;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -10,7 +10,7 @@ import java.time.Duration;
 import java.util.Collections;
 
 @Service
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 public class FlashSaleInventoryService {
 

@@ -21,7 +21,8 @@ public record ProductDTO(
         List<ProductReviewDTO> reviews,
         Double averageRating,
         Map<String, String> socialPulse,
-        String scarcityMessage) {
+        String scarcityMessage,
+        Map<String, String> sizeGuide) {
 
     // Non-canonical constructor for backward compatibility with Mapstruct and
     // legacy code
@@ -30,7 +31,7 @@ public record ProductDTO(
             List<ProductVariantDTO> variants, List<ProductMediaDTO> media,
             List<ProductReviewDTO> reviews, Double averageRating) {
         this(productId, productName, itemCode, image, description, quantity, price, discount, specialPrice,
-                variants, media, reviews, averageRating, new java.util.HashMap<>(), null);
+                variants, media, reviews, averageRating, new java.util.HashMap<>(), null, null);
     }
 
     // Compact constructor to handle null initialization

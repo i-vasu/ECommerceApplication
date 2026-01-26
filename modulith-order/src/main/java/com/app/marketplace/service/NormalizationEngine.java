@@ -67,7 +67,7 @@ public class NormalizationEngine {
                 // Create partial ProductDTO
                 com.app.product.payloads.ProductDTO product = new com.app.product.payloads.ProductDTO(
                         null, title, sku, null, null, null, price, 0.0, price, null, null, null, null,
-                        new java.util.HashMap<>());
+                        new java.util.HashMap<>(), null, new java.util.HashMap<>());
 
                 orderItems.add(new OrderItemDTO(null, product, qty, 0.0, price));
             }
@@ -109,7 +109,7 @@ public class NormalizationEngine {
                 // Create partial ProductDTO
                 com.app.product.payloads.ProductDTO product = new com.app.product.payloads.ProductDTO(
                         null, title, sku, null, null, null, price, 0.0, price, null, null, null, null,
-                        new java.util.HashMap<>());
+                        new java.util.HashMap<>(), null, new java.util.HashMap<>());
 
                 orderItems.add(new OrderItemDTO(null, product, qty, 0.0, price));
             }

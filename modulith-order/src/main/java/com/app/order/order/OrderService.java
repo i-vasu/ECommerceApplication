@@ -28,4 +28,6 @@ public interface OrderService {
 	 * cancellations.
 	 */
 	OrderDTO cancelOrder(String emailId, Long orderId);
+
+	OrderDTO retryOrderSync(Long orderId);
 }

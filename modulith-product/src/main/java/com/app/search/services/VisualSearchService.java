@@ -141,7 +141,9 @@ public class VisualSearchService {
                 new ArrayList<>(),
                 new ArrayList<>(),
                 null,
-                new java.util.HashMap<>()), vectorStr); // socialPulse
+                new java.util.HashMap<>(),
+                null,
+                null), vectorStr);
     }
 
     public List<ProductDTO> searchByImage(java.io.InputStream imageStream) {

@@ -14,6 +14,7 @@ import java.util.List;
 public interface ProductMapper {
 
     @Mapping(target = "averageRating", source = "reviews", qualifiedByName = "calculateAverageRating")
+    @Mapping(target = "sizeGuide", source = "category.sizeChart.data")
     ProductDTO productToProductDTO(Product product);
 
     Product productDTOToProduct(ProductDTO productDTO);

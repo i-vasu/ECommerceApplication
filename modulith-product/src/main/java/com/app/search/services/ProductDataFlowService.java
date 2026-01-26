@@ -36,6 +36,7 @@ public class ProductDataFlowService {
     private final ProductMediaRepo mediaRepo;
     private final ImageService imageService;
     private final VisualSearchService visualSearchService;
+    private final AITaggingService aiTaggingService;
     private final RestClient restClient;
     private final ERPNextCredentialProvider credentialProvider;
 
@@ -58,8 +59,8 @@ public class ProductDataFlowService {
 
         product.setProductName(name);
         product.setDescription(description);
-        product.setPrice(price);
-        product.setSpecialPrice(price);
+        product.setPrice(java.math.BigDecimal.valueOf(price));
+        product.setSpecialPrice(java.math.BigDecimal.valueOf(price));
         product.setCategory(category);
         if (imageUrl != null)
             product.setImage(imageUrl);
@@ -113,8 +114,8 @@ public class ProductDataFlowService {
 
         product.setProductName(name);
         product.setDescription(description != null && !description.isEmpty() ? description : name);
-        product.setPrice(price);
-        product.setSpecialPrice(price);
+        product.setPrice(java.math.BigDecimal.valueOf(price));
+        product.setSpecialPrice(java.math.BigDecimal.valueOf(price));
         product.setCategory(category);
 
         if (itemData.containsKey("brand")) {
@@ -195,15 +196,30 @@ public class ProductDataFlowService {
                     var fullImageUrl = currentImage.startsWith("http") ? currentImage
                             : credentialProvider.getBaseUrl() + currentImage;
 
+                    // 1. Update Product Vector for Visual Search
                     visualSearchService.updateProductVector(product.getProductId(), fullImageUrl);
 
+                    // 2. AI Auto-Cataloging: Generate Semantic Tags and Enrich Description
+                    enrichProductWithAI(product, fullImageUrl);
+
                 } catch (Exception e) {
-                    log.warn("Visual Embedding failed for {}: {}", itemCode, e.getMessage());
+                    log.warn("AI Enrichment/Visual Embedding failed for {}: {}", itemCode, e.getMessage());
                 }
             }
 
         } catch (Exception e) {
             log.error("Error syncing media for {}: {}", itemCode, e.getMessage());
+        }
+    }
+
+    private void enrichProductWithAI(Product product, String imageUrl) {
+        log.info("Triggering AI Auto-Cataloging for Product: {}", product.getItemCode());
+        
+        List<String> tags = aiTaggingService.generateTags(imageUrl);
+        if (!tags.isEmpty()) {
+            String tagStr = String.join(",", tags) + ",AI-Enriched";
+            product.setTags(product.getTags() != null ? product.getTags() + "," + tagStr : tagStr);
+            log.info("AI Tags added to product {}: {}", product.getItemCode(), tagStr);
         }
     }
 

@@ -133,6 +133,9 @@ public class ERPNextProductSyncService {
                     }
                     log.info("Synced stock levels for {} items from ERPNext", rawList.size());
 
+                    // Sync Size Charts too
+                    syncSizeCharts(tenant);
+
                     // Invalidate Cache to reflect stock updates
                     if (cacheManager.getCache("products") != null)
                         cacheManager.getCache("products").clear();
@@ -142,6 +145,35 @@ public class ERPNextProductSyncService {
             }
         } catch (Exception e) {
             log.error("Error syncing stock from ERPNext: {}", e.getMessage());
+        }
+    }
+
+    public void syncSizeCharts(Tenant tenant) {
+        log.info("Syncing Size Charts from ERPNext...");
+        // In ERPNext, we assume a custom DocType "Size Chart" or similar exists,
+        // or we use "Material Request" or just "Item" attributes.
+        // For Vaabhi, we'll fetch from custom /api/resource/Size Chart
+        String effectiveApiKey = tenant.getErpNextApiKey() != null ? tenant.getErpNextApiKey()
+                : credentialProvider.getApiKey();
+        String effectiveApiSecret = tenant.getErpNextApiSecret() != null ? tenant.getErpNextApiSecret()
+                : credentialProvider.getApiSecret();
+        String effectiveUrl = tenant.getErpNextUrl() != null ? tenant.getErpNextUrl() : credentialProvider.getBaseUrl();
+
+        try {
+            String url = effectiveUrl + "/api/resource/Size Chart?fields=[\"name\",\"measurements\"]";
+            ResponseEntity<Map<String, Object>> response = restClient.get()
+                    .uri(url)
+                    .header("Authorization", "token " + effectiveApiKey + ":" + effectiveApiSecret)
+                    .retrieve()
+                    .toEntity(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                // Logic to map and save to our SizeChart entity
+                log.info("Fetched {} size charts from ERPNext", ((List<?>) response.getBody().get("data")).size());
+            }
+        } catch (Exception e) {
+            log.error("Size Chart sync failed: {}", e.getMessage());
         }
     }
 
