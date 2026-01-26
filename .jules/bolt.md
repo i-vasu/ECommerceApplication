@@ -1,0 +1,3 @@
+## 2026-01-26 - Java Version Mismatch and N+1 Optimization
+**Learning:** The project `pom.xml` configures Java 25, but the environment runs Java 21. This prevents local builds and tests from running successfully. In such cases, relying on static analysis and code verification is necessary. Also, discovered a classic N+1 query issue in `Product` entity where `variants`, `media`, and `reviews` were being lazy-loaded in a loop during DTO mapping.
+**Action:** When environment constraints prevent running tests, prioritize safe, well-understood optimizations like `@BatchSize` for N+1 problems, and rely on rigorous code review and static verification. Do not attempt to modify build configuration (pom.xml) to fit the environment unless explicitly instructed.
