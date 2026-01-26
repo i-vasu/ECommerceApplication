@@ -42,7 +42,7 @@ class ReviewServiceImplTest {
     @Test
     void testAddReview_Success() {
         Long productId = 1L;
-        ProductReviewDTO reviewDTO = new ProductReviewDTO(null, 1L, "user1", 5, "Great!", true, null);
+        ProductReviewDTO reviewDTO = new ProductReviewDTO(null, 1L, "user1", "",5, "Great!", true, null);
 
         Product product = new Product();
         product.setProductId(productId);
@@ -67,7 +67,7 @@ class ReviewServiceImplTest {
     @Test
     void testAddReview_InvalidRating() {
         Long productId = 1L;
-        ProductReviewDTO reviewDTO = new ProductReviewDTO(null, 1L, "user1", 0, "Bad", true, null);
+        ProductReviewDTO reviewDTO = new ProductReviewDTO(null, 1L, "user1", "",0, "Bad", true, null);
 
         Product product = new Product();
         product.setProductId(productId);
@@ -88,7 +88,7 @@ class ReviewServiceImplTest {
         product.setProductId(productId);
         ProductReview review = new ProductReview();
         review.setRating(4);
-        ProductReviewDTO reviewDTO = new ProductReviewDTO(1L, 1L, "user1", 4, "Good", true, null);
+        ProductReviewDTO reviewDTO = new ProductReviewDTO(1L, 1L, "user1", "",4, "Good", true, null);
 
         when(productRepo.findById(productId)).thenReturn(Optional.of(product));
         when(reviewRepo.findByProduct(product)).thenReturn(List.of(review));

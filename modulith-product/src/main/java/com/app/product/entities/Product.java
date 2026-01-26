@@ -50,6 +50,7 @@ public class Product extends ExtensibleEntity {
 	private BigDecimal discount;
 	private BigDecimal specialPrice;
 	private String brand;
+	private List<String> tags;
 
 	@ManyToOne
 	@JoinColumn(name = "category_id")
@@ -243,4 +244,11 @@ public class Product extends ExtensibleEntity {
 	public void setPriceLists(List<ProductPriceList> priceLists) {
 		this.priceLists = priceLists;
 	}
+
+	public void setTags(String s) {
+	}
+
+	public List<String> getTags() {
+        return tags;
+    }
 }

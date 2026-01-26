@@ -1,5 +1,6 @@
 package com.app.product.services;
 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,6 +10,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.ArrayList;
 
@@ -52,8 +54,8 @@ class ProductServiceTest {
         Product product = new Product();
         product.setProductName("Test Product");
         product.setDescription("Desc");
-        product.setPrice(100.0);
-        product.setDiscount(10.0);
+        product.setPrice(BigDecimal.valueOf(100.0));
+        product.setDiscount(BigDecimal.valueOf(10.0));
 
         Category category = new Category();
         category.setCategoryId(categoryId);
@@ -63,9 +65,8 @@ class ProductServiceTest {
         savedProduct.setProductId(1L);
         savedProduct.setProductName("Test Product");
 
-        ProductDTO expectedDTO = new ProductDTO(
-                1L, "Test Product", "CODE123", null, "Desc", 10, 100.0, 10.0, 90.0,
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, new java.util.HashMap<>());
+        ProductDTO expectedDTO;
+        expectedDTO = new ProductDTO(1L, "Test Product", "CODE123", "image.png", "Desc", 10, 100.0, 10.0, 90.0, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
 
         when(categoryRepo.findById(categoryId)).thenReturn(Optional.of(category));
         when(productRepo.save(any(Product.class))).thenReturn(savedProduct);

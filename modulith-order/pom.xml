@@ -41,10 +41,12 @@
 			<version>1.4.6</version>
 		</dependency>
 
+		<!-- Source: https://mvnrepository.com/artifact/io.github.juspay.hyperswitch/hyperswitch-java-client -->
 		<dependency>
-			<groupId>com.hyperswitch</groupId>
-			<artifactId>hyperswitch-java</artifactId>
-			<version>1.0.0</version>
+			<groupId>io.github.juspay.hyperswitch</groupId>
+			<artifactId>hyperswitch-java-client</artifactId>
+			<version>0.0.4</version>
+			<scope>compile</scope>
 		</dependency>
 
         <!-- OAuth2 for social login -->

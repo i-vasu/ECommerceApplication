@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,7 +57,7 @@ public class CouponIntegrationTest extends AbstractIntegrationTest {
 
         Product product = new Product();
         product.setProductName("Laptop");
-        product.setPrice(1000.0);
+        product.setPrice(BigDecimal.valueOf(1000.0));
         product.setQuantity(10);
         product.setDescription("Powerful laptop");
         product.setItemCode("LAP-001");

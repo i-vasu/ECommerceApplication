@@ -2,6 +2,7 @@ package com.app.commerce.states;
 
 public enum OrderStatus {
     PENDING("PENDING"),
+    PAID("PAID"),
     PAYMENT_CAPTURED("PAYMENT_CAPTURED"),
     PAYMENT_FAILED("PAYMENT_FAILED"),
     PROCESSING("PROCESSING"), // ERP Sync Done
