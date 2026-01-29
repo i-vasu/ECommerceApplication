@@ -1,6 +1,7 @@
 package com.app.product.entities;
 
 import java.util.List;
+import org.hibernate.annotations.BatchSize;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -30,5 +31,6 @@ public class Category {
 	private String categoryName;
 
 	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+	@BatchSize(size = 20)
 	private List<Product> products;
 }
