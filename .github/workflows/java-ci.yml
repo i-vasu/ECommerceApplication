@@ -39,20 +39,25 @@ jobs:
           MINIO_ROOT_PASSWORD: minioadmin
         ports:
           - 9000:9000
+        # Start MinIO server with /data directory
         options: >-
           --health-cmd "curl -f http://localhost:9000/minio/health/live"
           --health-interval 30s
           --health-timeout 20s
           --health-retries 3
+          --entrypoint sh
+        cmd:
+          - -c
+          - "mkdir -p /data; minio server /data"
 
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
-        java-version: '21'
-        distribution: 'temurin'
+        java-version: '25-ea'
+        distribution: 'zulu'
         cache: maven
         
     - name: Run Tests

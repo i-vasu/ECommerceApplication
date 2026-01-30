@@ -1,11 +1,14 @@
 ## 2026-01-30 - Environment Mismatch Blocking Builds
-**Learning:** The project is configured for Java 25 (`<source>25</source>` in `pom.xml`) but the execution environment runs Java 21. This causes `mvn install` to fail with `release version 25 not supported`. Modifying `pom.xml` is prohibited.
-**Action:** When verification via build/test is impossible due to this mismatch, rely on rigorous static analysis and manual code verification, explicitly documenting the limitation.
+**Learning:** The project is configured for Java 25 (`<source>25</source>` in `pom.xml`). CI builds failed on Java 21 runners.
+**Action:** Configure CI workflows to use `java-version: '25-ea'` and `distribution: 'zulu'` when building Java 25 projects.
 
 ## 2026-01-30 - Optimization Pattern: BatchSize
 **Learning:** `OneToMany` collections in `Product` and `Category` entities were missing `@BatchSize`, leading to potential N+1 query issues.
 **Action:** Always check `OneToMany` relationships for `@BatchSize` or `FETCH JOIN` usage during performance reviews.
 
 ## 2026-01-30 - CI Configuration Failures
-**Learning:** CI workflows (`ci-cd.yml`) used incorrect module names (`order-service` instead of `modulith-order`) and missing dependency check plugins, causing build failures.
-**Action:** Verify Maven module names against `pom.xml` `<modules>` section when updating CI scripts. Ensure used plugins are defined in `pom.xml`.
+**Learning:**
+1. Maven module names in CI (`ci-cd.yml`) must match exactly (`modulith-order` vs `order-service`).
+2. MinIO containers require an explicit startup command in GitHub Actions (`server /data`).
+3. Dependency Check plugin requires full coordinates (`mvn org.owasp:dependency-check-maven:check`) if not in default groups.
+**Action:** Verify Maven module names against `pom.xml` and consult container documentation for startup commands when updating CI scripts.
