@@ -5,3 +5,7 @@
 ## 2026-01-30 - Optimization Pattern: BatchSize
 **Learning:** `OneToMany` collections in `Product` and `Category` entities were missing `@BatchSize`, leading to potential N+1 query issues.
 **Action:** Always check `OneToMany` relationships for `@BatchSize` or `FETCH JOIN` usage during performance reviews.
+
+## 2026-01-30 - CI Configuration Failures
+**Learning:** CI workflows (`ci-cd.yml`) used incorrect module names (`order-service` instead of `modulith-order`) and missing dependency check plugins, causing build failures.
+**Action:** Verify Maven module names against `pom.xml` `<modules>` section when updating CI scripts. Ensure used plugins are defined in `pom.xml`.
