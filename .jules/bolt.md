@@ -10,5 +10,5 @@
 **Learning:**
 1. Maven module names in CI (`ci-cd.yml`) must match exactly (`modulith-order` vs `order-service`).
 2. MinIO containers require an explicit startup command in GitHub Actions (`server /data`).
-3. Dependency Check plugin requires full coordinates (`mvn org.owasp:dependency-check-maven:check`) if not in default groups.
-**Action:** Verify Maven module names against `pom.xml` and consult container documentation for startup commands when updating CI scripts.
+3. Dependency Check plugin requires a specific data directory (`<dataDirectory>`) to avoid H2 concurrency issues in CI environments.
+**Action:** Verify Maven module names against `pom.xml`, consult container documentation for startup commands, and isolate plugin data directories in CI.
