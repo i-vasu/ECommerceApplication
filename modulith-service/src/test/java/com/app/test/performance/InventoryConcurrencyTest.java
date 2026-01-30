@@ -1,8 +1,8 @@
 package com.app.test.performance;
 
-import com.app.inventory.InventoryService;
-import com.app.inventory.InventoryService.InventoryLock;
-import com.app.inventory.payloads.InventoryRequest;
+import com.app.logistics.inventory.InventoryService;
+import com.app.logistics.inventory.InventoryService.InventoryLock;
+import com.app.logistics.inventory.payloads.InventoryRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,9 +2,9 @@ package com.app.order.batch;
 
 import com.app.order.entities.Order;
 import com.app.order.repositories.OrderRepo;
-import com.app.payment.PaymentService;
-import com.app.commerce.states.OrderStatus;
-import com.app.inventory.InventoryReservationService;
+import com.app.finance.payment.PaymentService;
+import com.app.governance.states.OrderStatus;
+import com.app.logistics.inventory.InventoryReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -36,21 +36,16 @@ public class PaymentReconciliationWorker {
 
         for (Order order : staleOrders) {
             try {
-                if (order.getPayment() != null && order.getPayment().getPgOrderId() != null) {
-                    // Check actual status from Razorpay
-                    String pgOrderId = order.getPayment().getPgOrderId();
-                    // We need a way to check status. getPaymentDetails checks paymentId, but we
-                    // have pgOrderId.
-                    // Razorpay API allows fetching by orderId too.
-
-                    // For now, if it's stale and no payment_id is recorded, we assume it's
-                    // abandoned.
-                    if (order.getPayment().getPgPaymentId() == null) {
-                        expireOrder(order);
-                    }
-                } else {
-                    expireOrder(order);
+                // Double check with Payment Service before expiring
+                if (paymentService.isPaymentCompleted(order.getOrderId())) {
+                    log.info("Order {} was actually paid but status not updated. Updating now.", order.getOrderId());
+                    order.setOrderStatus(OrderStatus.PAYMENT_CAPTURED);
+                    orderRepo.save(order);
+                    continue;
                 }
+
+                // If it's stale and still PENDING (and not paid), we assume it's abandoned.
+                expireOrder(order);
             } catch (Exception e) {
                 log.error("Failed to reconcile order {}: {}", order.getOrderId(), e.getMessage());
             }

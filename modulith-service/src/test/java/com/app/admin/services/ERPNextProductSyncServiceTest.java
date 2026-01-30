@@ -15,9 +15,9 @@ import org.springframework.web.client.RestClient;
 
 import com.app.core.multitenancy.ERPNextCredentialProvider;
 import com.app.core.multitenancy.Tenant;
-import com.app.product.integration.SyncGateway;
-import com.app.product.repositories.ProductRepo;
-import com.app.product.repositories.ProductVariantRepo;
+import com.app.catalog.integration.SyncGateway;
+import com.app.catalog.repositories.ProductRepo;
+import com.app.catalog.repositories.ProductVariantRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)

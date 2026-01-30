@@ -18,12 +18,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.app.payment.mappers.PaymentMapper;
-import com.app.order.repositories.PaymentRepo;
+import com.app.finance.payment.mappers.PaymentMapper;
+import com.app.finance.repositories.PaymentRepo;
+import com.app.finance.payment.PaymentServiceImpl;
 import com.app.order.repositories.OrderRepo;
 import com.app.order.entities.Order;
-import com.app.order.entities.Payment;
-import com.app.order.payloads.PaymentDTO;
+import com.app.finance.entities.Payment;
+import com.app.finance.payloads.PaymentDTO;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;

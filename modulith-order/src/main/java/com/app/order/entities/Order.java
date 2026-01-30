@@ -1,29 +1,29 @@
 package com.app.order.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.app.commerce.states.OrderStatus;
+import com.app.governance.states.OrderStatus;
+import com.app.catalog.entities.Product;
+import com.app.logistics.entities.FulfillmentGroup;
+import com.app.finance.promo.entities.OrderAdjustment;
+import com.app.core.APIException;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Order Aggregate Root following DDD principles.
+ * Encapsulates state transitions and business invariants.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,47 +31,169 @@ import lombok.Setter;
 @Entity
 @Table(name = "orders")
 public class Order {
+    @jakarta.persistence.Version
+    private Long version;
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long orderId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long orderId;
 
-	@Email
-	@Column(nullable = false)
-	private String email;
+    @Email
+    @Column(nullable = false)
+    private String email;
 
-	@OneToMany(mappedBy = "order", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-	private List<OrderItem> orderItems = new ArrayList<>();
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> orderItems = new ArrayList<>();
 
-	private LocalDate orderDate;
+    private LocalDate orderDate;
 
-	@OneToOne
-	@JoinColumn(name = "payment_id")
-	private Payment payment;
+    private Long paymentId;
 
-	@OneToOne
-	@JoinColumn(name = "shipment_id")
-	private Shipment shipment;
+    private Long userId;
 
-	private Double subTotal = 0.0;
-	private Double totalTax = 0.0;
-	private Double shippingCost = 0.0;
-	private Double totalAmount;
+    private Long shipmentId;
 
-	@Enumerated(EnumType.STRING)
-	private OrderStatus orderStatus;
+    // Use BigDecimal for production-grade financial precision
+    private BigDecimal subTotal = BigDecimal.ZERO;
+    private BigDecimal totalTax = BigDecimal.ZERO;
+    private BigDecimal shippingCost = BigDecimal.ZERO;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
-	private java.time.LocalDateTime deliveredDate;
+    @Enumerated(EnumType.STRING)
+    @Setter(AccessLevel.PRIVATE) // Controlled via domain methods
+    private OrderStatus orderStatus;
 
-	private String couponCode;
+    private LocalDateTime deliveredDate;
 
-	private Double discountAmount = 0.0;
+    private String couponCode;
 
-	private String erpNextOrderName;
+    private BigDecimal discountAmount = BigDecimal.ZERO;
 
-	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<FulfillmentGroup> fulfillmentGroups = new ArrayList<>();
+    private String erpNextOrderName;
 
-	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<com.app.commerce.promotion.entities.OrderAdjustment> adjustments = new ArrayList<>();
+    // Address Snapshot (Ubiquitous Language: Shipping Destination)
+    // Ensures persistent records even if the user updates their profile address
+    // later.
+    private String shippingStreet;
+    private String shippingCity;
+    private String shippingState;
+    private String shippingPincode;
+    private String shippingCountry;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FulfillmentGroup> fulfillmentGroups = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderAdjustment> adjustments = new ArrayList<>();
+
+    // ==================== Domain Business Methods ====================
+
+    /**
+     * Initializes the order with a shipping destination snapshot.
+     */
+    public void setShippingDestination(String street, String city, String state, String pincode, String country) {
+        this.shippingStreet = street;
+        this.shippingCity = city;
+        this.shippingState = state;
+        this.shippingPincode = pincode;
+        this.shippingCountry = country;
+    }
+
+    public void markAsPaid(String pgPaymentId) {
+        this.orderStatus = OrderStatus.PAYMENT_CAPTURED;
+    }
+
+    /**
+     * Domain method to add an item to the order.
+     * Encapsulates the relationship and invariant check.
+     */
+    public void addItem(Product product, Double quantity, BigDecimal price, BigDecimal discount) {
+        OrderItem item = new OrderItem();
+        item.setOrder(this);
+        item.setProduct(product);
+        item.setQuantity(quantity.intValue());
+        item.setOrderedPrice(price);
+        item.setDiscount(discount);
+        item.setProductName(product.getProductName());
+        item.setItemCode(product.getItemCode());
+        item.setStatus("NORMAL");
+
+        this.orderItems.add(item);
+        calculateTotals();
+    }
+
+    /**
+     * Recalculates subtotal and total amount based on items.
+     */
+    public void calculateTotals() {
+        this.subTotal = orderItems.stream()
+                .map(item -> item.getOrderedPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        this.totalAmount = this.subTotal.add(this.totalTax).add(this.shippingCost).subtract(this.discountAmount);
+    }
+
+    // Manual setters for fields
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public void setOrderDate(LocalDate orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public void setSubTotal(BigDecimal subTotal) {
+        this.subTotal = subTotal;
+    }
+
+    public void setTotalTax(BigDecimal totalTax) {
+        this.totalTax = totalTax;
+    }
+
+    public void setShippingCost(BigDecimal shippingCost) {
+        this.shippingCost = shippingCost;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public void setCouponCode(String couponCode) {
+        this.couponCode = couponCode;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public void setPaymentId(Long paymentId) {
+        this.paymentId = paymentId;
+    }
+
+    public void setShipmentId(Long shipmentId) {
+        this.shipmentId = shipmentId;
+    }
+
+    public void setErpNextOrderName(String name) {
+        this.erpNextOrderName = name;
+    }
+
+    public void setOrderStatus(OrderStatus status) {
+        this.orderStatus = status;
+    }
+
+    public void setDeliveredDate(LocalDateTime deliveredDate) {
+        this.deliveredDate = deliveredDate;
+    }
+
+    public void setOrderItems(List<OrderItem> items) {
+        this.orderItems = items;
+        if (items != null) {
+            items.forEach(i -> i.setOrder(this));
+        }
+    }
 }

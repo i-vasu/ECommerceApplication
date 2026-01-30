@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmed!</title>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+
+        .summary {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .total {
+            font-weight: 800;
+            font-size: 18px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">✓</div>
+            <h1>Your order is confirmed!</h1>
+            <p>Order ID: #<span th:text="${orderId}">12345</span></p>
+        </div>
+        <div class="content">
+            <p>Hi there,</p>
+            <p>Thank you for shopping with Vaabhi! We've received your order and our team is already getting it ready
+                for shipment.</p>
+
+            <div class="summary">
+                <h3>Order Summary</h3>
+                <div class="row">
+                    <span>Payment Method</span>
+                    <span th:text="${paymentMethod}">Credit Card</span>
+                </div>
+                <div class="row total">
+                    <span>Total Amount</span>
+                    <span th:text="'₹' + ${amount}">₹0.00</span>
+                </div>
+            </div>
+
+            <p>We'll notify you as soon as your items are on the way.</p>
+        </div>
+        <div class="footer">
+            <p>Thank you for choosing Vaabhi!</p>
+        </div>
+    </div>
+</body>
+
+</html>

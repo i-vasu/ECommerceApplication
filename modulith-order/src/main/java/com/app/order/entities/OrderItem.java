@@ -15,8 +15,8 @@ import jakarta.persistence.FetchType; // Added for FetchType
 // import lombok.NoArgsConstructor;
 
 // Assuming Product and ProductVariant are in the same package or need to be imported
-import com.app.product.entities.Product;
-import com.app.product.entities.ProductVariant;
+import com.app.catalog.entities.Product;
+import com.app.catalog.entities.ProductVariant;
 
 @Entity
 // Removed Lombok annotations: @Data, @AllArgsConstructor, @NoArgsConstructor
@@ -40,8 +40,8 @@ public class OrderItem {
 	private ProductVariant variant; // New field
 
 	private Integer quantity;
-	private double orderedPrice;
-	private double discount; // Added back
+	private java.math.BigDecimal orderedPrice;
+	private java.math.BigDecimal discount; // Added back
 
 	private String productName;
 	private String itemCode;
@@ -58,7 +58,7 @@ public class OrderItem {
 
 	// Manual All-argument constructor
 	public OrderItem(Long orderItemId, Order order, Product product, ProductVariant variant, Integer quantity,
-			double orderedPrice, String productName, String itemCode) {
+			java.math.BigDecimal orderedPrice, String productName, String itemCode) {
 		this.orderItemId = orderItemId;
 		this.order = order;
 		this.product = product;
@@ -110,19 +110,19 @@ public class OrderItem {
 		this.quantity = quantity;
 	}
 
-	public double getOrderedPrice() {
+	public java.math.BigDecimal getOrderedPrice() {
 		return orderedPrice;
 	}
 
-	public void setOrderedPrice(double orderedPrice) {
+	public void setOrderedPrice(java.math.BigDecimal orderedPrice) {
 		this.orderedPrice = orderedPrice;
 	}
 
-	public double getDiscount() {
+	public java.math.BigDecimal getDiscount() {
 		return discount;
 	}
 
-	public void setDiscount(double discount) {
+	public void setDiscount(java.math.BigDecimal discount) {
 		this.discount = discount;
 	}
 

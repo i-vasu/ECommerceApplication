@@ -1,24 +1,13 @@
-taraget < 1sec startup time
+legal module
 
-Java 25
+logic gaps
+tactics
 
-CRaC liberica JDK 25
-Compact Object Headers
-Class Data Sharing (CDS)
-Module Import Declarations
-Scoped Values
-Generational Shenandoah
-Stream Gatherers
-Ahead-of-Time (AOT) Class Loading/Method Profiling
-Class-File API
-Sequenced Collection
+redundant code
 
+complete event based decoupleing (async)
+Separation of concerns and responsibilities among java app and erpnext. no overlaps.
+zero FQN
 
-
-Spring Boot 4
-
-First-Class API Versioning
-Null Safety with JSpecify
-RestTestClient
-spring-boot-starter-opentelemetry
-
+zero lombok, migrate away from it
+migrate from hibernate to spring data jdbc

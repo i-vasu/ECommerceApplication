@@ -17,42 +17,53 @@
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-kernel</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
-        <!-- Product Dependency (for Orders/Cart) -->
+        <!-- New Specialized Modules -->
         <dependency>
             <groupId>com.app</groupId>
-            <artifactId>modulith-product</artifactId>
-        </dependency>
-
+            <artifactId>modulith-catalog</artifactId>
+            <version>${project.version}</version>
+            </dependency>
         <dependency>
             <groupId>com.app</groupId>
-            <artifactId>modulith-identity</artifactId>
-        </dependency>
+            <artifactId>modulith-security</artifactId>
+            <version>${project.version}</version>
+            </dependency>
         <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-starter-core</artifactId>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-checkout</artifactId>
+            <version>${project.version}</version>
+            </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-finance</artifactId>
+            <version>${project.version}</version>
+            </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-cart</artifactId>
+            <version>${project.version}</version>
+            </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-logistics</artifactId>
+            <version>${project.version}</version>
+            </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-governance</artifactId>
+            <version>${project.version}</version>
         </dependency>
-
-		<!-- Payments -->
-		<dependency>
-			<groupId>com.razorpay</groupId>
-			<artifactId>razorpay-java</artifactId>
-			<version>1.4.6</version>
-		</dependency>
-
-		<!-- Source: https://mvnrepository.com/artifact/io.github.juspay.hyperswitch/hyperswitch-java-client -->
-		<dependency>
-			<groupId>io.github.juspay.hyperswitch</groupId>
-			<artifactId>hyperswitch-java-client</artifactId>
-			<version>0.0.4</version>
-			<scope>compile</scope>
-		</dependency>
-
-        <!-- OAuth2 for social login -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-core</artifactId>
         </dependency>
 
         <!-- Test -->
@@ -60,6 +71,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.statemachine</groupId>
+			<artifactId>spring-statemachine-starter</artifactId>
 		</dependency>
 	</dependencies>
 

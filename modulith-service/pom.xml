@@ -16,18 +16,72 @@
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-kernel</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
-            <artifactId>modulith-product</artifactId>
+            <artifactId>modulith-governance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-catalog</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-discovery</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-intelligence</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-cart</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-checkout</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-order</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
-            <artifactId>modulith-identity</artifactId>
+            <artifactId>modulith-finance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-logistics</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-marketing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-erp-sync</artifactId>
+            <version>${project.version}</version>
         </dependency>
 		<!-- Log4j2: Exclude default logging globally -->
 		<dependency>
@@ -143,10 +197,41 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
         <dependency>
-            <groupId>me.paulschwarz</groupId>
-            <artifactId>spring-dotenv</artifactId>
-            <version>4.0.0</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-batch</artifactId>
         </dependency>
+
+		<!-- Monitoring & Admin (Spring Native) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.codecentric</groupId>
+			<artifactId>spring-boot-admin-starter-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.codecentric</groupId>
+			<artifactId>spring-boot-admin-starter-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-otel</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-exporter-otlp</artifactId>
+		</dependency>
+
+		<!-- Internal High-Performance Dashboard (Vaadin) -->
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-spring-boot-starter</artifactId>
+		</dependency>
 
 		<!-- Test Dependencies -->
 		<dependency>

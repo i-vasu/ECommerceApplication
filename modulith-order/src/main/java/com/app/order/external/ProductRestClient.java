@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.MediaType;
 
-import com.app.product.payloads.ProductDTO;
+import com.app.catalog.payloads.ProductDTO;
 
 @Component
 public class ProductRestClient implements ProductClient {

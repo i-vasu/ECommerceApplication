@@ -38,6 +38,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+        </dependency>
 
 		<!-- Redis & Persistence -->
 		<dependency>
@@ -72,6 +81,10 @@
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-event</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.integration</groupId>
@@ -161,6 +174,13 @@
             <artifactId>crac</artifactId>
             <version>1.5.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.statemachine</groupId>
+            <artifactId>spring-statemachine-data-jpa</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
 
         <!-- Test -->
 		<dependency>

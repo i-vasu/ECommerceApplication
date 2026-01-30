@@ -1,6 +1,6 @@
 package com.app.order.payloads;
 
-import com.app.identity.payloads.UserDTO;
+import com.app.security.payloads.UserDTO;
 
 public record JWTAuthResponse(String token, UserDTO user) {
 }

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Vaabhi!</title>
+    <style>
+        body {
+            font-family: 'Outfit', 'Helvetica', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(to right, #7c3aed, #2563eb);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .content {
+            font-size: 16px;
+        }
+
+        .button {
+            display: inline-block;
+            background: #7c3aed;
+            color: #ffffff !important;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-top: 25px;
+            transition: background 0.2s;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Vaabhi</div>
+        </div>
+        <div class="content">
+            <h1>Welcome home, <span th:text="${firstName}">Customer</span>!</h1>
+            <p>We're thrilled to have you join our fashion community. At Vaabhi, we believe style is a way to say who
+                you are without having to speak.</p>
+            <p>To celebrate your arrival, we've curated a special collection just for you. Ready to explore?</p>
+            <a href="http://localhost:3000/shop" class="button">Start Shopping</a>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 Vaabhi Store. All rights reserved.</p>
+            <p><a href="#" style="color: #64748b;">Terms</a> &bull; <a href="#" style="color: #64748b;">Privacy</a></p>
+        </div>
+    </div>
+</body>
+
+</html>

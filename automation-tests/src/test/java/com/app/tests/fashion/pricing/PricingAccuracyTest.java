@@ -1,10 +1,8 @@
 package com.app.tests.fashion.pricing;
 
-import com.app.order.entities.Cart;
-import com.app.order.entities.CartItem;
-import com.app.shipping.TaxCalculationService;
-import com.app.shipping.TaxCalculationService.TaxCalculation;
-import com.app.shipping.services.TaxCalculationServiceERPNextImpl;
+import com.app.logistics.shipping.TaxCalculationService;
+import com.app.logistics.shipping.TaxCalculationService.TaxCalculation;
+import com.app.logistics.shipping.services.TaxCalculationServiceERPNextImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -18,9 +16,9 @@ import java.util.ArrayList;
  */
 public class PricingAccuracyTest {
 
-    private final TaxCalculationService taxService = new TaxCalculationServiceERPNextImpl(null); // No ERPNextService
-                                                                                                 // needed for mock
-                                                                                                 // logic
+    private final TaxCalculationService taxService = new TaxCalculationServiceERPNextImpl(); // No ERPNextService
+                                                                                             // needed for mock
+                                                                                             // logic
 
     @ParameterizedTest
     @CsvSource({
@@ -31,10 +29,7 @@ public class PricingAccuracyTest {
     })
     @DisplayName("Verify Tax Accuracy across States")
     void testTaxCalculationAccuracy(String state, double cartTotal, double expectedTax, String tax1, String tax2) {
-        Cart cart = new Cart();
-        cart.setTotalPrice(cartTotal);
-
-        TaxCalculation result = taxService.calculateGST(cart, state);
+        TaxCalculation result = taxService.calculateGST(cartTotal, state);
 
         assertEquals(expectedTax, result.totalAmount(), 0.01, "Total tax should match expected value for " + state);
 

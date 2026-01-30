@@ -36,7 +36,7 @@ class NormalizationEngineTest {
         assertEquals("AMAZON", orderDTO.source());
         assertEquals("123-4567890-1234567", orderDTO.marketplaceOrderId());
         assertEquals("buyer@example.com", orderDTO.email());
-        assertEquals(199.99, orderDTO.totalAmount());
+        assertEquals(199.99, orderDTO.totalAmount().doubleValue());
         assertEquals(1, orderDTO.orderItems().size());
         assertEquals("SKU-AMZ-001", orderDTO.orderItems().get(0).product().itemCode());
         assertEquals(2, orderDTO.orderItems().get(0).quantity());
@@ -60,7 +60,7 @@ class NormalizationEngineTest {
         assertEquals("FLIPKART", orderDTO.source());
         assertEquals("FLIP-98765", orderDTO.marketplaceOrderId());
         assertEquals("customer@flipkart.com", orderDTO.email());
-        assertEquals(250.0, orderDTO.totalAmount());
+        assertEquals(250.0, orderDTO.totalAmount().doubleValue());
         assertEquals(1, orderDTO.orderItems().size());
         assertEquals("SKU-FLP-002", orderDTO.orderItems().get(0).product().itemCode());
         assertEquals(1, orderDTO.orderItems().get(0).quantity());

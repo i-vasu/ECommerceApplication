@@ -1,6 +1,15 @@
 package com.app.core.events;
 
+import java.math.BigDecimal;
 import java.io.Serializable;
 
-public record OrderPaidEvent(Long orderId, String email, Double amount, String pgPaymentId) implements Serializable {
-}
+/**
+ * Domain event published when payment is successfully captured for an order.
+ */
+public record OrderPaidEvent(
+    Long orderId, 
+    String email, 
+    BigDecimal amount, 
+    String pgPaymentId,
+    String paymentMethod
+) implements Serializable {}

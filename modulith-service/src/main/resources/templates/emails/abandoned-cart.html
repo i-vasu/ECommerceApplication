@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>You left something behind!</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #6b46c1;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .content {
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-top: none;
+        }
+
+        .button {
+            display: inline-block;
+            background: #6b46c1;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+
+        .rec-item {
+            display: inline-block;
+            width: 45%;
+            margin: 2%;
+            vertical-align: top;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #718096;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Don't Miss Out!</h1>
+        </div>
+        <div class="content">
+            <p>Hi <span th:text="${name}">Customer</span>,</p>
+            <p>We noticed you left some items in your cart. They're still waiting for you!</p>
+
+            <div th:each="item : ${cartItems}" class="item">
+                <strong th:text="${item.productName}">Product</strong> -
+                <span th:text="'₹' + ${item.productPrice}">Price</span>
+            </div>
+
+            <p style="font-weight: bold; font-size: 1.2rem; margin-top: 20px;">
+                Total: <span th:text="'₹' + ${cartTotal}">0.00</span>
+            </p>
+
+            <a th:href="${trackedCtaUrl}" class="button">Resume My Order</a>
+
+            <div th:if="${not #lists.isEmpty(recommendations)}" style="margin-top: 40px;">
+                <h3 style="border-top: 1px solid #e2e8f0; padding-top: 20px;">Trending Right Now</h3>
+                <div th:each="rec : ${recommendations}" class="rec-item">
+                    <img th:if="${rec.image}" th:src="${rec.image}"
+                        style="width: 100%; height: auto; border-radius: 4px;" />
+                    <div style="font-weight: bold; margin-top: 5px;" th:text="${rec.productName}">Product</div>
+                    <div style="color: #6b46c1;" th:text="'₹' + ${rec.specialPrice}">Price</div>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <p>Fashion Store Inc, Mumbai, India</p>
+            <p>Don't want these emails? <a th:href="${unsubscribeUrl}" style="color: #6b46c1;">Unsubscribe here</a></p>
+        </div>
+    </div>
+</body>
+
+</html>

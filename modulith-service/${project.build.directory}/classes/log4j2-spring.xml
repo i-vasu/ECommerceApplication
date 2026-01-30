@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" packages="com.app.core.logging">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} [%X{traceId}, %X{spanId}] - %msg%n"/>
+        </Console>
+        
+        <!-- Persistence: Logs to Disk (Rollover after 10MB) -->
+        <RollingFile name="File" fileName="logs/vaabhi.log" filePattern="logs/vaabhi-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} [%X{traceId}, %X{spanId}] - %msg%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+
+        <!-- Database Appender for Errors/Warnings -->
+        <DatabaseAppender name="Database">
+            <PatternLayout pattern="%msg"/>
+        </DatabaseAppender>
+
+        <!-- Native Memory Appender for Live UI Viewer -->
+        <MemoryAppender name="Memory" maxMessages="500">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} [%X{traceId}, %X{spanId}] - %msg%n"/>
+        </MemoryAppender>
+    </Appenders>
+    
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+            <AppenderRef ref="Database"/>
+            <AppenderRef ref="Memory"/>
+        </Root>
+        
+        <Logger name="com.app" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+            <AppenderRef ref="Database"/>
+            <AppenderRef ref="Memory"/>
+        </Logger>
+    </Loggers>
+</Configuration>

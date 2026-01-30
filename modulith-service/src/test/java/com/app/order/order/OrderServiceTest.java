@@ -14,20 +14,31 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import com.app.cart.CartService;
+import com.app.erp_sync.gateway.ERPNextService;
+import com.app.catalog.repositories.ProductRepo;
+import com.app.logistics.inventory.InventoryReservationService;
+import com.app.checkout.pipeline.OptimizedCheckoutService;
+import com.app.security.repositories.AddressRepo;
+import com.app.order.repositories.OrderHistoryRepo;
+import com.app.order.async.OrderProducer;
+import com.app.core.async.EventProducer;
+import com.app.governance.states.OperationalStateMachineService;
+import com.app.governance.rules.RuleEngineService;
+import com.app.core.services.RedisLockService;
+import com.app.security.UserService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.tracing.Tracer;
+import com.app.cart.domain.CartService;
 import com.app.core.APIException;
-import com.app.identity.repositories.UserRepo;
-import com.app.inventory.InventoryReservationService;
-import com.app.order.entities.Cart;
-import com.app.order.entities.CartItem;
-import com.app.order.entities.Payment;
+import com.app.security.repositories.UserRepo;
+import com.app.cart.entities.Cart;
+import com.app.cart.entities.CartItem;
+import com.app.finance.entities.Payment;
 import com.app.order.mappers.OrderMapper;
-import com.app.order.repositories.CartRepo;
+import com.app.cart.repositories.CartRepo;
 import com.app.order.repositories.OrderRepo;
-import com.app.order.repositories.PaymentRepo;
+import com.app.finance.repositories.PaymentRepo;
 import com.app.order.repositories.OrderItemRepo;
-import com.app.order.services.ERPNextService;
-import com.app.product.repositories.ProductRepo;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -54,6 +65,28 @@ class OrderServiceTest {
     private InventoryReservationService inventoryReservationService;
     @Mock
     private ProductRepo productRepo;
+    @Mock
+    private OptimizedCheckoutService optimizedCheckoutService;
+    @Mock
+    private AddressRepo addressRepo;
+    @Mock
+    private OrderHistoryRepo orderHistoryRepo;
+    @Mock
+    private MeterRegistry meterRegistry;
+    @Mock
+    private Tracer tracer;
+    @Mock
+    private OrderProducer orderProducer;
+    @Mock
+    private EventProducer eventProducer;
+    @Mock
+    private OperationalStateMachineService operationalStateMachine;
+    @Mock
+    private RuleEngineService ruleEngine;
+    @Mock
+    private RedisLockService lockService;
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -76,13 +109,24 @@ class OrderServiceTest {
         cart.setCartItems(Collections.singletonList(item));
 
         when(cartRepo.findCartByEmailAndCartId(email, cartId)).thenReturn(cart);
-        // Reserve success
-        when(inventoryReservationService.reserveStock("ITEM-1", 2)).thenReturn(true);
-        // DB Failure simulation (e.g. Payment save fails)
-        when(paymentRepo.save(any(Payment.class))).thenThrow(new RuntimeException("DB Error"));
+        
+        // Mock optimized checkout result
+        OptimizedCheckoutService.CheckoutResult result = mock(OptimizedCheckoutService.CheckoutResult.class);
+        when(result.inventory()).thenReturn(new OptimizedCheckoutService.CheckoutResult.InventoryStatus(true, "OK"));
+        when(optimizedCheckoutService.processCheckout(any(), any())).thenReturn(result);
+
+        // Mock lock
+        when(lockService.tryLock(anyString(), any())).thenReturn(true);
+        
+        // Mock Span/Tracer
+        io.micrometer.tracing.Span span = mock(io.micrometer.tracing.Span.class);
+        when(tracer.nextSpan()).thenReturn(span);
+        when(span.name(anyString())).thenReturn(span);
+
+        // DB Failure simulation on order save
+        when(orderRepo.save(any())).thenThrow(new RuntimeException("DB Error"));
 
         // Act & Assert
-        // Expect APIException which wraps the runtime exception
         assertThrows(APIException.class, () -> orderService.placeOrder(email, cartId, payMethod));
 
         // Assert Stock Release

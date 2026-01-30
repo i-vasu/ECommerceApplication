@@ -1,11 +1,11 @@
 package com.app.order.order;
 
-import com.app.commerce.states.OrderStatus;
+import com.app.governance.states.OrderStatus;
 import com.app.order.entities.Order;
 import com.app.order.entities.OrderHistory;
 import com.app.order.repositories.OrderHistoryRepo;
 import com.app.order.repositories.OrderRepo;
-import com.app.commerce.states.OrderStateMachine;
+import com.app.governance.states.OperationalStateMachineService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +27,7 @@ public class OrderStatusAuditTest {
     private OrderHistoryRepo historyRepo;
 
     @Mock
-    private OrderStateMachine stateMachine;
+    private OperationalStateMachineService stateMachine;
 
     @InjectMocks
     private OrderServiceImpl orderService;

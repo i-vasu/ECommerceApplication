@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: Vaabhi Product & Catalog API
+  description: API for managing products, categories, and inventory.
+  version: 1.0.0
+  contact:
+    name: Vaabhi Dev Team
+    email: dev@vaabhi.com
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+paths:
+  /public/products:
+    get:
+      tags:
+        - Product Search
+      summary: List Products
+      description: Fetches a paginated list of products.
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 12
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+
+  /public/products/{productId}:
+    get:
+      tags:
+        - Product Details
+      summary: Get Product Details
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDTO'
+
+components:
+  schemas:
+    ProductDTO:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        itemCode:
+          type: string
+        price:
+          type: number
+          format: decimal
+        specialPrice:
+          type: number
+          format: decimal
+        image:
+          type: string
+        description:
+          type: string
+
+    ProductResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductDTO'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer

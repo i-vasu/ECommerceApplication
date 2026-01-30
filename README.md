@@ -4,7 +4,7 @@ This project is a high-performance fashion e-commerce modular monolith built wit
 
 ## 🚀 Modern Tech Stack
 - **Java 25 (LTM)**: Utilizing Scoped Values, Virtual Threads, Sequenced Collections, and Vector API.
-- **Spring Boot 4.0**: Optimized for modern observability and high-concurrency startups.
+- **Spring Boot 4.0.1**: Optimized for modern observability and high-concurrency startups.
 - **Database**: PostgreSQL with Multi-tenant schema isolation.
 - **Monitoring**: OpenTelemetry + Prometheus/Grafana integration.
 

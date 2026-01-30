@@ -1,11 +1,14 @@
 package com.app.test.integration;
 
 import com.app.order.entities.*;
-import com.app.order.services.OptimizedCheckoutService;
-import com.app.order.services.OptimizedCheckoutService.CheckoutResult;
-import com.app.identity.entities.Address;
-import com.app.commerce.promotion.repositories.PromotionRuleRepo;
-import com.app.commerce.promotion.entities.PromotionRule;
+import com.app.cart.entities.Cart;
+import com.app.cart.entities.CartItem;
+import com.app.checkout.pipeline.OptimizedCheckoutService;
+import com.app.checkout.pipeline.OptimizedCheckoutService.CheckoutResult;
+import com.app.security.entities.Address;
+import com.app.security.entities.User;
+import com.app.finance.promo.repositories.PromotionRuleRepo;
+import com.app.finance.promo.entities.PromotionRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +39,7 @@ public class RecursiveCheckoutFlowTest {
     void testDeepCheckoutFlow() {
         // 1. Setup Cart
         Cart cart = new Cart();
-        com.app.identity.entities.User user = new com.app.identity.entities.User();
+        User user = new User();
         user.setEmail("test@fashion.com");
         cart.setUser(user);
         cart.setCartId(1L);

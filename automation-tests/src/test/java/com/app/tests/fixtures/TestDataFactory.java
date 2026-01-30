@@ -1,10 +1,10 @@
 package com.app.tests.fixtures;
 
 import com.app.order.entities.Order;
-import com.app.order.entities.Payment;
-import com.app.identity.entities.User;
+import com.app.finance.entities.Payment;
+import com.app.security.entities.User;
 import com.app.order.payloads.OrderDTO;
-import com.app.commerce.states.OrderStatus;
+import com.app.governance.states.OrderStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,12 +29,13 @@ public class TestDataFactory {
         }
 
         public OrderBuilder withAmount(Double amount) {
-            order.setTotalAmount(amount);
+            order.setTotalAmount(java.math.BigDecimal.valueOf(amount));
             return this;
         }
 
         public OrderBuilder withUser(User user) {
             order.setEmail(user.getEmail());
+            order.setUserId(user.getUserId());
             return this;
         }
 
@@ -47,7 +48,7 @@ public class TestDataFactory {
             if (order.getOrderStatus() == null)
                 order.setOrderStatus(OrderStatus.PENDING);
             if (order.getTotalAmount() == null)
-                order.setTotalAmount(100.0);
+                order.setTotalAmount(java.math.BigDecimal.valueOf(100.0));
             if (order.getOrderItems() == null)
                 order.setOrderItems(new ArrayList<>());
             return order;

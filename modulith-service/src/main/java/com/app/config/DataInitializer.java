@@ -1,9 +1,9 @@
 package com.app.config;
 
-import com.app.identity.entities.Role;
-import com.app.identity.entities.User;
-import com.app.identity.repositories.RoleRepo;
-import com.app.identity.repositories.UserRepo;
+import com.app.security.entities.Role;
+import com.app.security.entities.User;
+import com.app.security.repositories.RoleRepo;
+import com.app.security.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;

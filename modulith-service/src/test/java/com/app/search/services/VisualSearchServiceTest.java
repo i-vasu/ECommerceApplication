@@ -10,6 +10,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClient.RequestHeadersUriSpec;
 import org.springframework.web.client.RestClient.RequestHeadersSpec;
 import org.springframework.web.client.RestClient.ResponseSpec;
+import com.app.discovery.domain.services.VisualSearchService;
 
 import java.util.Collections;
 

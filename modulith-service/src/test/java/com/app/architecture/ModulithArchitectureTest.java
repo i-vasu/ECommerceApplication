@@ -125,7 +125,7 @@ class ModulithArchitectureTest {
         ArchRule rule = noClasses()
                 .that().resideInAPackage("com.app.order..")
                 .should().dependOnClassesThat()
-                .resideInAPackage("com.app.identity.services..")
+                .resideInAPackage("com.app.security.services..")
                 .andShould().dependOnClassesThat()
                 .resideInAPackage("com.app.marketing.services..");
 
@@ -145,7 +145,7 @@ class ModulithArchitectureTest {
                 .should().dependOnClassesThat()
                 .resideInAPackage("com.app.product.entities..")
                 .orShould().dependOnClassesThat()
-                .resideInAPackage("com.app.identity.entities..");
+                .resideInAPackage("com.app.security.entities..");
 
         // This will have violations for now - enable after full migration
         // rule.check(allClasses);

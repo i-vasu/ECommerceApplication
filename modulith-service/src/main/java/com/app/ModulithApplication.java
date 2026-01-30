@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @org.springframework.retry.annotation.EnableRetry
 @org.springframework.modulith.Modulithic
 @org.springframework.scheduling.annotation.EnableAsync
+@de.codecentric.boot.admin.server.config.EnableAdminServer
 public class ModulithApplication {
 
     public static void main(String[] args) {

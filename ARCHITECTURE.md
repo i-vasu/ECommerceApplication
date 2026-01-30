@@ -12,21 +12,33 @@
 
 This document outlines the architectural roles and responsibilities of the key data subsystems in the Vasu E-Commerce Platform. The architecture follows a **Command Query Responsibility Segregation (CQRS)** inspired pattern, where business operations and high-performance reads are decoupled.
 
-```mermaid
-graph TD
-    User[Storefront User] -->|Browses/Search| JavaApp[Spring Boot App]
-    Admin[Admin User] -->|Manages| ERPNext[ERPNext]
-    
-    subgraph "Core Data Layer"
-        ERPNext --"Syncs Products/Inventory"--> JavaApp
-        JavaApp --"Pushes Orders"--> ERPNext
-    end
-
-    subgraph "Performance Layer"
+    subgraph "Performance & Intelligence Layer"
         JavaApp --"Full Text Search / Analytics"--> ParadeDB[ParadeDB (Postgres)]
         JavaApp --"Cache / Session / Carts"--> Dragonfly[DragonflyDB (Redis)]
+        JavaApp --"Autonomous Intelligence"--> Intelligence[Self-Healing & Anomaly Engine]
     end
-```
+
+---
+
+### 1. Core & Infrastructure Layer (The Foundation)
+*   **`modulith-kernel`**: Core plumbing, Scoped Values, Multitenancy switches, and SMILE serialization.
+*   **`modulith-governance`**: Central nervous system—Audit logs, Rule Engine (SpEL), and Domain State Machines.
+*   **`modulith-security`**: Identity Provider (OIDC/OAuth2), RBAC, and Token management.
+*   **`modulith-erp-sync`**: Strictly isolated ERPNext gateway and webhook orchestration.
+
+### 2. Autonomous Intelligence Layer (The Brain)
+*   **`modulith-intelligence`**: Self-Healing Catalog, Dynamic Pricing engines, and Predictive Analytics.
+*   **`modulith-discovery`**: Semantic Search, Visual Search (Vector DJL), and AI-driven ranking.
+*   **`modulith-marketing`**: Segment-aware Journeys, WhatsApp/Email automation, and RFM calculation.
+
+### 3. Transactional Commerce Layer (The Engine)
+*   **`modulith-catalog`**: Product Master, Category hierarchies, and Inventory Master.
+*   **`modulith-cart`**: High-performance, Redis-backed carts with abandonment tracking.
+*   **`modulith-checkout`**: Parallelized validation pipeline (`OptimizedCheckoutService`).
+*   **`modulith-order`**: Core order lifecycle, fulfillment state transitions.
+*   **`modulith-finance`**: Payments (Razorpay/Hyperswitch), Taxes, and Promotion evaluation.
+*   **`modulith-logistics`**: Warehouse routing, Carrier management, and Pincode latency.
+*   **`modulith-support`**: Ticketing, Autonomous Anomaly Escalation, and Returns.
 
 ---
 

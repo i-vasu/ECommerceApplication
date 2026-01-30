@@ -1,13 +1,24 @@
 package com.app.core.events;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigDecimal;
+import java.util.List;
 
 /**
- * Event published when a new order is created.
- * Consumed by Inventory module to finalize stock deduction.
+ * Domain event published when an order is successfully placed.
  */
 public record OrderCreatedEvent(
-        @JsonProperty("orderId") Long orderId,
-        @JsonProperty("userId") Long userId,
-        @JsonProperty("totalAmount") Double totalAmount) {
+        Long orderId,
+        Long userId,
+        String email,
+        BigDecimal totalAmount,
+        List<OrderItemData> items,
+        java.time.LocalDateTime createdAt) {
+
+    public record OrderItemData(String itemCode, Integer quantity, BigDecimal price) {
+    }
+
+    public OrderCreatedEvent(Long orderId, Long userId, String email, BigDecimal totalAmount,
+            List<OrderItemData> items) {
+        this(orderId, userId, email, totalAmount, items, java.time.LocalDateTime.now());
+    }
 }

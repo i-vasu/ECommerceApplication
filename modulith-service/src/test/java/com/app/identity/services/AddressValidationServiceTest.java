@@ -1,6 +1,6 @@
-package com.app.identity.services;
+package com.app.security.services;
 
-import com.app.identity.entities.Address;
+import com.app.security.entities.Address;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

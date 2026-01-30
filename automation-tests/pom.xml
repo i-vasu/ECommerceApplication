@@ -115,6 +115,46 @@
             <artifactId>modulith-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-checkout</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-cart</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-finance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-order</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-catalog</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-logistics</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.app</groupId>
+            <artifactId>modulith-governance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

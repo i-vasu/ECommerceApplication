@@ -87,40 +87,30 @@ This document provides a comprehensive map of the end-to-end business flows with
 
 ---
 
+## 7. Autonomous Business Intelligence & Self-Healing
+*Managed by: `modulith-kernel`, `modulith-product`, `modulith-identity`*
+
+*   **Fraudulent Return Prevention (Fraud Guard)**: Checks historical return rates via SpEL policies to automatically block abusive users.
+*   **Self-Healing Catalog**: Daily recalculation of `quality_score` based on return rates, automatically deprioritizing poor-performing items in search.
+*   **Dynamic Pricing (Surge/Clearance)**: Real-time price adjustments based on demand velocity (Redis) and inventory levels.
+*   **Autonomous Support Escalation**: Automatic ticket creation and AI-categorization for SLA violations detected by the Kernel.
+*   **Customer Insight Engine**: Daily RFM analysis to identify VIPs and "At-Risk" users, triggering autonomous recovery journeys.
+
+---
+
 ## Technical Edge Case Handling
 1.  **Distributed Lock**: Background syncs use Redis locks to prevent race conditions across server nodes.
 2.  **Binary Serialization**: All intra-service signals and caches use **Jackson 3 SMILE**, reducing network payload by ~40%.
-3.  **Atomic Inventory**: Inventory is reserved *before* order confirmation to prevent overselling during high-concurrency "Flash Drops".
-4.  **Schema-on-Write Search**: Product changes trigger async search index refreshes for near real-time catalog accuracy.
-5.  **API Resource Hardening**: All paginated endpoints (Products, Orders, Support) enforce a strict maximum page size (50) to prevent memory-based Denial of Service (DoS). Visual search handles strict file-type and size validation at the controller entry point.
+3.  **Atomic Inventory**: Inventory is reserved *before* order confirmation to prevent overselling.
+4.  **Schema-on-Write Search**: Product changes trigger async search index refreshes.
+5.  **API Resource Hardening**: All paginated endpoints enforce a strict maximum page size (50).
+6.  **Decoupled Analytics**: Activity tracking is published via **Asynchronous Domain Events**, decoupling business logic from tracking latency.
 
-Next ToDO: 
+---
 
-ERPNext Side: Create a Webhook in ERPNext all DocType as needed.
-Endpoint: https://your-domain.com/api/webhooks/erpnext/order-status
-Secret: Generate a random string and save it in both ERPNext (Webhook Secret field) and our tenants table (erpNextWebhookSecret column).
-
-1. ⚡ Flash Sale & High-Concurrency Engine
-In fashion, "New Drops" create massive traffic spikes. Currently, our inventory check happens during checkout.
-
-What we can do: Transition to a Redis-first Atomic Inventory. During a flash sale, stock is decremented in Redis (DECR) in milliseconds. This prevents "Overselling" and ensures the database isn't crushed by 10,000 users hitting the same item simultaneously.
-2. 🎟️ Advanced Promotions & Coupon Engine
-Currently, we have basic coupon support. Real-world fashion stores need:
-
-Automatic Rules: "Buy 2 Get 1 Free" or "10% off on all Blue Dresses."
-Stackable Coupons: Allowing a "First Purchase" discount to stack with a "Free Shipping" coupon.
-Cart Price Rules: "Add ₹500 more to unlock Free Delivery."
-
-
-4. 🚚 Intelligent Warehouse Routing
-We added erpNextWarehouse to the Tenant entity, but what if a tenant has multiple warehouses?
-
-Smart Sourcing: Automatically selecting the warehouse closest to the customer's PIN code to reduce shipping costs and delivery time.
-5. 🤳 Personalized Style Feeds (AI)
-We've already implemented Visual and Semantic search.
-
-The Next Level: A "Because you liked [Product A]" engine that uses our vector embeddings to show visually similar items on the product page, increasing the Average Order Value (AOV).
-📱 6. Omnichannel Notifications (SMS/WhatsApp)
-Emails often go to spam.
-
-
+## Strategic Roadmap & Gaps
+1.  **Transactional Outbox**: Need persistent event storage to prevent data loss on JVM crashes.
+2.  **Redis-First Atomic Inventory**: Replace DB-based checks with purely Redis-atomic locks.
+3.  **Regional Logistic Routing**: Automatically switch carriers based on real-time pincode-level latency anomalies.
+4.  **Segment-Aware Discovery**: Personalize search ranking based on user segment (VIP vs. New User).
+5.  **Omnichannel Notifications**: Integration for WhatsApp/SMS status updates.

@@ -22,12 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import com.app.core.ResourceNotFoundException;
-import com.app.product.entities.Category;
-import com.app.product.entities.Product;
-import com.app.product.mappers.ProductMapper;
-import com.app.product.payloads.ProductDTO;
-import com.app.product.repositories.CategoryRepo;
-import com.app.product.repositories.ProductRepo;
+import com.app.catalog.entities.Category;
+import com.app.catalog.entities.Product;
+import com.app.catalog.mappers.ProductMapper;
+import com.app.catalog.payloads.ProductDTO;
+import com.app.catalog.repositories.CategoryRepo;
+import com.app.catalog.repositories.ProductRepo;
+import com.app.catalog.services.ProductServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {

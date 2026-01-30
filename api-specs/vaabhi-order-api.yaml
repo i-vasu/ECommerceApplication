@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Vaabhi Order & Transaction API
+  description: Public API for managing orders, checkout, and payments in the Vaabhi E-Commerce Platform.
+  version: 1.0.0
+  contact:
+    name: Vaabhi Dev Team
+    email: dev@vaabhi.com
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+paths:
+  /public/users/{email}/carts/{cartId}/payments/{paymentMethod}/order:
+    post:
+      tags:
+        - Orders
+      summary: Place an Order
+      description: Finalizes the checkout process and transitions a cart into a confirmed order.
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cartId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: paymentMethod
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [RAZORPAY, CASH_ON_DELIVERY, WALLET]
+      responses:
+        '201':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDTO'
+        '400':
+          description: Validation failure or inventory lock error
+        '404':
+          description: Cart or user not found
+
+components:
+  schemas:
+    OrderDTO:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        email:
+          type: string
+        orderDate:
+          type: string
+          format: date
+        totalAmount:
+          type: number
+          format: decimal
+        orderStatus:
+          type: string
+        orderItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemDTO'
+    
+    OrderItemDTO:
+      type: object
+      properties:
+        orderItemId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+        orderedProductPrice:
+          type: number
+          format: decimal
+        product:
+          $ref: '#/components/schemas/ProductDTO'
+
+    ProductDTO:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        specialPrice:
+          type: number
+          format: decimal
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

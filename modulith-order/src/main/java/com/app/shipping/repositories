@@ -1,9 +1,0 @@
-package com.app.order.repositories;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.app.order.entites.Shipment;
-
-public interface ShipmentRepo extends JpaRepository<Shipment, Long> {
-
-}

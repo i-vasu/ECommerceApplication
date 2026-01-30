@@ -11,11 +11,15 @@ public interface OrderService {
 
 	OrderDTO getOrder(String emailId, Long orderId);
 
+	OrderDTO getOrderById(Long orderId);
+
 	List<OrderDTO> getOrdersByUser(String emailId);
 
 	OrderResponse getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
 
 	OrderDTO updateOrder(String emailId, Long orderId, String orderStatus);
+
+	OrderDTO updateOrderStatusInternal(Long orderId, String orderStatus);
 
 	/**
 	 * Places an order from marketplace integration (Amazon, Flipkart, etc.)
@@ -30,4 +34,12 @@ public interface OrderService {
 	OrderDTO cancelOrder(String emailId, Long orderId);
 
 	OrderDTO retryOrderSync(Long orderId);
+
+	void confirmPayment(Long orderId, String transactionId);
+
+	void markPaymentFailed(Long orderId, String reason);
+
+	void updateOrderStatus(Long orderId, String status);
+
+	List<OrderDTO> findPendingOrdersByItemCode(String itemCode);
 }

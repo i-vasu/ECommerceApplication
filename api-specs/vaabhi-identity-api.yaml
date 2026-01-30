@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Vaabhi Identity & User API
+  description: API for user registration, authentication, and profile management.
+  version: 1.0.0
+  contact:
+    name: Vaabhi Dev Team
+    email: dev@vaabhi.com
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+paths:
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: User Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jwt-token:
+                    type: string
+        '401':
+          description: Invalid credentials
+
+  /register:
+    post:
+      tags:
+        - Authentication
+      summary: User Registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '201':
+          description: User registered successfully
+
+components:
+  schemas:
+    UserDTO:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        mobileNumber:
+          type: string
+        email:
+          type: string
+        password:
+          type: string

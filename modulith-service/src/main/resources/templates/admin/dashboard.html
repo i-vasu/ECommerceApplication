@@ -40,6 +40,36 @@
                 <i data-lucide="message-square" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
                 Support
             </a>
+            <a href="/admin/query-scratchpad"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="terminal" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                SQL Scratchpad
+            </a>
+            <a href="/admin/broadcasts"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="megaphone" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Broadcast Console
+            </a>
+            <a href="/admin/tech-monitoring"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="pulse" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Tech Monitor
+            </a>
+            <a href="/admin/trace-viewer"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="git-branch" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Trace Viewer
+            </a>
+            <a href="/admin/alert-config"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="bell-ring" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Alert Center
+            </a>
+            <a href="/admin/log-search"
+                class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-purple-600 rounded-xl transition-all duration-200 font-medium group">
+                <i data-lucide="search-code" class="w-5 h-5 mr-3 group-hover:text-purple-600 transition-colors"></i>
+                Log Intelligence
+            </a>
         </nav>
 
         <div class="p-4 border-t border-gray-100">
@@ -96,47 +126,47 @@
                         </div>
                     </a>
 
-                    <!-- Umami -->
-                    <a href="http://localhost:3000" target="_blank"
-                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
-                        <div class="flex items-center space-x-4">
-                            <div
-                                class="w-14 h-14 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors">
-                                <i data-lucide="bar-chart-2" class="w-8 h-8 text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-gray-900">Umami</h3>
-                                <p class="text-sm text-gray-500">Web Analytics</p>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- Ditto -->
-                    <a href="#" target="_blank"
-                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
-                        <div class="flex items-center space-x-4">
-                            <div
-                                class="w-14 h-14 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors">
-                                <i data-lucide="copy" class="w-8 h-8 text-pink-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-gray-900">Ditto</h3>
-                                <p class="text-sm text-gray-500">Sync & Replication</p>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- Metabase -->
-                    <a href="http://localhost:3001" target="_blank"
+                    <!-- Vaadin Native Analytics -->
+                    <a href="/admin/analytics-native" target="_blank"
                         class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
                         <div class="flex items-center space-x-4">
                             <div
                                 class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                                <i data-lucide="pie-chart" class="w-8 h-8 text-blue-600"></i>
+                                <i data-lucide="line-chart" class="w-8 h-8 text-blue-600"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-gray-900">Metabase</h3>
-                                <p class="text-sm text-gray-500">Business Intelligence</p>
+                                <h3 class="font-bold text-gray-900">Native Analytics</h3>
+                                <p class="text-sm text-gray-500">Internal Vaadin Dashboard</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Automation Control -->
+                    <a href="/admin/marketing-native" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                                <i data-lucide="settings" class="w-8 h-8 text-orange-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Automation Control</h3>
+                                <p class="text-sm text-gray-500">Marketing & ROI Rules</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Broadcasts -->
+                    <a href="/admin/broadcasts" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-pink-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors">
+                                <i data-lucide="megaphone" class="w-8 h-8 text-pink-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Broadcasts</h3>
+                                <p class="text-sm text-gray-500">Newsletters & Blasts</p>
                             </div>
                         </div>
                     </a>
@@ -144,23 +174,23 @@
             </div>
 
             <!-- Developer Section -->
-            <div class="mb-8">
+            <div class="mb-10">
                 <h2 class="text-lg font-bold text-gray-800 mb-4 px-1 flex items-center">
                     <i data-lucide="code-2" class="w-5 h-5 mr-2 text-indigo-600"></i>
-                    Developer Tools
+                    Observability & Dev Tools
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- ParadeDB -->
-                    <a href="http://localhost:5432" target="_blank"
+                    <!-- SQL Scratchpad -->
+                    <a href="/admin/query-scratchpad" target="_blank"
                         class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
                         <div class="flex items-center space-x-4">
                             <div
-                                class="w-14 h-14 bg-yellow-50 rounded-xl flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
-                                <i data-lucide="database" class="w-8 h-8 text-yellow-600"></i>
+                                class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                <i data-lucide="terminal" class="w-8 h-8 text-gray-700"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-gray-900">ParadeDB</h3>
-                                <p class="text-sm text-gray-500">PostgreSQL Search</p>
+                                <h3 class="font-bold text-gray-900">SQL Scratchpad</h3>
+                                <p class="text-sm text-gray-500">Ad-hoc Data Analysis</p>
                             </div>
                         </div>
                     </a>
@@ -180,24 +210,144 @@
                         </div>
                     </a>
 
-                    <!-- Grafana -->
-                    <a href="http://localhost:3000" target="_blank"
+                    <!-- Native Tech Monitor -->
+                    <a href="/admin/tech-monitoring" target="_blank"
                         class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
                         <div class="flex items-center space-x-4">
                             <div
-                                class="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-orange-100 transition-colors">
-                                <i data-lucide="activity" class="w-8 h-8 text-orange-600"></i>
+                                class="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                                <i data-lucide="pulse" class="w-8 h-8 text-indigo-600"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-gray-900">Grafana</h3>
-                                <p class="text-sm text-gray-500">Monitoring Stack</p>
+                                <h3 class="font-bold text-gray-900">Tech Monitor</h3>
+                                <p class="text-sm text-gray-500">Native Health & Logs</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Trace Viewer -->
+                    <a href="/admin/trace-viewer" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-blue-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                <i data-lucide="git-branch" class="w-8 h-8 text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Trace Viewer</h3>
+                                <p class="text-sm text-gray-500">Cross-Module Timelines</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Log Intelligence -->
+                    <a href="/admin/log-search" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-gray-900 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors">
+                                <i data-lucide="search-code" class="w-8 h-8 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Log Intelligence</h3>
+                                <p class="text-sm text-gray-500">ParadeDB Diagnostic Search</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Alert Center -->
+                    <a href="/admin/alert-config" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-red-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-red-50 rounded-xl flex items-center justify-center group-hover:bg-red-100 transition-colors">
+                                <i data-lucide="bell" class="w-8 h-8 text-red-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Alert Center</h3>
+                                <p class="text-sm text-gray-500">SLA & Thresholds</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Latency Heatmap -->
+                    <a href="/admin/latency-heatmap" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-orange-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                                <i data-lucide="bar-chart-3" class="w-8 h-8 text-orange-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Latency Heatmap</h3>
+                                <p class="text-sm text-gray-500">Distribution Analysis</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Module Topology -->
+                    <a href="/admin/module-topology" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                                <i data-lucide="network" class="w-8 h-8 text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Architecture Map</h3>
+                                <p class="text-sm text-gray-500">Monolith Topology</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Operational Intelligence -->
+                    <a href="/admin/operational-dashboard" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-emerald-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                                <i data-lucide="cpu" class="w-8 h-8 text-emerald-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Operational Intel</h3>
+                                <p class="text-sm text-gray-500">Real-time Automation Logs</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Global Intelligence -->
+                    <a href="/admin/global-analytics" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                                <i data-lucide="brain-circuit" class="w-8 h-8 text-indigo-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Global Intel</h3>
+                                <p class="text-sm text-gray-500">Natural SpEL Analytics</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Rule Registry -->
+                    <a href="/admin/rule-registry" target="_blank"
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-amber-200 transition-all duration-300 group">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-14 h-14 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+                                <i data-lucide="settings-2" class="w-8 h-8 text-amber-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Rule Registry</h3>
+                                <p class="text-sm text-gray-500">No-Code Policy Manager</p>
                             </div>
                         </div>
                     </a>
                 </div>
             </div>
 
-            <!-- Recent Orders Placeholders -->
+            <!-- Recent Orders -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                     <h3 class="text-lg font-bold text-gray-900">Recent Orders</h3>

@@ -1,20 +1,20 @@
 package com.app.test.integration;
 
-import com.app.cart.CartService;
+import com.app.cart.domain.CartService;
 import com.app.cart.payloads.CartDTO;
-import com.app.commerce.checkout.CheckoutService;
-import com.app.discount.entities.Coupon;
-import com.app.discount.repositories.CouponRepo;
-import com.app.identity.entities.User;
-import com.app.identity.repositories.UserRepo;
-import com.app.order.entities.Cart;
+
+import com.app.finance.promo.entities.Coupon;
+import com.app.finance.promo.repositories.CouponRepo;
+import com.app.security.entities.User;
+import com.app.security.repositories.UserRepo;
+import com.app.cart.entities.Cart;
 import com.app.order.entities.Order;
 import com.app.order.order.OrderService;
 import com.app.order.payloads.OrderDTO;
-import com.app.order.repositories.CartRepo;
+import com.app.cart.repositories.CartRepo;
 import com.app.order.repositories.OrderRepo;
-import com.app.product.entities.Product;
-import com.app.product.repositories.ProductRepo;
+import com.app.catalog.entities.Product;
+import com.app.catalog.repositories.ProductRepo;
 import com.app.test.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

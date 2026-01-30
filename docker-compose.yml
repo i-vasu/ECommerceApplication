@@ -69,30 +69,9 @@ services:
       resources:
         limits:
           memory: 128M
-
-  # Legacy services removed in favor of modular monolith
-
-  dittofeed:
-    image: dittofeed/dittofeed-lite:latest
-    container_name: marketing-dittofeed
-    restart: always
-    ports:
-      - "3301:3000"
-    deploy:
-      resources:
-        limits:
-          memory: 256M # Reduced from 512M for admin-only
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      POSTGRES_DB: dittofeed
-      REDIS_URL: redis://dragonfly:6379
-      ADMIN_API_KEY: "password"
-      NODE_OPTIONS: "--max-old-space-size=192"
-    networks:
-      - ecommerce-net
+      # Legacy/External services removed in favor of modular monolith native features
+  # Dittofeed (Retention) -> Replaced by Spring Batch + Spring Mail
+  # Metabase (Dashboards) -> Replaced by Vaadin + Analytical Views
 
   umami:
     image: ghcr.io/umami-software/umami:postgresql-latest
@@ -107,29 +86,6 @@ services:
       resources:
         limits:
           memory: 128M # Reduced from 256M for admin-only
-    networks:
-      - ecommerce-net
-
-  metabase:
-    image: metabase/metabase:latest
-    container_name: analytics-metabase
-    restart: always
-    ports:
-      - "3302:3000"
-    environment:
-      MB_DB_TYPE: postgres
-      MB_DB_DBNAME: metabase
-      MB_DB_PORT: 5432
-      MB_DB_USER: ${JAVA_DB_USERNAME:-postgres}
-      MB_DB_PASS: ${JAVA_DB_PASSWORD:-123Vasu456}
-      MB_DB_HOST: postgres
-      # Optimization for admin-only usage
-      JAVA_OPTS: "-Xmx384m -Xms128m -XX:MaxMetaspaceSize=128m"
-      MB_JETTY_MAX_THREADS: 10
-    deploy:
-      resources:
-        limits:
-          memory: 512M # Reduced from 1G for admin-only
     networks:
       - ecommerce-net
 

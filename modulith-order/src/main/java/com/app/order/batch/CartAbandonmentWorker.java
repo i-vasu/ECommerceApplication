@@ -1,6 +1,6 @@
 package com.app.order.batch;
 
-import com.app.order.repositories.CartRepo;
+import com.app.cart.repositories.CartRepo;
 import com.app.core.async.EventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

@@ -14,11 +14,10 @@ import com.app.core.security.JWTUtil;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.app.config.AppConstants;
-import com.app.identity.entities.Role;
-import com.app.identity.entities.User;
-import com.app.identity.repositories.RoleRepo;
-import com.app.identity.repositories.UserRepo;
-import com.app.order.services.ERPNextService;
+import com.app.security.entities.Role;
+import com.app.security.entities.User;
+import com.app.security.repositories.RoleRepo;
+import com.app.security.repositories.UserRepo;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +36,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private JWTUtil jwtUtil;
 
     @Autowired
-    private ERPNextService erpNextService;
+    private com.app.core.async.EventProducer eventProducer;
 
     @Value("${frontend.url:http://localhost:3000/oauth2/redirect}")
     private String frontendRedirectUrl;
@@ -96,7 +95,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
 
             userRepo.save(user);
-            erpNextService.createCustomer(user);
+
+            // Publish event instead of direct call to avoid circular dependency
+            com.app.core.events.UserRegisteredEvent event = new com.app.core.events.UserRegisteredEvent(
+                    user.getUserId(), user.getEmail(), user.getFirstName(), user.getLastName());
+            eventProducer.publish("user_registered_events", event);
         }
 
         String tenantId = com.app.core.multitenancy.TenantContext.getTenantId();

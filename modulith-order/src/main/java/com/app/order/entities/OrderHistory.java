@@ -1,6 +1,8 @@
 package com.app.order.entities;
 
-import com.app.commerce.states.OrderStatus;
+import com.app.governance.states.OrderStatus;
+import com.app.finance.entities.Payment;
+import com.app.logistics.entities.Shipment;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

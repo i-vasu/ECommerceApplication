@@ -1,13 +1,13 @@
 package com.app.test.integration;
 
-import com.app.commerce.states.OrderStatus;
+import com.app.governance.states.OrderStatus;
 import com.app.order.entities.Order;
 import com.app.order.entities.OrderItem;
-import com.app.product.entities.Product;
-import com.app.identity.entities.User;
+import com.app.catalog.entities.Product;
+import com.app.security.entities.User;
 import com.app.order.repositories.OrderRepo;
-import com.app.product.repositories.ProductRepo;
-import com.app.identity.repositories.UserRepo;
+import com.app.catalog.repositories.ProductRepo;
+import com.app.security.repositories.UserRepo;
 import com.app.test.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +61,7 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         Order order = new Order();
         order.setEmail(user.getEmail());
         order.setOrderStatus(OrderStatus.PENDING);
-        order.setTotalAmount(99.99);
+        order.setTotalAmount(java.math.BigDecimal.valueOf(99.99));
 
         OrderItem orderItem = new OrderItem();
         orderItem.setProduct(product);
@@ -78,7 +78,7 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         // 3. Verify Order Created
         Order orderFromRepo = orderRepo.findAll().get(0);
         assertThat(orderFromRepo.getOrderStatus()).isEqualTo(OrderStatus.PENDING); // Changed to enum comparison
-        assertThat(savedOrder.getTotalAmount()).isEqualTo(99.99);
+        assertThat(savedOrder.getTotalAmount()).isEqualByComparingTo(java.math.BigDecimal.valueOf(99.99));
         assertThat(savedOrder.getOrderItems()).hasSize(1);
 
         // Verify order can be retrieved
@@ -94,7 +94,7 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
             Order order = new Order();
             order.setEmail("user" + i + "@test.com");
             order.setOrderStatus(OrderStatus.PENDING);
-            order.setTotalAmount(100.0);
+            order.setTotalAmount(java.math.BigDecimal.valueOf(100.0));
             orderRepo.save(order);
         }
 

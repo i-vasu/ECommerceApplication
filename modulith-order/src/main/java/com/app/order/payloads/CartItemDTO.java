@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.app.cart.payloads.CartDTO;
-import com.app.product.payloads.ProductDTO;
+import com.app.catalog.payloads.ProductDTO;
 
 @Data
 @NoArgsConstructor

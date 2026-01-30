@@ -1,0 +1,5 @@
+package com.app.governance.states;
+
+public enum OrderStatus {
+    PENDING, PAYMENT_CAPTURED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUND_INITIATED, RETURN_REQUESTED
+}

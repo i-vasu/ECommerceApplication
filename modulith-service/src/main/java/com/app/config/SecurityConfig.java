@@ -19,7 +19,7 @@ import org.springframework.core.annotation.Order;
 
 import com.app.core.security.JWTFilter;
 import com.app.order.security.OAuth2LoginSuccessHandler;
-import com.app.identity.security.UserDetailsServiceImpl;
+import com.app.security.security.UserDetailsServiceImpl;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -38,8 +38,9 @@ public class SecurityConfig {
         @Order(1)
         public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
                 http
-                                .securityMatcher("/admin/**")
+                                .securityMatcher("/admin/**", "/VAADIN/**", "/sw.js", "/manifest.webmanifest")
                                 .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/VAADIN/**", "/sw.js", "/manifest.webmanifest").permitAll()
                                                 .requestMatchers("/admin/login", "/admin/css/**", "/admin/js/**",
                                                                 "/admin/images/**")
                                                 .permitAll()
@@ -112,5 +113,21 @@ public class SecurityConfig {
         @Bean
         public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
                 return configuration.getAuthenticationManager();
+        }
+
+        @Bean
+        @Order(0)
+        public SecurityFilterChain adminServerFilterChain(HttpSecurity http) throws Exception {
+                // Spring Boot Admin Server requires some specific allowances
+                http
+                    .securityMatcher("/instances/**", "/assets/**", "/")
+                    .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/assets/**", "/login").permitAll()
+                        .anyRequest().hasAuthority("ADMIN"))
+                    .formLogin(form -> form.loginPage("/login").permitAll())
+                    .logout(logout -> logout.logoutUrl("/logout").permitAll())
+                    .csrf(csrf -> csrf.disable());
+
+                return http.build();
         }
 }

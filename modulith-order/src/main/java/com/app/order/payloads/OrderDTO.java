@@ -11,15 +11,15 @@ public record OrderDTO(
 		List<OrderItemDTO> orderItems,
 		LocalDate orderDate,
 		PaymentDTO payment,
-		Double totalAmount,
+		java.math.BigDecimal totalAmount,
 		String orderStatus,
 		String marketplaceOrderId,
 		String customerEmail,
 		String source,
 		String couponCode,
-		Double discountAmount) {
+		java.math.BigDecimal discountAmount) {
 	public OrderDTO(Long orderId, String email, List<OrderItemDTO> orderItems, LocalDate orderDate, PaymentDTO payment,
-			Double totalAmount, String orderStatus) {
+			java.math.BigDecimal totalAmount, String orderStatus) {
 		this(orderId, email, orderItems, orderDate, payment, totalAmount, orderStatus, null, null, null, null, null);
 	}
 }
