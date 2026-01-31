@@ -42,11 +42,11 @@ jobs:
           -e MINIO_ROOT_PASSWORD=minioadmin \
           minio/minio server /data
     
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
-        java-version: '21'
-        distribution: 'temurin'
+        java-version: '25-ea'
+        distribution: 'zulu'
         cache: maven
         
     - name: Run Tests
