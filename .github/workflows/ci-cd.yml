@@ -30,10 +30,13 @@ jobs:
           distribution: 'zulu'
           cache: maven
       
+      - name: Build and Install Dependencies
+        run: mvn install -DskipTests
+
       - name: Install Playwright dependencies
         if: matrix.test-suite == 'e2e'
         run: |
-          mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
+          mvn exec:java -pl automation-tests -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
       
       - name: Run Unit Tests
         if: matrix.test-suite == 'unit'
