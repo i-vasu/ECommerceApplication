@@ -303,6 +303,14 @@ public class User {
 		this.accountStatus = accountStatus;
 	}
 
+	public String getCustomerGroup() {
+		return customerGroup;
+	}
+
+	public void setCustomerGroup(String customerGroup) {
+		this.customerGroup = customerGroup;
+	}
+
 	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(name = "user_segment_map", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "segment_id"))
 	private Set<com.app.identity.entities.CustomerSegment> segments = new HashSet<>();
