@@ -273,6 +273,14 @@
 					<classifier>exec</classifier>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>10.0.4</version>
+				<configuration>
+					<dataDirectory>${project.build.directory}/dependency-check-data</dataDirectory>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
