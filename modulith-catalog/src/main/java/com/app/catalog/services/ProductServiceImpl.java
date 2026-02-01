@@ -1,49 +1,40 @@
 package com.app.catalog.services;
 
-import java.io.FileNotFoundException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
 import com.app.catalog.ProductService;
-import com.app.core.audit.AuditTrail;
-import com.app.core.utils.ContentSanitizer;
-import java.util.List;
-import java.util.ArrayList;
-import java.time.LocalDateTime;
-
-import com.app.catalog.mappers.ProductMapper;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.cache.annotation.Caching;
-import org.springframework.security.core.context.SecurityContextHolder;
-import com.app.security.repositories.UserRepo;
-
-import com.app.catalog.entities.Category;
 import com.app.catalog.entities.Product;
-import com.app.core.APIException;
-import com.app.core.ResourceNotFoundException;
+import com.app.catalog.mappers.ProductMapper;
 import com.app.catalog.payloads.ProductDTO;
 import com.app.catalog.payloads.ProductResponse;
 import com.app.catalog.payloads.ProductSyncEvent;
 import com.app.catalog.repositories.CategoryRepo;
 import com.app.catalog.repositories.ProductRepo;
+import com.app.catalog.review.payloads.ProductReviewDTO;
 import com.app.catalog.review.services.ReviewService;
 import com.app.catalog.review.services.SocialProofService;
-import com.app.catalog.review.entities.ProductReview;
-import com.app.catalog.review.payloads.ProductReviewDTO;
+import com.app.core.APIException;
+import com.app.core.ResourceNotFoundException;
 import com.app.core.async.EventProducer;
-import java.io.IOException;
-
-import org.springframework.transaction.annotation.Transactional;
-
+import com.app.core.audit.AuditTrail;
+import com.app.core.utils.ContentSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Transactional
@@ -57,7 +48,6 @@ public class ProductServiceImpl implements ProductService {
 	private final ProductMapper productMapper;
 	private final StringRedisTemplate redisTemplate;
 	private final EventProducer eventProducer;
-	private final UserRepo userRepo;
 	private final ContentSanitizer sanitizer;
 	private final SocialProofService socialProofService;
 	private final ReviewService reviewService;
@@ -115,8 +105,8 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	@Cacheable(value = "products", key = "#pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
-		if (pageSize > com.app.config.AppConstants.MAX_PAGE_SIZE) {
-			pageSize = com.app.config.AppConstants.MAX_PAGE_SIZE;
+		if (pageSize > com.app.core.constants.AppConstants.MAX_PAGE_SIZE) {
+			pageSize = com.app.core.constants.AppConstants.MAX_PAGE_SIZE;
 		}
 
 		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -143,8 +133,8 @@ public class ProductServiceImpl implements ProductService {
 	@Cacheable(value = "products", key = "'cat-' + #categoryId + '-' + #pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse searchByCategory(Long categoryId, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder) {
-		if (pageSize > com.app.config.AppConstants.MAX_PAGE_SIZE) {
-			pageSize = com.app.config.AppConstants.MAX_PAGE_SIZE;
+		if (pageSize > com.app.core.constants.AppConstants.MAX_PAGE_SIZE) {
+			pageSize = com.app.core.constants.AppConstants.MAX_PAGE_SIZE;
 		}
 
 		var category = categoryRepo.findById(categoryId)
@@ -178,13 +168,13 @@ public class ProductServiceImpl implements ProductService {
 	@Cacheable(value = "products", key = "'search-' + #keyword + '-' + #pageNumber + '-' + #pageSize + '-' + #sortBy + '-' + #sortOrder")
 	public ProductResponse searchProductByKeyword(String keyword, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder) {
-		if (keyword == null || keyword.trim().length() < com.app.config.AppConstants.MIN_KEYWORD_LENGTH) {
-			throw new APIException("Search keyword must be at least " + com.app.config.AppConstants.MIN_KEYWORD_LENGTH
+		if (keyword == null || keyword.trim().length() < com.app.core.constants.AppConstants.MIN_KEYWORD_LENGTH) {
+			throw new APIException("Search keyword must be at least " + com.app.core.constants.AppConstants.MIN_KEYWORD_LENGTH
 					+ " characters.");
 		}
 
-		if (pageSize > com.app.config.AppConstants.MAX_PAGE_SIZE) {
-			pageSize = com.app.config.AppConstants.MAX_PAGE_SIZE;
+		if (pageSize > com.app.core.constants.AppConstants.MAX_PAGE_SIZE) {
+			pageSize = com.app.core.constants.AppConstants.MAX_PAGE_SIZE;
 		}
 
 		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -219,8 +209,8 @@ public class ProductServiceImpl implements ProductService {
 	public ProductResponse facetedSearch(String keyword, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
 			Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
 
-		if (pageSize > com.app.config.AppConstants.MAX_PAGE_SIZE) {
-			pageSize = com.app.config.AppConstants.MAX_PAGE_SIZE;
+		if (pageSize > com.app.core.constants.AppConstants.MAX_PAGE_SIZE) {
+			pageSize = com.app.core.constants.AppConstants.MAX_PAGE_SIZE;
 		}
 
 		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -273,6 +263,7 @@ public class ProductServiceImpl implements ProductService {
 		eventPublisher.publishEvent(new com.app.core.events.ProductUpdatedEvent(
 				productId,
 				savedProduct.getItemCode(),
+				savedProduct.getProductName(),
 				oldPrice,
 				savedProduct.getSpecialPrice(),
 				oldQty,

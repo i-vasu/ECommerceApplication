@@ -1,13 +1,12 @@
 package com.app.core.services;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor

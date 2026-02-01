@@ -4,9 +4,9 @@ import com.app.cart.payloads.CartDTO;
 import com.app.core.payloads.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Cart v1", description = "Shopping Cart Management APIs - Version 1")
 public interface CartApi {
@@ -21,7 +21,7 @@ public interface CartApi {
         ResponseEntity<ApiResponse<Page<CartDTO>>> getCarts(Pageable pageable);
 
         @Operation(summary = "Get Cart by ID", description = "Retrieves cart details by ID")
-        ResponseEntity<ApiResponse<CartDTO>> getCartById(String emailId, Long cartId);
+        ResponseEntity<ApiResponse<CartDTO>> getCartById(Long userId, Long cartId);
 
         @Operation(summary = "Update Cart Product", description = "Updates the quantity of a product in the cart")
         ResponseEntity<ApiResponse<CartDTO>> updateCartProduct(Long cartId, Long productId, Integer quantity,

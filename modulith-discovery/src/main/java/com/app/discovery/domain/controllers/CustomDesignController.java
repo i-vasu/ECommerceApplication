@@ -3,15 +3,14 @@ package com.app.discovery.domain.controllers;
 import com.app.discovery.domain.entities.CustomDesign;
 import com.app.discovery.domain.services.AiDesignService;
 import com.app.discovery.domain.services.CustomDesignService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.Map;
-import java.time.LocalDateTime;
-import reactor.core.publisher.Flux;
-
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/search/custom-design")

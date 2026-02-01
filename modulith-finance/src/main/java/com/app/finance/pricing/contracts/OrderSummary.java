@@ -1,6 +1,5 @@
 package com.app.finance.pricing.contracts;
 
-import lombok.Data;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;

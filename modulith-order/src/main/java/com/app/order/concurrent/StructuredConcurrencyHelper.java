@@ -1,9 +1,9 @@
 package com.app.order.concurrent;
 
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
-import java.util.concurrent.ExecutorCompletionService;
 
 public class StructuredConcurrencyHelper {
 

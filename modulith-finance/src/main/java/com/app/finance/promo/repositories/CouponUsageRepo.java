@@ -3,6 +3,7 @@ package com.app.finance.promo.repositories;
 import com.app.finance.promo.entities.CouponUsage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 @Repository

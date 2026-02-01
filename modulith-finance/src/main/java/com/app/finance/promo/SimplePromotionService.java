@@ -1,6 +1,7 @@
 package com.app.finance.promo;
 
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 
 @Service

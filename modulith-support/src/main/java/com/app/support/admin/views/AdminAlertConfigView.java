@@ -1,5 +1,6 @@
 package com.app.support.admin.views;
 
+import com.app.support.repositories.jdbc.MonitoringJdbcRepo;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
@@ -11,10 +12,7 @@ import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
-import com.app.support.repositories.jdbc.MonitoringJdbcRepo;
-import lombok.RequiredArgsConstructor;
 
-import java.util.List;
 import java.util.Map;
 
 @Route("admin/alert-config")

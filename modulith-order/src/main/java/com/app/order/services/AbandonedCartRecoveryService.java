@@ -2,15 +2,16 @@ package com.app.order.services;
 
 import com.app.cart.entities.Cart;
 import com.app.cart.repositories.CartRepo;
-import com.app.governance.states.CartState;
+import com.app.core.events.CartAbandonedEvent;
 import com.app.governance.rules.RuleEngineService;
+import com.app.governance.states.CartState;
+import com.app.security.repositories.UserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.app.core.events.CartAbandonedEvent;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 public class AbandonedCartRecoveryService {
 
     private final CartRepo cartRepo;
+    private final UserRepo userRepo;
     private final RuleEngineService ruleEngine;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -48,14 +50,19 @@ public class AbandonedCartRecoveryService {
     }
 
     private void processAbandonedCart(Cart cart) {
-        if (cart.getUser() == null || cart.getCartItems().isEmpty()) {
+        if (cart.getUserId() == null || cart.getCartItems().isEmpty()) {
+            return;
+        }
+
+        var user = userRepo.findById(cart.getUserId()).orElse(null);
+        if (user == null) {
             return;
         }
 
         Map<String, Object> context = new HashMap<>();
         context.put("total", cart.getTotalPrice());
         context.put("itemCount", cart.getCartItems().size());
-        context.put("user", cart.getUser());
+        context.put("user", user);
 
         // SpEL Rule: Recover if cart > $500 or has more than 3 items
         String recoveryRule = "total > 500 || itemCount >= 3";
@@ -66,8 +73,8 @@ public class AbandonedCartRecoveryService {
             // Emit Event instead of direct service call
             eventPublisher.publishEvent(new CartAbandonedEvent(
                     String.valueOf(cart.getCartId()),
-                    cart.getUser() != null ? cart.getUser().getUserId() : 0L,
-                    cart.getEmail(),
+                    user.getUserId(),
+                    user.getEmail(),
                     cart.getCartItems().stream()
                             .map(item -> new CartAbandonedEvent.CartItemData(
                                     item.getProductId() != null ? item.getProductId() : 0L,

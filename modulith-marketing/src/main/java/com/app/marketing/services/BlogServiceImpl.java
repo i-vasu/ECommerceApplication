@@ -1,20 +1,19 @@
 package com.app.marketing.services;
 
-import com.app.marketing.repositories.BlogRepo;
 import com.app.marketing.entities.Blog;
-import org.springframework.stereotype.Service;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.connection.stream.ObjectRecord;
-import org.springframework.data.redis.connection.stream.StreamRecords;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.time.LocalDateTime;
-
+import com.app.marketing.repositories.BlogRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.redis.connection.stream.ObjectRecord;
+import org.springframework.data.redis.connection.stream.StreamRecords;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @RequiredArgsConstructor

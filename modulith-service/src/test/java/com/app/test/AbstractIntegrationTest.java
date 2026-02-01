@@ -6,11 +6,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
-import org.springframework.web.context.WebApplicationContext;
-import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Abstract base class for integration tests

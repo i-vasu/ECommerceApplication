@@ -1,9 +1,9 @@
 package com.app.intelligence.analysis.async;
 
-import com.app.intelligence.analysis.services.AnalyticsService;
-import com.app.core.events.ProductViewedEvent;
-import com.app.core.events.ProductSearchEvent;
 import com.app.core.events.AddToCartEvent;
+import com.app.core.events.ProductSearchEvent;
+import com.app.core.events.ProductViewedEvent;
+import com.app.intelligence.analysis.services.AnalyticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;

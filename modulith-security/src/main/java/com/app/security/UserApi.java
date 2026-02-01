@@ -1,11 +1,12 @@
 package com.app.security;
 
+import com.app.core.payloads.ApiResponse;
 import com.app.security.payloads.UserDTO;
 import com.app.security.payloads.UserResponse;
-import com.app.core.payloads.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+
 import java.util.List;
 
 @Tag(name = "User v1", description = "User Management APIs - Version 1")

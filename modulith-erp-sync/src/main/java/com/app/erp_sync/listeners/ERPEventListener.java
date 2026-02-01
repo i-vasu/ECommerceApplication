@@ -48,8 +48,8 @@ public class ERPEventListener {
         log.info("ERP-Sync: Received ReturnApprovedEvent for Order ID: {}. Syncing Return to ERPNext.",
                 event.orderId());
         try {
-            // TODO: Implement createSalesReturn in ERPNextService
-            // erpNextService.createSalesReturn(event);
+            // Implement createSalesReturn in ERPNextService
+            erpNextService.createSalesReturn(event);
             log.info("ERP-Sync: ERP Sales Return sync requested for Client Order ID: {}", event.orderId());
         } catch (Exception e) {
             log.error("ERP-Sync: Failed to sync ERP Sales Return for Order ID: {}. Error: {}", event.orderId(),

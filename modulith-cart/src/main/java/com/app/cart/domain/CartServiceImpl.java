@@ -1,36 +1,31 @@
 package com.app.cart.domain;
 
-import java.util.Map;
-import java.util.HashMap;
-
-import java.util.List;
-import com.app.cart.mappers.CartMapper;
 import com.app.cart.domain.services.CartCouponService;
+import com.app.cart.entities.Cart;
+import com.app.cart.entities.CartItem;
+import com.app.cart.payloads.CartDTO;
+import com.app.cart.repositories.CartItemRepo;
+import com.app.cart.repositories.CartRepo;
 import com.app.catalog.ProductService;
+import com.app.catalog.payloads.ProductDTO;
+import com.app.core.APIException;
+import com.app.core.ResourceNotFoundException;
+import com.app.core.services.RedisLockService;
+import com.app.finance.pricing.OrderTotalService;
+import com.app.finance.pricing.contracts.OrderTotalInput;
+import com.app.governance.rules.RuleEngineService;
+import com.app.governance.states.OperationalStateMachineService;
+import com.app.intelligence.analysis.services.AnalyticsService;
+import com.app.logistics.inventory.InventoryReservationService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import com.app.cart.entities.Cart;
-import com.app.cart.entities.CartItem;
-import com.app.core.APIException;
-import com.app.core.ResourceNotFoundException;
-import com.app.cart.payloads.CartDTO;
-import com.app.catalog.payloads.ProductDTO;
-import com.app.cart.repositories.CartItemRepo;
-import com.app.cart.repositories.CartRepo;
-
-import com.app.finance.pricing.OrderTotalService;
-import com.app.finance.pricing.contracts.OrderTotalInput;
-import com.app.logistics.inventory.InventoryReservationService;
-import com.app.governance.rules.RuleEngineService;
-import com.app.governance.states.OperationalStateMachineService;
-import com.app.core.services.RedisLockService;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.intelligence.analysis.services.AnalyticsService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -117,7 +112,7 @@ public class CartServiceImpl implements CartService {
 
 			var input = OrderTotalInput.builder()
 					.id(cart.getCartId())
-					.email(cart.getEmail())
+					.userId(cart.getUserId())
 					.couponCode(cart.getCouponCode())
 					.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 							item.getProductId(),
@@ -147,15 +142,15 @@ public class CartServiceImpl implements CartService {
 	}
 
 	@Override
-	public CartDTO getCart(String emailId, Long cartId) {
-		var cart = cartRepo.findCartByEmailAndCartId(emailId, cartId);
+	public CartDTO getCart(Long userId, Long cartId) {
+		var cart = cartRepo.findCartByUserIdAndCartId(userId, cartId);
 		if (cart == null)
 			throw new ResourceNotFoundException("Cart", "cartId", cartId);
 
 		// Optional: Recalculate on View to ensure freshness
 		var input = OrderTotalInput.builder()
 				.id(cart.getCartId())
-				.email(cart.getEmail())
+				.userId(cart.getUserId())
 				.couponCode(cart.getCouponCode())
 				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 						item.getProductId(),
@@ -186,7 +181,7 @@ public class CartServiceImpl implements CartService {
 				var cart = cartItem.getCart();
 				var input = OrderTotalInput.builder()
 						.id(cart.getCartId())
-						.email(cart.getEmail())
+						.userId(cart.getUserId())
 						.couponCode(cart.getCouponCode())
 						.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 								item.getProductId(),
@@ -225,7 +220,7 @@ public class CartServiceImpl implements CartService {
 		// Recalculate Pipeline
 		var input = OrderTotalInput.builder()
 				.id(cart.getCartId())
-				.email(cart.getEmail())
+				.userId(cart.getUserId())
 				.couponCode(cart.getCouponCode())
 				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 						item.getProductId(),
@@ -258,9 +253,9 @@ public class CartServiceImpl implements CartService {
 
 		// Recalculate Pipeline
 		var input = OrderTotalInput.builder()
-				.id(cart.getCartId())
-				.email(cart.getEmail())
-				.couponCode(cart.getCouponCode())
+						.id(cart.getCartId())
+						.userId(cart.getUserId())
+						.couponCode(cart.getCouponCode())
 				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 						item.getProductId(),
 						item.getItemCode(),
@@ -293,7 +288,7 @@ public class CartServiceImpl implements CartService {
 		// 3. Recalculate using full pricing pipeline
 		var input = OrderTotalInput.builder()
 				.id(cart.getCartId())
-				.email(cart.getEmail())
+				.userId(cart.getUserId())
 				.couponCode(cart.getCouponCode())
 				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 						item.getProductId(),
@@ -321,7 +316,7 @@ public class CartServiceImpl implements CartService {
 		// Recalculate
 		var input = OrderTotalInput.builder()
 				.id(cart.getCartId())
-				.email(cart.getEmail())
+				.userId(cart.getUserId())
 				.couponCode(cart.getCouponCode())
 				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 						item.getProductId(),

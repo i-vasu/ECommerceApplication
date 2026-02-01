@@ -9,8 +9,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 @Tag(name = "Custom Design", description = "Endpoints for AI-generated designs and virtual try-on")
 @SecurityRequirement(name = "E-Commerce Application")

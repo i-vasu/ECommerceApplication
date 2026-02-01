@@ -1,10 +1,13 @@
 package com.app.catalog.review.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
-import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.app.catalog.entities.Product;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+// Correct for BOTH Jackson 2 and Jackson 3
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product_reviews")

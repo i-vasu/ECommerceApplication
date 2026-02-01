@@ -1,24 +1,18 @@
 package com.app.support.admin.views;
 
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.component.dependency.JsModule;
-import com.vaadin.flow.component.dependency.NpmPackage;
+import com.app.support.repositories.jdbc.AnalyticsJdbcRepo;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
+import jakarta.annotation.security.RolesAllowed;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import com.vaadin.flow.component.tabs.Tabs;
-import jakarta.annotation.security.RolesAllowed;
-import com.app.support.repositories.jdbc.AnalyticsJdbcRepo;
-import lombok.RequiredArgsConstructor;
-
 import java.util.List;
 import java.util.Map;
 

@@ -6,6 +6,7 @@ import org.springframework.statemachine.data.jpa.JpaPersistingStateMachineInterc
 import org.springframework.statemachine.data.jpa.JpaStateMachineRepository;
 import org.springframework.statemachine.persist.StateMachineRuntimePersister;
 
+
 @Configuration
 public class StateMachinePersistenceConfig {
 

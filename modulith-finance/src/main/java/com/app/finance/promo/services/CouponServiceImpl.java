@@ -1,16 +1,15 @@
 package com.app.finance.promo.services;
 
+import com.app.core.APIException;
+import com.app.core.ResourceNotFoundException;
+import com.app.finance.promo.CouponValidationService;
 import com.app.finance.promo.entities.Coupon;
 import com.app.finance.promo.entities.CouponUsage;
+import com.app.finance.promo.mappers.CouponMapper;
 import com.app.finance.promo.payloads.CouponDTO;
 import com.app.finance.promo.repositories.CouponRepo;
 import com.app.finance.promo.repositories.CouponUsageRepo;
-import com.app.core.APIException;
-import com.app.core.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import com.app.finance.promo.mappers.CouponMapper;
-import com.app.finance.promo.CouponValidationService;
-import com.app.finance.promo.CouponValidationService.CouponDiscount;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

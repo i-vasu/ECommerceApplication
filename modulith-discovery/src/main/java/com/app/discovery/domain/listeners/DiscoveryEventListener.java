@@ -1,18 +1,17 @@
 package com.app.discovery.domain.listeners;
 
 import com.app.core.events.ProductCreatedEvent;
-import com.app.core.events.ProductUpdatedEvent;
-import com.app.core.events.ProductSyncCompletedEvent;
 import com.app.core.events.ProductEnrichedEvent;
-import com.app.discovery.domain.services.VisualSearchService;
+import com.app.core.events.ProductSyncCompletedEvent;
+import com.app.core.events.ProductUpdatedEvent;
 import com.app.discovery.domain.services.AITaggingService;
+import com.app.discovery.domain.services.VisualSearchService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Event listeners for Discovery module.
@@ -68,6 +67,18 @@ public class DiscoveryEventListener {
         } catch (Exception e) {
             log.error("Discovery: Failed to reindex product {} - {}", event.itemCode(), e.getMessage(), e);
         }
+    }
+
+    /**
+     * Handle product sync completed - trigger full re-indexing or updates.
+     */
+    @Async
+    @EventListener
+    public void handleProductSyncCompleted(ProductSyncCompletedEvent event) {
+        log.info("Discovery: Received ProductSyncCompletedEvent. Triggering resync for {} products.", event.syncedCount());
+        // In a real scenario, this might trigger a batch re-index or update stats.
+        // Currently, individual updates are handled via ProductCreated/Updated events.
+        // This log serves as acknowledgment of the sync completion.
     }
 
     /**

@@ -6,7 +6,6 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 public class ArchitectureTest {
@@ -18,8 +17,8 @@ public class ArchitectureTest {
     @Test
     void servicesShouldNotDependOnControllers() {
         ArchRule rule = noClasses()
-                .that().resideInAPackage("..service..")
-                .should().dependOnClassesThat().resideInAPackage("..controller..");
+                .that().resideInAnyPackage("..service..", "..services..")
+                .should().dependOnClassesThat().resideInAnyPackage("..controller..", "..controllers..");
 
         rule.check(importedClasses);
     }
@@ -27,8 +26,8 @@ public class ArchitectureTest {
     @Test
     void persistenceLayerShouldNotDependOnServiceLayer() {
         ArchRule rule = noClasses()
-                .that().resideInAPackage("..repository..")
-                .should().dependOnClassesThat().resideInAPackage("..service..");
+                .that().resideInAnyPackage("..repository..", "..repositories..")
+                .should().dependOnClassesThat().resideInAnyPackage("..service..", "..services..");
 
         rule.check(importedClasses);
     }

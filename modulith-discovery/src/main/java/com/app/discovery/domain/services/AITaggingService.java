@@ -8,13 +8,12 @@ import ai.djl.modality.cv.ImageFactory;
 import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ModelZoo;
 import ai.djl.repository.zoo.ZooModel;
-import ai.djl.translate.TranslateException;
-import lombok.extern.slf4j.Slf4j;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;

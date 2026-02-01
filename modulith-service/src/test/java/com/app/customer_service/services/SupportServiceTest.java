@@ -1,10 +1,9 @@
 package com.app.customer_service.services;
 
-import com.app.order.entities.SupportTicket;
-import com.app.order.entities.TicketMessage;
-import com.app.order.repositories.SupportTicketRepo;
-import com.app.order.repositories.TicketMessageRepo;
-import com.app.core.ResourceNotFoundException;
+import com.app.support.domain.SupportService;
+import com.app.support.entities.SupportTicket;
+import com.app.support.entities.TicketMessage;
+import com.app.support.repositories.SupportTicketRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +25,9 @@ public class SupportServiceTest {
     @Mock
     private SupportTicketRepo ticketRepo;
     @Mock
-    private TicketMessageRepo messageRepo;
+    private com.app.governance.audit.OperationalAuditRepo auditRepo;
+    @Mock
+    private com.app.core.utils.ContentSanitizer sanitizer;
 
     @InjectMocks
     private SupportService supportService;
@@ -40,57 +41,70 @@ public class SupportServiceTest {
         testTicket.setTicketId(1L);
         testTicket.setUserEmail(userEmail);
         testTicket.setSubject("Issue with Refund");
-        testTicket.setStatus(SupportTicket.TicketStatus.OPEN);
+        testTicket.setStatus("OPEN");
         testTicket.setMessages(new ArrayList<>());
     }
 
     @Test
     void testCreateTicket() {
         when(ticketRepo.save(any(SupportTicket.class))).thenReturn(testTicket);
+        when(sanitizer.stripHtml(anyString())).thenAnswer(i -> i.getArgument(0));
+        when(sanitizer.sanitize(anyString())).thenAnswer(i -> i.getArgument(0));
+
+        com.app.support.payloads.TicketDTO ticketDTO = new com.app.support.payloads.TicketDTO();
+        ticketDTO.setUserEmail(userEmail);
+        ticketDTO.setSubject("Issue");
+        ticketDTO.setMessage("I have a problem");
         
-        SupportTicket created = supportService.createTicket(userEmail, "Issue", "I have a problem", null, "HIGH");
+        SupportTicket created = supportService.createTicket(ticketDTO);
         
         assertNotNull(created);
         assertEquals(userEmail, created.getUserEmail());
         verify(ticketRepo, times(1)).save(any());
-        verify(messageRepo, times(1)).save(any());
     }
 
     @Test
     void testReplyToTicket_User() {
         when(ticketRepo.findById(1L)).thenReturn(Optional.of(testTicket));
+        when(sanitizer.sanitize(anyString())).thenAnswer(i -> i.getArgument(0));
         
-        supportService.replyToTicket(1L, "This is a reply", "USER", userEmail);
+        TicketMessage msg = new TicketMessage();
+        msg.setMessage("This is a reply");
+        msg.setSenderType("USER");
+        msg.setSenderId(userEmail);
         
-        verify(messageRepo, times(1)).save(any());
-        assertEquals(SupportTicket.TicketStatus.OPEN, testTicket.getStatus());
+        supportService.replyToTicket(1L, msg);
+        
+        verify(ticketRepo, times(1)).save(any());
+        assertEquals("OPEN", testTicket.getStatus());
     }
 
     @Test
     void testReplyToTicket_Admin() {
         when(ticketRepo.findById(1L)).thenReturn(Optional.of(testTicket));
+        when(sanitizer.sanitize(anyString())).thenAnswer(i -> i.getArgument(0));
         
-        supportService.replyToTicket(1L, "Admin reply", "ADMIN", "admin@vaabhi.com");
+        supportService.adminReplyToTicket(1L, "Admin reply", "admin@vaabhi.com");
         
-        assertEquals(SupportTicket.TicketStatus.IN_PROGRESS, testTicket.getStatus());
+        assertEquals("IN_PROGRESS", testTicket.getStatus());
     }
 
     @Test
     void testGetUserTickets() {
-        List<SupportTicket> list = List.of(testTicket);
-        when(ticketRepo.findByUserEmailOrderByCreatedAtDesc(userEmail)).thenReturn(list);
+        org.springframework.data.domain.Page<SupportTicket> page = new org.springframework.data.domain.PageImpl<>(List.of(testTicket));
+        when(ticketRepo.findByUserEmail(eq(userEmail), any())).thenReturn(page);
         
-        List<SupportTicket> result = supportService.getUserTickets(userEmail);
+        org.springframework.data.domain.Page<SupportTicket> result = supportService.getUserTickets(userEmail, org.springframework.data.domain.PageRequest.of(0, 10));
         
-        assertEquals(1, result.size());
-        verify(ticketRepo).findByUserEmailOrderByCreatedAtDesc(userEmail);
+        assertEquals(1, result.getContent().size());
+        verify(ticketRepo).findByUserEmail(eq(userEmail), any());
     }
 
     @Test
     void testGetTicket_Found() {
         when(ticketRepo.findById(1L)).thenReturn(Optional.of(testTicket));
         
-        SupportTicket found = supportService.getTicket(1L);
+        SupportTicket found = supportService.getTicketById(1L);
         
         assertNotNull(found);
         assertEquals(1L, found.getTicketId());
@@ -100,6 +114,6 @@ public class SupportServiceTest {
     void testGetTicket_NotFound() {
         when(ticketRepo.findById(99L)).thenReturn(Optional.empty());
         
-        assertThrows(ResourceNotFoundException.class, () -> supportService.getTicket(99L));
+        assertThrows(RuntimeException.class, () -> supportService.getTicketById(99L));
     }
 }

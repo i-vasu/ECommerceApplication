@@ -2,10 +2,6 @@ package com.app.order.payloads;
 
 import java.util.List;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 public class OrderResponse {
 
 	private List<OrderDTO> content;

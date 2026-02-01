@@ -1,22 +1,22 @@
 package com.app.security.services;
 
-import com.app.security.async.UserEvent;
-import lombok.extern.log4j.Log4j2;
-
-import com.app.security.UserService;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
 import com.app.core.async.EventProducer;
-import org.springframework.context.ApplicationEventPublisher;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
-import java.util.UUID;
-import java.time.LocalDateTime;
-
+import com.app.security.UserService;
+import com.app.security.async.UserEvent;
+import com.app.security.entities.Address;
+import com.app.security.entities.User;
+import com.app.security.entities.UserLoyalty;
+import com.app.security.entities.UserProfile;
 import com.app.security.mappers.IdentityMapper;
+import com.app.security.payloads.AddressDTO;
+import com.app.security.payloads.UserDTO;
+import com.app.security.payloads.UserResponse;
+import com.app.security.repositories.AddressRepo;
+import com.app.security.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,18 +26,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.security.entities.Address;
-import com.app.security.entities.User;
-import com.app.security.payloads.AddressDTO;
-import com.app.security.payloads.UserDTO;
-import com.app.security.payloads.UserResponse;
-import com.app.security.repositories.AddressRepo;
-import com.app.security.repositories.RoleRepo;
-import com.app.security.repositories.UserRepo;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Transactional
 @Service
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, com.app.core.contracts.UserServiceContract {
 
 	private static final org.apache.logging.log4j.Logger log = org.apache.logging.log4j.LogManager.getLogger(UserServiceImpl.class);
 
@@ -98,6 +95,21 @@ public class UserServiceImpl implements UserService {
 			user.setVerificationCodeExpiry(LocalDateTime.now().plusHours(24));
 			user.setVerified(false);
 			user.setAccountStatus("PENDING_VERIFICATION");
+
+			// Create Profile
+			UserProfile profile = new UserProfile();
+			profile.setUser(user);
+			profile.setFirstName(userDTO.firstName());
+			profile.setLastName(userDTO.lastName());
+			profile.setMobileNumber(userDTO.mobileNumber());
+			user.setProfile(profile);
+
+			// Create Loyalty
+			UserLoyalty loyalty = new UserLoyalty();
+			loyalty.setUser(user);
+			loyalty.setCustomerGroup("RETAIL");
+			loyalty.setRewardPoints(0);
+			user.setLoyalty(loyalty);
 			
 			User registeredUser = userRepo.save(user);
 			
@@ -117,8 +129,8 @@ public class UserServiceImpl implements UserService {
 				eventPublisher.publishEvent(new com.app.core.events.UserRegisteredEvent(
 						registeredUser.getUserId(),
 						registeredUser.getEmail(),
-						registeredUser.getFirstName(),
-						registeredUser.getLastName()
+						registeredUser.getProfile().getFirstName(),
+						registeredUser.getProfile().getLastName()
 				));
 
 			} catch (Exception e) {
@@ -126,8 +138,8 @@ public class UserServiceImpl implements UserService {
 			}
 
 			AddressDTO addressDTO = null;
-			if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
-				addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().getFirst());
+			if (user.getProfile().getAddresses() != null && !user.getProfile().getAddresses().isEmpty()) {
+				addressDTO = identityMapper.addressToAddressDTO(user.getProfile().getAddresses().getFirst());
 			}
 
 			userDTO = identityMapper.userToUserDTO(registeredUser).toBuilder()
@@ -164,8 +176,8 @@ public class UserServiceImpl implements UserService {
 			UserDTO baseDTO = identityMapper.userToUserDTO(user);
 
 			AddressDTO addressDTO = null;
-			if (user.getAddresses() != null && user.getAddresses().size() != 0) {
-				addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().getFirst());
+			if (user.getProfile() != null && user.getProfile().getAddresses() != null && !user.getProfile().getAddresses().isEmpty()) {
+				addressDTO = identityMapper.addressToAddressDTO(user.getProfile().getAddresses().getFirst());
 			}
 
 			return baseDTO.toBuilder()
@@ -206,8 +218,8 @@ public class UserServiceImpl implements UserService {
 		UserDTO baseUserDTO = identityMapper.userToUserDTO(user);
 
 		AddressDTO addressDTO = null;
-		if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
-			addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().getFirst());
+		if (user.getProfile() != null && user.getProfile().getAddresses() != null && !user.getProfile().getAddresses().isEmpty()) {
+			addressDTO = identityMapper.addressToAddressDTO(user.getProfile().getAddresses().getFirst());
 		}
 
 		return baseUserDTO.toBuilder()
@@ -222,9 +234,9 @@ public class UserServiceImpl implements UserService {
 
 		String encodedPass = passwordEncoder.encode(userDTO.password());
 
-		user.setFirstName(userDTO.firstName());
-		user.setLastName(userDTO.lastName());
-		user.setMobileNumber(userDTO.mobileNumber());
+		user.getProfile().setFirstName(userDTO.firstName());
+		user.getProfile().setLastName(userDTO.lastName());
+		user.getProfile().setMobileNumber(userDTO.mobileNumber());
 		user.setEmail(userDTO.email());
 		user.setPassword(encodedPass);
 
@@ -244,7 +256,7 @@ public class UserServiceImpl implements UserService {
 
 				address = addressRepo.save(address);
 
-				user.setAddresses(List.of(address));
+				user.getProfile().setAddresses(List.of(address));
 			}
 		}
 
@@ -253,8 +265,8 @@ public class UserServiceImpl implements UserService {
 
 		// Get address DTO if available
 		AddressDTO addressDTO = null;
-		if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
-			addressDTO = identityMapper.addressToAddressDTO(user.getAddresses().get(0));
+		if (user.getProfile() != null && user.getProfile().getAddresses() != null && !user.getProfile().getAddresses().isEmpty()) {
+			addressDTO = identityMapper.addressToAddressDTO(user.getProfile().getAddresses().get(0));
 		}
 
 		// Build new UserDTO with all fields using the builder
@@ -352,15 +364,15 @@ public class UserServiceImpl implements UserService {
 			throw new APIException("Cannot transfer points to yourself");
 		}
 
-		int senderBalance = sender.getRewardPoints() != null ? sender.getRewardPoints() : 0;
+		int senderBalance = sender.getLoyalty().getRewardPoints() != null ? sender.getLoyalty().getRewardPoints() : 0;
 		if (senderBalance < points) {
 			throw new APIException("Insufficient reward points");
 		}
 
-		int receiverBalance = receiver.getRewardPoints() != null ? receiver.getRewardPoints() : 0;
+		int receiverBalance = receiver.getLoyalty().getRewardPoints() != null ? receiver.getLoyalty().getRewardPoints() : 0;
 
-		sender.setRewardPoints(senderBalance - points);
-		receiver.setRewardPoints(receiverBalance + points);
+		sender.getLoyalty().setRewardPoints(senderBalance - points);
+		receiver.getLoyalty().setRewardPoints(receiverBalance + points);
 
 		userRepo.save(sender);
 		userRepo.save(receiver);
@@ -387,5 +399,30 @@ public class UserServiceImpl implements UserService {
 		stateMachineService.triggerAccountEvent(userId, com.app.governance.states.AccountEvent.CLOSE);
 		
 		userRepo.save(user);
+	}
+
+	// UserServiceContract implementations
+	@Override
+	public boolean userExists(Long userId) {
+		return userRepo.existsById(userId);
+	}
+
+	@Override
+	public boolean userExistsByEmail(String email) {
+		return userRepo.findByEmail(email).isPresent();
+	}
+
+	@Override
+	public String getUserEmail(Long userId) {
+		return userRepo.findById(userId)
+				.map(User::getEmail)
+				.orElse(null);
+	}
+
+	@Override
+	public String getUserFullName(Long userId) {
+		return userRepo.findById(userId)
+				.map(u -> u.getProfile().getFirstName() + " " + u.getProfile().getLastName())
+				.orElse(null);
 	}
 }

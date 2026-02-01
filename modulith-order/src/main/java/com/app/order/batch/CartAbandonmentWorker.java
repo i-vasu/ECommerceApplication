@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class CartAbandonmentWorker {
 
     private final CartRepo cartRepo;
+    private final com.app.security.repositories.UserRepo userRepo;
     private final EventProducer eventProducer;
 
     /**
@@ -31,10 +32,11 @@ public class CartAbandonmentWorker {
 
         for (var cart : abandonedCarts) {
             try {
-                if (cart.getUser() != null) {
+                var user = userRepo.findById(cart.getUserId()).orElse(null);
+                if (user != null) {
                     // Publish abandonment event for notification service
-                    eventProducer.publish("cart_abandonment_events", cart.getUser().getEmail());
-                    log.info("Notified abandonment for cart of user: {}", cart.getUser().getEmail());
+                    eventProducer.publish("cart_abandonment_events", user.getEmail());
+                    log.info("Notified abandonment for cart of user: {}", user.getEmail());
                 }
             } catch (Exception e) {
                 log.error("Failed to process abandoned cart {}: {}", cart.getCartId(), e.getMessage());

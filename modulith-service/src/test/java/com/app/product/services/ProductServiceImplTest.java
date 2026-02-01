@@ -1,12 +1,12 @@
 package com.app.product.services;
 
-import com.app.catalog.entities.Product;
 import com.app.catalog.entities.Category;
+import com.app.catalog.entities.Product;
 import com.app.catalog.payloads.ProductDTO;
-import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.repositories.CategoryRepo;
-import com.app.core.ResourceNotFoundException;
+import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.services.ProductServiceImpl;
+import com.app.core.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,8 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
-import java.util.Optional;
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,7 +51,7 @@ public class ProductServiceImplTest {
         testProduct.setPrice(BigDecimal.valueOf(5000.0));
         testProduct.setQuantity(10);
 
-        testProductDTO = new ProductDTO(1L, "Silk Saree", "Silk", 10, BigDecimal.valueOf(5000.0), 0.0, BigDecimal.valueOf(5000.0), "silk-saree.jpg", "ITEM001");
+        testProductDTO = new ProductDTO(1L, "Silk Saree", "ITEM001", "silk-saree.jpg", "Silk", 10, 5000.0, 0.0, 5000.0, null, null, null, null);
     }
 
     @Test
@@ -61,7 +61,7 @@ public class ProductServiceImplTest {
         when(productRepo.save(any(Product.class))).thenReturn(testProduct);
         when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(testProductDTO);
 
-        ProductDTO saved = productService.addProduct(1L, testProductDTO);
+        ProductDTO saved = productService.addProduct(1L, testProduct);
 
         assertNotNull(saved);
         assertEquals("Silk Saree", saved.productName());
@@ -92,7 +92,7 @@ public class ProductServiceImplTest {
         when(productRepo.save(any(Product.class))).thenReturn(testProduct);
         when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(testProductDTO);
 
-        ProductDTO updated = productService.updateProduct(1L, testProductDTO);
+        ProductDTO updated = productService.updateProduct(1L, testProduct);
 
         assertNotNull(updated);
         verify(productRepo).save(any());

@@ -1,7 +1,9 @@
 package com.app.support.admin.views;
 
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -9,15 +11,8 @@ import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.distribution.CountAtBucket;
 import io.micrometer.core.instrument.distribution.HistogramSnapshot;
 import jakarta.annotation.security.RolesAllowed;
-import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 
 /**
  * Latency Distribution Heatmap (Native Visualizer).

@@ -1,22 +1,18 @@
 package com.app.review.services;
 
-import com.app.core.APIException;
-import com.app.core.ResourceNotFoundException;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.review.entities.ProductReview;
+import com.app.catalog.review.mappers.ReviewMapper;
 import com.app.catalog.review.payloads.ProductReviewDTO;
-import org.junit.jupiter.api.BeforeEach;
+import com.app.catalog.review.repositories.ProductReviewRepo;
+import com.app.catalog.review.services.ReviewServiceImpl;
+import com.app.core.APIException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
-import com.app.catalog.review.mappers.ReviewMapper;
-import com.app.catalog.review.services.ReviewServiceImpl;
-import com.app.catalog.review.repositories.ProductReviewRepo;
 
 import java.util.List;
 import java.util.Optional;

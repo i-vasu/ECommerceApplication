@@ -1,22 +1,20 @@
 package com.app.erp_sync.gateway;
 
-// TODO: Refactor to use event-driven architecture
-// Instead of direct ProductDataFlowService dependency, publish events that discovery module can listen to
 
 // import com.app.media.ImageService;
 // import com.app.search.services.ProductDataFlowService;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.http.dsl.Http;
+import org.springframework.messaging.MessageChannel;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.integration.channel.DirectChannel;
 
 @Configuration
 public class ERPNextSyncConfig {
@@ -26,8 +24,6 @@ public class ERPNextSyncConfig {
         return new DirectChannel();
     }
 
-    // TODO: Re-implement using event-driven approach
-    // Publish ProductSyncedEvent instead of calling ProductDataFlowService directly
     @Bean
     public static IntegrationFlow syncFlow(org.springframework.context.ApplicationEventPublisher eventPublisher) {
         org.springframework.integration.event.inbound.ApplicationEventListeningMessageProducer producer = 

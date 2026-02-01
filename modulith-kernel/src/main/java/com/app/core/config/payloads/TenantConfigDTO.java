@@ -1,7 +1,8 @@
 package com.app.core.config.payloads;
 
-import java.util.Map;
 import lombok.Builder;
+
+import java.util.Map;
 
 @Builder
 public record TenantConfigDTO(

@@ -1,14 +1,13 @@
 package com.app.order.external;
 
-import java.util.List;
-
+import com.app.catalog.payloads.ProductDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.http.MediaType;
 
-import com.app.catalog.payloads.ProductDTO;
+import java.util.List;
 
 @Component
 public class ProductRestClient implements ProductClient {

@@ -1,26 +1,24 @@
 package com.app.catalog.domain;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.app.catalog.ProductService;
+import com.app.catalog.entities.Category;
+import com.app.catalog.entities.Product;
 import com.app.catalog.mappers.CategoryMapper;
+import com.app.catalog.payloads.CategoryDTO;
+import com.app.catalog.payloads.CategoryResponse;
+import com.app.catalog.repositories.CategoryRepo;
+import com.app.core.APIException;
+import com.app.core.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import com.app.catalog.entities.Category;
-import com.app.catalog.entities.Product;
-import com.app.core.APIException;
-import com.app.core.ResourceNotFoundException;
-import com.app.catalog.payloads.CategoryDTO;
-import com.app.catalog.payloads.CategoryResponse;
-import com.app.catalog.repositories.CategoryRepo;
-import com.app.catalog.ProductService;
-
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Transactional
 @Service

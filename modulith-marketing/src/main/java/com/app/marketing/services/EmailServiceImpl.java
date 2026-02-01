@@ -3,12 +3,11 @@ package com.app.marketing.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import org.springframework.scheduling.annotation.Async;
-
 @Service
-public class EmailServiceImpl implements EmailService {
+public class EmailServiceImpl implements EmailService, com.app.core.contracts.EmailServiceContract {
 
     @Autowired
     private org.thymeleaf.TemplateEngine templateEngine;
@@ -51,5 +50,24 @@ public class EmailServiceImpl implements EmailService {
         } catch (Exception e) {
             e.printStackTrace(); // Log error properly in real app
         }
+    }
+
+    // EmailServiceContract implementations
+    @Override
+    @Async
+    public void sendOrderConfirmation(String toEmail, String subject, String body) {
+        sendSimpleMessage(toEmail, subject, body);
+    }
+
+    @Override
+    @Async
+    public void sendPaymentNotification(String toEmail, Long orderId, Double amount, String paymentId) {
+        sendOrderConfirmation(toEmail, orderId, java.math.BigDecimal.valueOf(amount), paymentId);
+    }
+
+    @Override
+    @Async
+    public void sendEmail(String toEmail, String subject, String body) {
+        sendSimpleMessage(toEmail, subject, body);
     }
 }

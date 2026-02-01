@@ -1,5 +1,6 @@
 package com.app.search.services;
 
+import com.app.discovery.domain.services.VisualSearchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -7,17 +8,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClient.RequestHeadersUriSpec;
 import org.springframework.web.client.RestClient.RequestHeadersSpec;
+import org.springframework.web.client.RestClient.RequestHeadersUriSpec;
 import org.springframework.web.client.RestClient.ResponseSpec;
-import com.app.discovery.domain.services.VisualSearchService;
 
-import java.util.Collections;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.contains;
 
 @ExtendWith(MockitoExtension.class)
 public class VisualSearchServiceTest {

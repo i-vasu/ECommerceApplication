@@ -23,13 +23,28 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-spring-boot-starter</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-spring-boot-starter</artifactId>
-		</dependency>
 	</dependencies>
+	<properties>
+    	<spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+	</properties>
+	<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <skip>true</skip>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+	
 </project>

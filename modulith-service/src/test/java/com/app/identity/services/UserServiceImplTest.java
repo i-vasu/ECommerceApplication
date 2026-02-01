@@ -1,11 +1,11 @@
 package com.app.security.services;
 
+import com.app.core.APIException;
+import com.app.core.ResourceNotFoundException;
 import com.app.security.entities.User;
 import com.app.security.payloads.UserDTO;
-import com.app.security.repositories.UserRepo;
 import com.app.security.repositories.RoleRepo;
-import com.app.core.ResourceNotFoundException;
-import com.app.core.APIException;
+import com.app.security.repositories.UserRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +46,17 @@ public class UserServiceImplTest {
         testUser.setEmail("user@example.com");
         testUser.setPassword("encodedPassword");
 
-        testUserDTO = new UserDTO(1L, "First", "Last", "1234567890", "user@example.com", "Password123", null, null);
+        testUser.setAccountStatus("ACTIVE");
+
+        testUserDTO = UserDTO.builder()
+                .userId(1L)
+                .firstName("First")
+                .lastName("Last")
+                .mobileNumber("1234567890")
+                .email("user@example.com")
+                .password("Password123")
+                .accountStatus("ACTIVE")
+                .build();
     }
 
     @Test
@@ -95,7 +105,7 @@ public class UserServiceImplTest {
         
         userService.deactivateAccount(1L);
         
-        assertFalse(testUser.isEnabled());
+        assertEquals("DEACTIVATED", testUser.getAccountStatus());
         verify(userRepo).save(testUser);
     }
 }

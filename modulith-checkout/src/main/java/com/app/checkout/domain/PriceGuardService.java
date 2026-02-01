@@ -1,9 +1,9 @@
 package com.app.checkout.domain;
 
-import com.app.governance.rules.RuleEngineService;
 import com.app.cart.entities.CartItem;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
+import com.app.governance.rules.RuleEngineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;

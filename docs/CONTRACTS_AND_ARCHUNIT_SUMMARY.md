@@ -9,7 +9,7 @@ Created **3 contract interfaces** in `modulith-kernel/src/main/java/com/app/core
 #### 1. **UserServiceContract.java**
 - Defines standard methods for user queries across modules
 - Methods: `getUserById()`, `getUserByEmail()`, `userExists()`, `verifyEmail()`
-- **Purpose**: Allows `order` and `product` modules to query user data without depending on `identity` implementation
+- **Purpose**: Allows `order` and `catalog` modules to query user data without depending on `security` implementation
 
 #### 2. **EmailServiceContract.java**  
 - Defines email notification methods
@@ -38,14 +38,14 @@ Enforces module-level architectural rules:
 
 **Passing Tests** ✅:
 - `kernelShouldNotDependOnDomainModules()` - Kernel is dependency-free
-- `identityShouldNotDependOnOrderOrProduct()` - Identity remains independent
-- `productShouldNotDependOnOrder()` - Correct dependency flow
-- `orderCanDependOnProductAndIdentity()` - Documents allowed dependencies
+- `securityShouldNotDependOnOrderOrCatalog()` - Security remains independent
+- `catalogShouldNotDependOnOrder()` - Correct dependency flow
+- `orderCanDependOnCatalogAndSecurity()` - Documents allowed dependencies
 
 **Failing Tests** 🔴 (Expected - reveals technical debt):
-- `modulesShouldBeFreeOfCycles()` - **Found real issue**: `product` ↔ `search` cycle
-  - Root cause: `ProductDataFlowService` (in search) depends on `ProductRepo` (in product)
-  - **Fix**: Move `search` package into `product` module OR introduce events
+- `modulesShouldBeFreeOfCycles()` - **Found real issue**: `catalog` ↔ `discovery` cycle
+  - Root cause: `ProductDataFlowService` (in discovery) depends on `ProductRepo` (in catalog)
+  - **Fix**: Move `discovery` logic into `catalog` module OR introduce events
 
 **Commented Out Tests** 📝 (Enable after migration):
 - `crossModuleServiceCallsShouldUseContracts()` - Will fail until services fully migrate to contracts
@@ -68,9 +68,9 @@ Enforces clean architecture within modules:
 ```
 modulith-kernel  (✅ Clean - no domain dependencies)
     ↑
-modulith-identity  (✅ Clean - kernel only)
+modulith-security  (✅ Clean - kernel only)
     ↑
-modulith-product  (⚠️ Has internal cycle: product ↔ search)
+modulith-catalog  (⚠️ Has internal cycle: catalog ↔ search)
     ↑
 modulith-order  (⚠️ Still uses direct service calls, not contracts)
     ↑
@@ -78,7 +78,7 @@ modulith-service  (✅ Orchestrator)
 ```
 
 ### Violations Found  
-1. **Cyclic Dependency**: `product` ↔ `search` (ArchUnit detected ✅)
+1. **Cyclic Dependency**: `catalog` ↔ `discovery` (ArchUnit detected ✅)
 2. **Direct Service Calls**: `OrderServiceImpl` still imports `UserService` directly
 3. **Entity Sharing**: Some DTOs still reference entities from other modules
 
@@ -87,9 +87,9 @@ modulith-service  (✅ Orchestrator)
 ## 🔧 Next Steps (Technical Debt)
 
 ### High Priority
-1. **Fix product ↔ search cycle**
-   - Option A: Move `com.app.search` into `com.app.product` (they're tightly coupled)
-   - Option B: Introduce events for product indexing
+1. **Fix catalog ↔ discovery cycle**
+   - Option A: Move `com.app.discovery` into `com.app.catalog` (they're tightly coupled)
+   - Option B: Introduce events for catalog indexing
 
 2. **Migrate to Contract Interfaces**
    - Update `Order ServiceImpl` to use `UserServiceContract` instead of direct `UserService`

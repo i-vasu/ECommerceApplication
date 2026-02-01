@@ -1,14 +1,13 @@
 package com.app.security.security;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.app.security.entities.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.app.security.entities.User;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class UserInfoConfig implements UserDetails {
 

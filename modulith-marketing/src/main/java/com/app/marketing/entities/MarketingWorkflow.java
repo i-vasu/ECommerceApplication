@@ -3,6 +3,7 @@ package com.app.marketing.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.List;
 

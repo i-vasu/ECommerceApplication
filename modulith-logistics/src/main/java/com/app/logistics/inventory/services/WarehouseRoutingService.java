@@ -1,9 +1,9 @@
 package com.app.logistics.inventory.services;
 
 import com.app.governance.rules.RuleEngineService;
-import com.app.security.entities.Address;
 import com.app.logistics.inventory.entities.Warehouse;
 import com.app.logistics.inventory.repositories.WarehouseRepo;
+import com.app.security.entities.Address;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;

@@ -1,21 +1,19 @@
 package com.app.commerce.promotion.services;
 
-import com.app.commerce.promotion.entities.PromotionRule;
-import com.app.commerce.promotion.repositories.PromotionRuleRepo;
-import org.junit.jupiter.api.BeforeEach;
+import com.app.finance.promo.entities.PromotionRule;
+import com.app.finance.promo.repositories.PromotionRuleRepo;
+import com.app.finance.promo.services.RuleBasedPromotionEngine;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +41,7 @@ public class RuleBasedPromotionEngineTest {
         BigDecimal result = promotionEngine.applyCoupon(TEST_CODE, new BigDecimal("6000"), TEST_EMAIL);
 
         // Expected result is -600.0 (as a negative value for pricing summary)
-        assertEquals(new BigDecimal("-600.00"), result.setScale(2));
+        assertThat(result).isEqualByComparingTo(new BigDecimal("-600.00"));
     }
 
     @Test
@@ -57,7 +55,7 @@ public class RuleBasedPromotionEngineTest {
 
         BigDecimal result = promotionEngine.applyCoupon(TEST_CODE, new BigDecimal("4000"), TEST_EMAIL);
 
-        assertEquals(BigDecimal.ZERO, result);
+        assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
@@ -72,6 +70,6 @@ public class RuleBasedPromotionEngineTest {
 
         BigDecimal result = promotionEngine.applyCoupon(TEST_CODE, new BigDecimal("1000"), TEST_EMAIL);
 
-        assertEquals(new BigDecimal("-500.0"), result);
+        assertThat(result).isEqualByComparingTo(new BigDecimal("-500.0"));
     }
 }

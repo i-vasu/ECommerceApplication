@@ -36,7 +36,7 @@ public class WalletIntegrationTest extends AbstractIntegrationTest {
         assertThat(walletService.getBalance(email)).isEqualTo(700.0);
         
         // 4. Verify Transactions
-        Wallet updatedWallet = walletRepo.findByEmail(email).orElseThrow();
+        Wallet updatedWallet = walletRepo.findByUserEmail(email).orElseThrow();
         assertThat(updatedWallet.getTransactions()).hasSize(2);
         assertThat(updatedWallet.getTransactions().get(0).getAmount()).isNotNull();
     }

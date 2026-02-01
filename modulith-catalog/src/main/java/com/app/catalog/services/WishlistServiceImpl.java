@@ -1,12 +1,12 @@
 package com.app.catalog.services;
 
-import com.app.core.ResourceNotFoundException;
-import com.app.security.repositories.UserRepo;
 import com.app.catalog.entities.Wishlist;
 import com.app.catalog.mappers.ProductMapper;
 import com.app.catalog.payloads.ProductDTO;
 import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.repositories.WishlistRepo;
+import com.app.core.ResourceNotFoundException;
+import com.app.security.repositories.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,8 +27,11 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getWishlist(String email) {
-        Wishlist wishlist = wishlistRepo.findByUserEmail(email)
-                .orElseGet(() -> createEmptyWishlist(email));
+        var user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        Wishlist wishlist = wishlistRepo.findByUserId(user.getUserId())
+                .orElseGet(() -> createWishlistForUser(user.getUserId()));
 
         return wishlist.getProducts().stream()
                 .map(productMapper::productToProductDTO)
@@ -37,8 +40,11 @@ public class WishlistServiceImpl implements WishlistService {
 
     @Override
     public void addProductToWishlist(String email, Long productId) {
-        Wishlist wishlist = wishlistRepo.findByUserEmail(email)
-                .orElseGet(() -> createEmptyWishlist(email));
+        var user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        Wishlist wishlist = wishlistRepo.findByUserId(user.getUserId())
+                .orElseGet(() -> createWishlistForUser(user.getUserId()));
 
         var product = productRepo.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
@@ -51,8 +57,11 @@ public class WishlistServiceImpl implements WishlistService {
 
     @Override
     public void removeProductFromWishlist(String email, Long productId) {
-        Wishlist wishlist = wishlistRepo.findByUserEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Wishlist", "email", email));
+        var user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        Wishlist wishlist = wishlistRepo.findByUserId(user.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Wishlist", "userId", user.getUserId()));
 
         var product = productRepo.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
@@ -63,19 +72,19 @@ public class WishlistServiceImpl implements WishlistService {
 
     @Override
     public void clearWishlist(String email) {
-        Wishlist wishlist = wishlistRepo.findByUserEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Wishlist", "email", email));
+        var user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        Wishlist wishlist = wishlistRepo.findByUserId(user.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Wishlist", "userId", user.getUserId()));
 
         wishlist.getProducts().clear();
         wishlistRepo.save(wishlist);
     }
 
-    private Wishlist createEmptyWishlist(String email) {
-        var user = userRepo.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
-
+    private Wishlist createWishlistForUser(Long userId) {
         Wishlist wishlist = new Wishlist();
-        wishlist.setUser(user);
+        wishlist.setUserId(userId);
         return wishlistRepo.save(wishlist);
     }
 }

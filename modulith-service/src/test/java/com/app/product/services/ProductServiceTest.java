@@ -1,27 +1,6 @@
 package com.app.product.services;
 
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigDecimal;
-import java.util.Optional;
-import java.util.ArrayList;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.StringRedisTemplate;
-
-import com.app.core.ResourceNotFoundException;
 import com.app.catalog.entities.Category;
 import com.app.catalog.entities.Product;
 import com.app.catalog.mappers.ProductMapper;
@@ -29,6 +8,22 @@ import com.app.catalog.payloads.ProductDTO;
 import com.app.catalog.repositories.CategoryRepo;
 import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.services.ProductServiceImpl;
+import com.app.core.ResourceNotFoundException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {

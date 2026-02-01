@@ -1,7 +1,7 @@
 package com.app.security.services;
 
-import com.app.security.entities.User;
 import com.app.security.entities.CustomerSegment;
+import com.app.security.entities.User;
 import com.app.security.repositories.CustomerSegmentRepo;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;

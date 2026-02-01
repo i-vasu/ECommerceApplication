@@ -1,8 +1,8 @@
 package com.app.order.listeners;
 
-import com.app.core.events.UserRegisteredEvent;
 import com.app.cart.entities.Cart;
 import com.app.cart.repositories.CartRepo;
+import com.app.core.events.UserRegisteredEvent;
 import com.app.security.repositories.UserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +25,9 @@ public class UserActivityListener {
         
         userRepo.findById(event.userId()).ifPresentOrElse(user -> {
             // Check if cart already exists (idempotency)
-            if (cartRepo.findByUserEmail(user.getEmail()).isEmpty()) {
+            if (cartRepo.findByUserId(user.getUserId()).isEmpty()) {
                 Cart cart = new Cart();
-                cart.setUser(user);
+                cart.setUserId(user.getUserId());
                 cart.setTotalPrice(BigDecimal.ZERO);
                 cartRepo.save(cart);
                 log.info("Successfully initialized cart for user ID: {}", event.userId());

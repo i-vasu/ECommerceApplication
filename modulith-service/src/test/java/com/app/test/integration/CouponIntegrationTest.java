@@ -1,20 +1,17 @@
 package com.app.test.integration;
 
-import com.app.cart.domain.CartService;
-import com.app.cart.payloads.CartDTO;
-
-import com.app.finance.promo.entities.Coupon;
-import com.app.finance.promo.repositories.CouponRepo;
-import com.app.security.entities.User;
-import com.app.security.repositories.UserRepo;
 import com.app.cart.entities.Cart;
-import com.app.order.entities.Order;
-import com.app.order.order.OrderService;
-import com.app.order.payloads.OrderDTO;
+import com.app.cart.payloads.CartDTO;
 import com.app.cart.repositories.CartRepo;
-import com.app.order.repositories.OrderRepo;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
+import com.app.finance.promo.entities.Coupon;
+import com.app.finance.promo.repositories.CouponRepo;
+import com.app.order.entities.Order;
+import com.app.order.repositories.OrderRepo;
+import com.app.security.entities.User;
+import com.app.security.entities.UserProfile;
+import com.app.security.repositories.UserRepo;
 import com.app.test.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,8 +48,11 @@ public class CouponIntegrationTest extends AbstractIntegrationTest {
     void testCouponApplicationAndCheckout() {
         // 1. Setup User and Product via Repos (Pre-requisites)
         User user = new User();
-        user.setFirstName("Jonathan");
         user.setEmail("john@example.com");
+        UserProfile profile = new UserProfile();
+        profile.setFirstName("Jonathan");
+        profile.setUser(user);
+        user.setProfile(profile);
         user = userRepo.save(user);
 
         Product product = new Product();
@@ -69,7 +69,7 @@ public class CouponIntegrationTest extends AbstractIntegrationTest {
 
         // 2. Setup Cart via Repo
         Cart cart = new Cart();
-        cart.setUser(user);
+        cart.setUserId(user.getUserId());
         cart = cartRepo.save(cart);
 
         // 3. Setup Coupon via Repo

@@ -1,12 +1,11 @@
 package com.app.order.entities;
 
 import com.app.governance.states.OrderStatus;
-import com.app.finance.entities.Payment;
-import com.app.logistics.entities.Shipment;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity

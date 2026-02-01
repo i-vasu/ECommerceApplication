@@ -1,24 +1,15 @@
 package com.app.order.entities;
 
+import com.app.governance.states.OrderStatus;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.app.governance.states.OrderStatus;
-import com.app.catalog.entities.Product;
-import com.app.logistics.entities.FulfillmentGroup;
-import com.app.finance.promo.entities.OrderAdjustment;
-import com.app.core.APIException;
-
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Order Aggregate Root following DDD principles.
@@ -80,12 +71,6 @@ public class Order {
     private String shippingPincode;
     private String shippingCountry;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FulfillmentGroup> fulfillmentGroups = new ArrayList<>();
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderAdjustment> adjustments = new ArrayList<>();
-
     // ==================== Domain Business Methods ====================
 
     /**
@@ -107,15 +92,15 @@ public class Order {
      * Domain method to add an item to the order.
      * Encapsulates the relationship and invariant check.
      */
-    public void addItem(Product product, Double quantity, BigDecimal price, BigDecimal discount) {
+    public void addItem(Long productId, String productName, String itemCode, Double quantity, BigDecimal price, BigDecimal discount) {
         OrderItem item = new OrderItem();
         item.setOrder(this);
-        item.setProduct(product);
+        item.setProductId(productId);
         item.setQuantity(quantity.intValue());
         item.setOrderedPrice(price);
         item.setDiscount(discount);
-        item.setProductName(product.getProductName());
-        item.setItemCode(product.getItemCode());
+        item.setProductName(productName);
+        item.setItemCode(itemCode);
         item.setStatus("NORMAL");
 
         this.orderItems.add(item);

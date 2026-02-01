@@ -1,14 +1,16 @@
 package com.app.security.controllers;
 
-import com.app.security.services.WalletService;
-import com.app.security.entities.WalletTransaction;
-import com.app.security.entities.User;
-import com.app.security.repositories.UserRepo;
 import com.app.core.ResourceNotFoundException;
+import com.app.security.entities.User;
+import com.app.security.entities.WalletTransaction;
+import com.app.security.repositories.UserRepo;
+import com.app.security.services.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
@@ -38,8 +40,16 @@ public class UserAccountController {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
 
+        Integer rewardPoints = 0;
+        String customerGroup = "RETAIL";
+
+        if (user.getLoyalty() != null) {
+            rewardPoints = user.getLoyalty().getRewardPoints();
+            customerGroup = user.getLoyalty().getCustomerGroup();
+        }
+
         return ResponseEntity.ok(Map.of(
-                "rewardPoints", user.getRewardPoints(),
-                "customerGroup", user.getCustomerGroup()));
+                "rewardPoints", rewardPoints,
+                "customerGroup", customerGroup));
     }
 }

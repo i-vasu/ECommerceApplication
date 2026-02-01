@@ -1,15 +1,13 @@
 package com.app.discovery.assets;
 
-import app.photofox.vipsffm.Vips;
 import app.photofox.vipsffm.VImage;
+import app.photofox.vipsffm.Vips;
 import app.photofox.vipsffm.VipsOption;
 import io.trbl.blurhash.BlurHash;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;

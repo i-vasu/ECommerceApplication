@@ -1,20 +1,21 @@
 package com.app.discount.services;
 
-import com.app.discount.entities.Coupon;
-import com.app.discount.payloads.CouponDTO;
-import com.app.discount.repositories.CouponRepo;
+import com.app.finance.promo.entities.Coupon;
+import com.app.finance.promo.mappers.CouponMapper;
+import com.app.finance.promo.payloads.CouponDTO;
+import com.app.finance.promo.repositories.CouponRepo;
+import com.app.finance.promo.services.CouponServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import com.app.discount.mappers.CouponMapper;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 

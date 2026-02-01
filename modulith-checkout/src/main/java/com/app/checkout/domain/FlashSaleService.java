@@ -1,19 +1,18 @@
 package com.app.checkout.domain;
 
+import com.app.core.ResourceNotFoundException;
 import com.app.finance.promo.entities.FlashSale;
 import com.app.finance.promo.entities.FlashSaleProduct;
 import com.app.finance.promo.repositories.FlashSaleRepo;
-import com.app.logistics.inventory.services.FlashSaleInventoryService;
-import com.app.core.ResourceNotFoundException;
-import com.app.governance.states.OperationalStateMachineService;
 import com.app.governance.states.FlashSaleEvent;
+import com.app.governance.states.OperationalStateMachineService;
+import com.app.logistics.inventory.services.FlashSaleInventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service

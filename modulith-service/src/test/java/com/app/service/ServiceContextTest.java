@@ -1,17 +1,16 @@
 package com.app.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.app.ModulithApplication;
+import com.app.config.RedisStreamConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
 
-import com.app.ModulithApplication;
-import com.app.config.RedisStreamConfig;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = ModulithApplication.class)
+@SpringBootTest(classes = ModulithApplication.class, properties = "spring.autoconfigure.exclude=org.springframework.statemachine.boot.autoconfigure.StateMachineJpaRepositoriesAutoConfiguration")
 public class ServiceContextTest {
 
     @Autowired
@@ -28,6 +27,7 @@ public class ServiceContextTest {
 
     @Test
     void redisContainerIsRegistered() {
-        assertThat(context.getBean(StreamMessageListenerContainer.class)).isNotNull();
+        assertThat(context.getBean("streamMessageListenerContainer", StreamMessageListenerContainer.class)).isNotNull();
+        assertThat(context.getBean("mapStreamMessageListenerContainer", StreamMessageListenerContainer.class)).isNotNull();
     }
 }

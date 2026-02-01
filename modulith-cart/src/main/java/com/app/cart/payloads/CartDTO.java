@@ -1,7 +1,8 @@
 package com.app.cart.payloads;
 
-import java.util.List;
 import com.app.catalog.payloads.ProductDTO;
+
+import java.util.List;
 
 public record CartDTO(
         Long cartId,

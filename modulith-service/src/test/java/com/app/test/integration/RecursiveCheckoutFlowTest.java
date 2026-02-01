@@ -1,24 +1,25 @@
 package com.app.test.integration;
 
-import com.app.order.entities.*;
 import com.app.cart.entities.Cart;
 import com.app.cart.entities.CartItem;
 import com.app.checkout.pipeline.OptimizedCheckoutService;
 import com.app.checkout.pipeline.OptimizedCheckoutService.CheckoutResult;
+import com.app.finance.promo.entities.PromotionRule;
+import com.app.finance.promo.repositories.PromotionRuleRepo;
 import com.app.security.entities.Address;
 import com.app.security.entities.User;
-import com.app.finance.promo.repositories.PromotionRuleRepo;
-import com.app.finance.promo.entities.PromotionRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Granular Recursive Flow Test.
@@ -40,15 +41,16 @@ public class RecursiveCheckoutFlowTest {
         // 1. Setup Cart
         Cart cart = new Cart();
         User user = new User();
+        user.setUserId(1L);
         user.setEmail("test@fashion.com");
-        cart.setUser(user);
+        cart.setUserId(user.getUserId());
         cart.setCartId(1L);
-        cart.setTotalPrice(10000.0);
+        cart.setTotalPrice(BigDecimal.valueOf(10000.0));
 
         CartItem item = new CartItem();
         item.setProductId(101L);
         item.setItemCode("TSHIRT-RED-XL");
-        item.setProductPrice(10000.0);
+        item.setProductPrice(BigDecimal.valueOf(10000.0));
         item.setQuantity(1);
         cart.setCartItems(List.of(item));
 
@@ -66,14 +68,14 @@ public class RecursiveCheckoutFlowTest {
         address.setPincode("400001");
 
         // 4. TRIGGER RECURSIVE FLOW
-        CheckoutResult result = checkoutService.processCheckout(cart, address, null);
+        CheckoutResult result = checkoutService.processCheckout(cart, address);
 
         // 5. VERIFY GRANULAR OUTPUTS
         assertNotNull(result);
 
         // A. Verify Promotion Engine recursion
         // Expecting 15% discount on 10000 = 1500
-        assertEquals(-1500.0, result.promotionDiscount().doubleValue(), "Promotion Engine failed to recurse SpEL rule");
+        assertThat(result.promotionDiscount().abs()).isEqualByComparingTo(BigDecimal.valueOf(1500.0));
 
         // B. Verify Tax Engine recursion (IGST vs CGST/SGST)
         // Maharashtra is intra-state (simulated), expect CGST/SGST
@@ -81,8 +83,11 @@ public class RecursiveCheckoutFlowTest {
         assertTrue(result.tax().components().stream().anyMatch(c -> c.name().contains("CGST")));
 
         // C. Verify Final Accounting Precision
-        double expected = 10000.0 - 1500.0 + result.tax().totalAmount() + result.shipping().amount();
-        assertEquals(expected, result.finalAmount(), 0.01, "Accounting discrepancy in recursive checkout");
+        BigDecimal expected = BigDecimal.valueOf(10000.0)
+            .subtract(BigDecimal.valueOf(1500.0))
+            .add(BigDecimal.valueOf(result.tax().totalAmount()))
+            .add(BigDecimal.valueOf(result.shipping().amount()));
+        assertThat(result.finalAmount()).isEqualByComparingTo(expected);
 
         System.out.println("✅ Deep recursion test passed: Promotion, Tax, and Pricing are perfectly synced.");
     }

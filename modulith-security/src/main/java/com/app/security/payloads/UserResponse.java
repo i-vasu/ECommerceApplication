@@ -1,7 +1,6 @@
 package com.app.security.payloads;
 
 import java.util.List;
-import com.app.security.payloads.UserDTO;
 
 public class UserResponse {
 

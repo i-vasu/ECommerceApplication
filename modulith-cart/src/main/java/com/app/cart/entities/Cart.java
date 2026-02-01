@@ -1,25 +1,16 @@
 package com.app.cart.entities;
 
+import com.app.governance.states.CartState;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.app.security.entities.User;
-import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
-import java.math.BigDecimal;
-import com.app.governance.states.CartState;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-
 @Entity
+@Table(name = "carts")
 public class Cart {
 
 	@Id
@@ -32,9 +23,8 @@ public class Cart {
 	@UpdateTimestamp
 	private LocalDateTime lastUpdated;
 
-	@OneToOne
-	@JoinColumn(name = "user_id")
-	private User user;
+	@jakarta.persistence.Column(name = "user_id", unique = true, nullable = false)
+	private Long userId;
 
 	@OneToMany(mappedBy = "cart", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, orphanRemoval = true)
 	private List<CartItem> cartItems = new ArrayList<>();
@@ -51,9 +41,9 @@ public class Cart {
 	public Cart() {
 	}
 
-	public Cart(Long cartId, User user, List<CartItem> cartItems, BigDecimal totalPrice) {
+	public Cart(Long cartId, Long userId, List<CartItem> cartItems, BigDecimal totalPrice) {
 		this.cartId = cartId;
-		this.user = user;
+		this.userId = userId;
 		this.cartItems = cartItems;
 		this.totalPrice = totalPrice;
 	}
@@ -66,12 +56,12 @@ public class Cart {
 		this.cartId = cartId;
 	}
 
-	public User getUser() {
-		return user;
+	public Long getUserId() {
+		return userId;
 	}
 
-	public void setUser(User user) {
-		this.user = user;
+	public void setUserId(Long userId) {
+		this.userId = userId;
 	}
 
 	public List<CartItem> getCartItems() {
@@ -112,10 +102,6 @@ public class Cart {
 
 	public void setLastUpdated(LocalDateTime lastUpdated) {
 		this.lastUpdated = lastUpdated;
-	}
-
-	public String getEmail() {
-		return (user != null) ? user.getEmail() : null;
 	}
 
 	public CartState getStatus() {

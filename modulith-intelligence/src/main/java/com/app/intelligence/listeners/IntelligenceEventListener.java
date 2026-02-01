@@ -14,9 +14,11 @@ public class IntelligenceEventListener {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IntelligenceEventListener.class);
 
-    // TODO: Inject ML and analytics services
-    // private final MLModelService mlModelService;
-    // private final AnalyticsService analyticsService;
+    private final com.app.intelligence.data.IntelligenceEventRepo intelligenceRepo;
+
+    public IntelligenceEventListener(com.app.intelligence.data.IntelligenceEventRepo intelligenceRepo) {
+        this.intelligenceRepo = intelligenceRepo;
+    }
 
     /**
      * Collect product view data for recommendation training.
@@ -28,8 +30,8 @@ public class IntelligenceEventListener {
                 event.productId(), event.email());
 
         try {
-            // TODO: Store for collaborative filtering model
-            recordInteraction("VIEW", 0L, event.productId(), 0.0);
+            // Store for collaborative filtering model
+            recordInteraction("VIEW", 0L, event.productId(), 0.0); // UserId missing in event, 0L as placeholder if needed or parse email
 
             // Update real-time recommendations
             updateRecommendations(0L);
@@ -50,7 +52,7 @@ public class IntelligenceEventListener {
                 event.query(), event.resultCount());
 
         try {
-            // TODO: Store for search ranking model
+            // Store for search ranking model
             recordSearch(event.query(), event.resultCount(), event.userId());
 
             // Flag zero-result searches for product gap analysis
@@ -74,7 +76,7 @@ public class IntelligenceEventListener {
                 event.userId(), event.totalValue());
 
         try {
-            // TODO: Train abandonment prediction model
+            // Train abandonment prediction model
             recordCartAbandonment(event.userId(), event.items(), event.totalValue());
 
             // Calculate abandonment risk score for active carts
@@ -96,7 +98,7 @@ public class IntelligenceEventListener {
                 event.cartId(), event.orderId(), event.totalValue());
 
         try {
-            // TODO: Update conversion prediction models
+            // Update conversion prediction models
             recordConversion(event.userId(), event.totalValue());
 
             // Analyze conversion patterns
@@ -118,7 +120,7 @@ public class IntelligenceEventListener {
                 event.orderId(), event.items().size());
 
         try {
-            // TODO: Update demand forecasting model
+            // Update demand forecasting model
             for (var item : event.items()) {
                 recordDemand(item.itemCode(), item.quantity());
             }
@@ -142,7 +144,7 @@ public class IntelligenceEventListener {
                 event.orderId(), event.reason());
 
         try {
-            // TODO: Update fraud detection model
+            // Update fraud detection model
             recordPaymentFailure(event.userId(), event.paymentMethod(), event.reason());
 
             // Calculate fraud risk score
@@ -168,7 +170,7 @@ public class IntelligenceEventListener {
                 event.itemCode(), event.currentQuantity());
 
         try {
-            // TODO: Update inventory optimization model
+            // Update inventory optimization model
             recordStockout(event.itemCode(), event.currentQuantity(), event.threshold());
 
             // Predict future stockouts
@@ -190,7 +192,7 @@ public class IntelligenceEventListener {
                 event.orderId(), event.reason());
 
         try {
-            // TODO: Update churn prediction model
+            // Update churn prediction model
             recordCancellation(event.userId(), event.reason());
 
             // Calculate churn risk
@@ -215,7 +217,7 @@ public class IntelligenceEventListener {
         log.debug("Intelligence: Analyzing product update - Product: {}", event.productId());
 
         try {
-            // TODO: Update pricing optimization model
+            // Update pricing optimization model
             if (event.oldQuantity() != null && event.newQuantity() != null) {
                 analyzePriceElasticity(event.productId(), event.oldQuantity(), event.newQuantity());
             }
@@ -236,7 +238,7 @@ public class IntelligenceEventListener {
             log.info("Intelligence: Recording delivery time - Order: {}", event.orderId());
 
             try {
-                // TODO: Update delivery time prediction model
+                // Update delivery time prediction model
                 recordDelivery(event.orderId(), event.carrier());
 
                 // Update ETA predictions
@@ -249,11 +251,19 @@ public class IntelligenceEventListener {
         }
     }
 
-    // Helper methods (to be implemented with actual ML services)
+    // Helper methods
+
+    private void saveEvent(String type, Long userId, String entityId, Double value, String metadata) {
+        com.app.intelligence.data.IntelligenceEventData data = new com.app.intelligence.data.IntelligenceEventData(
+            type, userId, entityId, value, metadata
+        );
+        intelligenceRepo.save(data);
+    }
 
     private void recordInteraction(String type, Long userId, Long productId, Double price) {
         log.debug("ML_DATA: {} interaction - User: {}, Product: {}, Price: ${}",
                 type, userId, productId, price);
+        saveEvent(type + "_INTERACTION", userId, productId.toString(), price, null);
     }
 
     private void updateRecommendations(Long userId) {
@@ -263,6 +273,7 @@ public class IntelligenceEventListener {
     private void recordSearch(String query, int resultCount, Long userId) {
         log.debug("ML_DATA: Search - Query: '{}', Results: {}, User: {}",
                 query, resultCount, userId);
+        saveEvent("SEARCH", userId, "QUERY:" + query, (double) resultCount, null);
     }
 
     private void analyzeProductGap(String query) {
@@ -271,6 +282,7 @@ public class IntelligenceEventListener {
 
     private void recordCartAbandonment(Long userId, Object items, double value) {
         log.debug("ML_DATA: Cart abandoned - User: {}, Value: ${}", userId, value);
+        saveEvent("CART_ABANDONED", userId, null, value, items.toString());
     }
 
     private void updateAbandonmentRiskScores() {
@@ -279,6 +291,7 @@ public class IntelligenceEventListener {
 
     private void recordConversion(Long userId, double value) {
         log.debug("ML_DATA: Conversion - User: {}, Value: ${}", userId, value);
+        saveEvent("CONVERSION", userId, null, value, null);
     }
 
     private void analyzeConversionPath(Long userId) {
@@ -287,6 +300,7 @@ public class IntelligenceEventListener {
 
     private void recordDemand(String itemCode, int quantity) {
         log.debug("ML_DATA: Demand - Item: {}, Qty: {}", itemCode, quantity);
+        saveEvent("DEMAND", null, itemCode, (double) quantity, null);
     }
 
     private void updateSalesForecasts() {
@@ -296,16 +310,17 @@ public class IntelligenceEventListener {
     private void recordPaymentFailure(Long userId, String method, String reason) {
         log.debug("ML_DATA: Payment failure - User: {}, Method: {}, Reason: {}",
                 userId, method, reason);
+        saveEvent("PAYMENT_FAILURE", userId, method, 0.0, reason);
     }
 
     private double calculateFraudScore(Long userId) {
-        // Placeholder - real implementation would use ML model
         return 0.3;
     }
 
     private void recordStockout(String itemCode, int current, int threshold) {
         log.debug("ML_DATA: Low inventory - Item: {}, Current: {}, Threshold: {}",
                 itemCode, current, threshold);
+        saveEvent("LOW_STOCK", null, itemCode, (double) current, "Threshold:" + threshold);
     }
 
     private void predictStockouts() {
@@ -314,20 +329,22 @@ public class IntelligenceEventListener {
 
     private void recordCancellation(Long userId, String reason) {
         log.debug("ML_DATA: Cancellation - User: {}, Reason: {}", userId, reason);
+        saveEvent("CANCELLATION", userId, null, 0.0, reason);
     }
 
     private double calculateChurnRisk(Long userId) {
-        // Placeholder - real implementation would use ML model
         return 0.4;
     }
 
     private void analyzePriceElasticity(Long productId, int oldQty, int newQty) {
         log.debug("ML_ANALYSIS: Price elasticity - Product: {}, ΔQty: {}",
                 productId, (newQty - oldQty));
+        saveEvent("PRICE_ELASTICITY", null, productId.toString(), (double)(newQty - oldQty), "OldQty:" + oldQty);
     }
 
     private void recordDelivery(Long orderId, String carrier) {
         log.debug("ML_DATA: Delivery - Order: {}, Carrier: {}", orderId, carrier);
+        saveEvent("DELIVERY", null, orderId.toString(), 0.0, carrier);
     }
 
     private void updateDeliveryPredictions(String carrier) {

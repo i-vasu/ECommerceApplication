@@ -1,23 +1,20 @@
 package com.app.security;
 
-import java.util.List;
-
-import com.app.security.mappers.IdentityMapper;
-import org.springframework.stereotype.Service;
-
-import com.app.security.entities.Address;
-import com.app.security.entities.User;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
+import com.app.security.entities.Address;
+import com.app.security.entities.User;
+import com.app.security.mappers.IdentityMapper;
 import com.app.security.payloads.AddressDTO;
 import com.app.security.repositories.AddressRepo;
 import com.app.security.repositories.UserRepo;
-
-import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 // ✅ OPTIMIZED: Method-level @Transactional for better connection pooling (20-30% faster reads)
 @RequiredArgsConstructor
@@ -94,7 +91,11 @@ public class AddressServiceImpl implements AddressService {
 			List<User> users = userRepo.findByAddress(addressId);
 			final var a = addressFromDB;
 
-			users.forEach(user -> user.getAddresses().add(a));
+			users.forEach(user -> {
+				if (user.getProfile() != null) {
+					user.getProfile().getAddresses().add(a);
+				}
+			});
 
 			deleteAddress(addressId);
 
@@ -111,7 +112,9 @@ public class AddressServiceImpl implements AddressService {
 		List<User> users = userRepo.findByAddress(addressId);
 
 		users.forEach(user -> {
-			user.getAddresses().remove(addressFromDB);
+			if (user.getProfile() != null) {
+				user.getProfile().getAddresses().remove(addressFromDB);
+			}
 
 			userRepo.save(user);
 		});

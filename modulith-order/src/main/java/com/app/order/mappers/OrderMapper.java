@@ -1,11 +1,11 @@
 package com.app.order.mappers;
 
+import com.app.finance.entities.Payment;
+import com.app.finance.payloads.PaymentDTO;
 import com.app.order.entities.Order;
 import com.app.order.entities.OrderItem;
-import com.app.finance.entities.Payment;
 import com.app.order.payloads.OrderDTO;
 import com.app.order.payloads.OrderItemDTO;
-import com.app.finance.payloads.PaymentDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

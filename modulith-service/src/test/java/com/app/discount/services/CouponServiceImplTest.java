@@ -1,17 +1,18 @@
 package com.app.discount.services;
 
-import com.app.discount.entities.Coupon;
-import com.app.discount.payloads.CouponDTO;
-import com.app.discount.repositories.CouponRepo;
-import com.app.discount.repositories.CouponUsageRepo;
+import com.app.core.APIException;
+import com.app.finance.promo.entities.Coupon;
+import com.app.finance.promo.mappers.CouponMapper;
+import com.app.finance.promo.payloads.CouponDTO;
+import com.app.finance.promo.repositories.CouponRepo;
+import com.app.finance.promo.repositories.CouponUsageRepo;
+import com.app.finance.promo.services.CouponServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
-import com.app.core.APIException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -19,7 +20,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CouponServiceImplTest {
@@ -31,7 +33,7 @@ class CouponServiceImplTest {
     private CouponUsageRepo couponUsageRepo;
 
     @Mock
-    private com.app.discount.mappers.CouponMapper couponMapper;
+    private CouponMapper couponMapper;
 
     @InjectMocks
     private CouponServiceImpl couponService;

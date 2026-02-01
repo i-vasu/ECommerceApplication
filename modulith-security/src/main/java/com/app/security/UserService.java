@@ -1,9 +1,9 @@
 package com.app.security;
 
-import java.util.List;
-
 import com.app.security.payloads.UserDTO;
 import com.app.security.payloads.UserResponse;
+
+import java.util.List;
 
 public interface UserService {
 	UserDTO registerUser(UserDTO userDTO);

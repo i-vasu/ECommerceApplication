@@ -1,8 +1,8 @@
 package com.app.discovery.domain.services;
 
 import com.app.catalog.payloads.ProductDTO;
-import com.app.catalog.payloads.ProductVariantDTO;
 import com.app.catalog.payloads.ProductMediaDTO;
+import com.app.catalog.payloads.ProductVariantDTO;
 import com.app.catalog.review.payloads.ProductReviewDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

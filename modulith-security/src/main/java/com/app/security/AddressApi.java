@@ -4,9 +4,9 @@ import com.app.security.entities.Address;
 import com.app.security.payloads.AddressDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Address", description = "Address Management APIs")
 public interface AddressApi {

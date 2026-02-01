@@ -1,7 +1,8 @@
 package com.app.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import org.crac.Context;
+import org.crac.Core;
+import org.crac.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,10 +12,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.crac.Context;
-import org.crac.Resource;
-import org.crac.Core;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 
 /**
  * Redis Configuration

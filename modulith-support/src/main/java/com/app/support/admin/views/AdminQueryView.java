@@ -9,7 +9,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.JdbcTemplate;
 

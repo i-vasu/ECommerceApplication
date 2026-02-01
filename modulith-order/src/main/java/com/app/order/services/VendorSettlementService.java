@@ -1,7 +1,6 @@
 package com.app.order.services;
 
 import com.app.governance.rules.RuleEngineService;
-import com.app.order.entities.Order;
 import com.app.order.entities.Vendor;
 import com.app.order.repositories.OrderRepo;
 import com.app.order.repositories.VendorRepo;

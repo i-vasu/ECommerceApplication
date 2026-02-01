@@ -1,7 +1,7 @@
 package com.app.marketing.services;
 
-import com.app.intelligence.analysis.services.AnalyticsService;
 import com.app.catalog.payloads.ProductDTO;
+import com.app.intelligence.analysis.services.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

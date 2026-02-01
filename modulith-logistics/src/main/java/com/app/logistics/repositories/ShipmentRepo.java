@@ -1,7 +1,6 @@
 package com.app.logistics.repositories;
 
 import com.app.logistics.entities.Shipment;
-
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.stereotype.Repository;
 

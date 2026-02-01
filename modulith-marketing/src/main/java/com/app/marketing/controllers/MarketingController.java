@@ -1,8 +1,6 @@
 package com.app.marketing.controllers;
 
-import com.app.marketing.entities.CampaignLink;
 import com.app.marketing.repositories.CampaignLinkRepo;
-import com.app.marketing.repositories.MarketingLogRepo;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

@@ -1,12 +1,11 @@
 package com.app.catalog.review.services;
 
+import com.app.catalog.review.entities.ProductReview;
+import com.app.catalog.review.repositories.ProductReviewRepo;
 import com.app.governance.rules.RuleEngineService;
 import com.app.governance.states.OperationalStateMachineService;
 import com.app.governance.states.ReviewEvent;
-import com.app.catalog.review.entities.ProductReview;
-import com.app.catalog.review.repositories.ProductReviewRepo;
 import lombok.RequiredArgsConstructor;
-// import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

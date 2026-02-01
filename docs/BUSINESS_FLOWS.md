@@ -5,7 +5,7 @@ This document provides a comprehensive map of the end-to-end business flows with
 ---
 
 ## 1. Unified Authentication & Identity Lifecycle
-*Managed by: `modulith-identity` and `modulith-order`*
+*Managed by: `modulith-security` and `modulith-order`*
 
 *   **User Onboarding Flow**:
     *   **Process**: User Registration → Password Complexity Validation → Secure BCrypt Hashing → Persistence (Unique Email/Mobile validation) → `UserRegisteredEvent` Publication → Async Email Verification (24h Expiry) Dispatch.
@@ -21,7 +21,7 @@ This document provides a comprehensive map of the end-to-end business flows with
 ---
 
 ## 2. Intelligent Product Discovery & Catalog
-*Managed by: `modulith-product`*
+*Managed by: `modulith-catalog`*
 
 *   **AI Visual Search Flow**:
     *   **Process**: Image Upload → Validation (Format: JPEG/PNG, Max Size: 5MB) → DJL (Deep Java Library) Image Vectorization → Vector Similarity Search (ParadeDB/pgvector) → Returning Top-N matching fashion items.
@@ -73,7 +73,7 @@ This document provides a comprehensive map of the end-to-end business flows with
 ---
 
 ## 6. Post-Purchase Experience & Social Proof
-*Managed by: `modulith-product` and `modulith-service`*
+*Managed by: `modulith-catalog` and `modulith-service`*
 
 *   **Logistics & Shipment Tracking**:
     *   **Process**: Shipment creation in ERP → Logistics Provider Webhook Reception → Internal Shipment State Machine Update → Customer Notification dispatch.
@@ -88,7 +88,7 @@ This document provides a comprehensive map of the end-to-end business flows with
 ---
 
 ## 7. Autonomous Business Intelligence & Self-Healing
-*Managed by: `modulith-kernel`, `modulith-product`, `modulith-identity`*
+*Managed by: `modulith-kernel`, `modulith-catalog`, `modulith-security`*
 
 *   **Fraudulent Return Prevention (Fraud Guard)**: Checks historical return rates via SpEL policies to automatically block abusive users.
 *   **Self-Healing Catalog**: Daily recalculation of `quality_score` based on return rates, automatically deprioritizing poor-performing items in search.

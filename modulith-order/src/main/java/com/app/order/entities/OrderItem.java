@@ -1,13 +1,6 @@
 package com.app.order.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.FetchType; // Added for FetchType
+import jakarta.persistence.*;
 
 // Removed Lombok imports:
 // import lombok.AllArgsConstructor;
@@ -15,8 +8,8 @@ import jakarta.persistence.FetchType; // Added for FetchType
 // import lombok.NoArgsConstructor;
 
 // Assuming Product and ProductVariant are in the same package or need to be imported
-import com.app.catalog.entities.Product;
-import com.app.catalog.entities.ProductVariant;
+// import com.app.catalog.entities.Product;
+// import com.app.catalog.entities.ProductVariant;
 
 @Entity
 // Removed Lombok annotations: @Data, @AllArgsConstructor, @NoArgsConstructor
@@ -31,13 +24,15 @@ public class OrderItem {
 	@JoinColumn(name = "order_id")
 	private Order order;
 
-	@ManyToOne
-	@JoinColumn(name = "product_id")
-	private Product product; // New field
+	// @ManyToOne
+	// @JoinColumn(name = "product_id")
+	// private Product product; 
+    private Long productId;
 
-	@ManyToOne
-	@JoinColumn(name = "variant_id")
-	private ProductVariant variant; // New field
+	// @ManyToOne
+	// @JoinColumn(name = "variant_id")
+	// private ProductVariant variant;
+    private Long variantId;
 
 	private Integer quantity;
 	private java.math.BigDecimal orderedPrice;
@@ -57,12 +52,12 @@ public class OrderItem {
 	}
 
 	// Manual All-argument constructor
-	public OrderItem(Long orderItemId, Order order, Product product, ProductVariant variant, Integer quantity,
+	public OrderItem(Long orderItemId, Order order, Long productId, Long variantId, Integer quantity,
 			java.math.BigDecimal orderedPrice, String productName, String itemCode) {
 		this.orderItemId = orderItemId;
 		this.order = order;
-		this.product = product;
-		this.variant = variant;
+		this.productId = productId;
+		this.variantId = variantId;
 		this.quantity = quantity;
 		this.orderedPrice = orderedPrice;
 		this.productName = productName;
@@ -86,20 +81,20 @@ public class OrderItem {
 		this.order = order;
 	}
 
-	public Product getProduct() {
-		return product;
+	public Long getProductId() {
+		return productId;
 	}
 
-	public void setProduct(Product product) {
-		this.product = product;
+	public void setProductId(Long productId) {
+		this.productId = productId;
 	}
 
-	public ProductVariant getVariant() {
-		return variant;
+	public Long getVariantId() {
+		return variantId;
 	}
 
-	public void setVariant(ProductVariant variant) {
-		this.variant = variant;
+	public void setVariantId(Long variantId) {
+		this.variantId = variantId;
 	}
 
 	public Integer getQuantity() {

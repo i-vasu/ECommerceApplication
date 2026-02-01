@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface WalletRepo extends JpaRepository<Wallet, Long> {
     Optional<Wallet> findByUserEmail(String email);
 
+    @org.springframework.data.jpa.repository.Query("SELECT w FROM Wallet w WHERE w.user.userId = :userId")
     Optional<Wallet> findByUserId(Long userId);
 }

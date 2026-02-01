@@ -1,10 +1,14 @@
 package com.app.core.persistence;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Transient;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+// Correct for BOTH Jackson 2 and Jackson 3
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +21,9 @@ import java.util.Map;
 @MappedSuperclass
 public abstract class ExtensibleEntity implements Serializable {
 
+
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "extension_attributes", columnDefinition = "jsonb")
     private Map<String, Object> extensionAttributes = new HashMap<>();
 

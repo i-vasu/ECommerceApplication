@@ -3,10 +3,10 @@ package com.app.catalog.review.controllers;
 import com.app.catalog.review.payloads.ProductReviewDTO;
 import com.app.catalog.review.services.ReviewService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 

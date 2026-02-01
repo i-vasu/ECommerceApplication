@@ -1,10 +1,10 @@
 package com.app.security.services;
 
+import com.app.core.APIException;
 import com.app.security.entities.Wallet;
 import com.app.security.entities.WalletTransaction;
 import com.app.security.repositories.WalletRepo;
 import com.app.security.repositories.WalletTransactionRepo;
-import com.app.core.APIException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -35,13 +36,15 @@ public class WalletServiceTest {
     @BeforeEach
     void setUp() {
         testWallet = new Wallet();
-        testWallet.setEmail(userEmail);
+        com.app.security.entities.User user = new com.app.security.entities.User();
+        user.setEmail(userEmail);
+        testWallet.setUser(user);
         testWallet.setBalance(500.0);
     }
 
     @Test
     void testGetOrCreateWallet_Existing() {
-        when(walletRepo.findByEmail(userEmail)).thenReturn(Optional.of(testWallet));
+        when(walletRepo.findByUserEmail(userEmail)).thenReturn(Optional.of(testWallet));
         
         Wallet wallet = walletService.getOrCreateWallet(userEmail);
         
@@ -51,7 +54,7 @@ public class WalletServiceTest {
 
     @Test
     void testGetOrCreateWallet_New() {
-        when(walletRepo.findByEmail(userEmail)).thenReturn(Optional.empty());
+        when(walletRepo.findByUserEmail(userEmail)).thenReturn(Optional.empty());
         when(walletRepo.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
         
         Wallet wallet = walletService.getOrCreateWallet(userEmail);
@@ -62,7 +65,7 @@ public class WalletServiceTest {
 
     @Test
     void testCredit() {
-        when(walletRepo.findByEmail(userEmail)).thenReturn(Optional.of(testWallet));
+        when(walletRepo.findByUserEmail(userEmail)).thenReturn(Optional.of(testWallet));
         
         walletService.credit(userEmail, 200.0, "Refund", "REF123");
         
@@ -72,7 +75,7 @@ public class WalletServiceTest {
 
     @Test
     void testDebit_Success() {
-        when(walletRepo.findByEmail(userEmail)).thenReturn(Optional.of(testWallet));
+        when(walletRepo.findByUserEmail(userEmail)).thenReturn(Optional.of(testWallet));
         
         walletService.debit(userEmail, 100.0, "Purchase", "ORD456");
         
@@ -82,7 +85,7 @@ public class WalletServiceTest {
 
     @Test
     void testDebit_InsufficientFunds() {
-        when(walletRepo.findByEmail(userEmail)).thenReturn(Optional.of(testWallet));
+        when(walletRepo.findByUserEmail(userEmail)).thenReturn(Optional.of(testWallet));
         
         assertThrows(APIException.class, () -> 
             walletService.debit(userEmail, 1000.0, "Purchase", "ORD789")
@@ -91,7 +94,7 @@ public class WalletServiceTest {
 
     @Test
     void testGetBalance() {
-        when(walletRepo.findByEmail(userEmail)).thenReturn(Optional.of(testWallet));
+        when(walletRepo.findByUserEmail(userEmail)).thenReturn(Optional.of(testWallet));
         
         double balance = walletService.getBalance(userEmail);
         

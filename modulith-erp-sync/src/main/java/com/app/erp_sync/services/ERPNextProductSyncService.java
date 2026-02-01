@@ -1,22 +1,20 @@
 package com.app.erp_sync.services;
 
-import java.util.List;
-import java.util.Map;
-
+import com.app.catalog.entities.ProductVariant;
+import com.app.catalog.repositories.ProductVariantRepo;
+import com.app.core.multitenancy.ERPNextCredentialProvider;
+import com.app.core.multitenancy.Tenant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.app.catalog.entities.ProductVariant;
-// import com.app.catalog.integration.SyncGateway;
-import com.app.catalog.repositories.ProductVariantRepo;
-import com.app.core.multitenancy.Tenant;
-import com.app.core.multitenancy.ERPNextCredentialProvider;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.cache.CacheManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class ERPNextProductSyncService {

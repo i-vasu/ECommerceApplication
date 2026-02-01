@@ -1,12 +1,12 @@
 package com.app.checkout.pipeline;
 
 import com.app.cart.entities.Cart;
-import com.app.security.entities.Address;
+import com.app.governance.states.InventoryEvent;
+import com.app.governance.states.OperationalStateMachineService;
 import com.app.logistics.inventory.InventoryService;
 import com.app.logistics.inventory.InventoryService.InventoryLock;
 import com.app.logistics.inventory.payloads.InventoryRequest;
-import com.app.governance.states.OperationalStateMachineService;
-import com.app.governance.states.InventoryEvent;
+import com.app.security.entities.Address;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

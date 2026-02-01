@@ -1,7 +1,5 @@
 package com.app.core.events;
 
-import java.math.BigDecimal;
-
 /**
  * Domain event published when an order is cancelled.
  * Decouples order cancellation from external systems (Inventory, Payment,

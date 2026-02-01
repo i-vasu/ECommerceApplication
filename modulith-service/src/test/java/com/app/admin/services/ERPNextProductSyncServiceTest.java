@@ -1,9 +1,11 @@
 package com.app.admin.services;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import com.app.catalog.repositories.ProductRepo;
+import com.app.catalog.repositories.ProductVariantRepo;
+import com.app.core.multitenancy.ERPNextCredentialProvider;
+import com.app.core.multitenancy.Tenant;
+import com.app.erp_sync.gateway.SyncGateway;
+import com.app.erp_sync.services.ERPNextProductSyncService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
@@ -12,13 +14,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.ObjectMapper;
 
-import com.app.core.multitenancy.ERPNextCredentialProvider;
-import com.app.core.multitenancy.Tenant;
-import com.app.catalog.integration.SyncGateway;
-import com.app.catalog.repositories.ProductRepo;
-import com.app.catalog.repositories.ProductVariantRepo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ERPNextProductSyncServiceTest {

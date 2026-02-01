@@ -2,8 +2,9 @@ package com.app.catalog.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.util.Map;
+
 import java.util.HashMap;
+import java.util.Map;
 
 @Entity
 @Table(name = "size_charts")

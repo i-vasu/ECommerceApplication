@@ -1,6 +1,7 @@
 package com.app.discovery.domain.services;
 
 import com.app.catalog.payloads.ProductDTO;
+
 import java.util.List;
 
 public interface SearchService {

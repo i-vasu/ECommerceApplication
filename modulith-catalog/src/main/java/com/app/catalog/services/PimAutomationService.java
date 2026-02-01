@@ -1,11 +1,10 @@
 package com.app.catalog.services;
 
-import com.app.governance.states.OperationalStateMachineService;
-import com.app.governance.states.PimEvent;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
+import com.app.governance.states.OperationalStateMachineService;
+import com.app.governance.states.PimEvent;
 import lombok.RequiredArgsConstructor;
-// import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;

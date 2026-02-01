@@ -1,11 +1,11 @@
 package com.app.core.multitenancy;
 
 import lombok.RequiredArgsConstructor;
+import org.crac.Context;
+import org.crac.Core;
+import org.crac.Resource;
 import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider;
 import org.springframework.stereotype.Component;
-import org.crac.Context;
-import org.crac.Resource;
-import org.crac.Core;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

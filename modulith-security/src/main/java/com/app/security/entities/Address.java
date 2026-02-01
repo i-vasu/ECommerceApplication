@@ -1,17 +1,11 @@
 package com.app.security.entities;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "addresses")
@@ -45,11 +39,7 @@ public class Address {
 	@Size(min = 6, message = "Pincode must contain atleast 6 characters")
 	private String pincode;
 
-	@Column(name = "is_default_shipping")
-	private boolean isDefaultShipping = false;
 
-	@Column(name = "is_default_billing")
-	private boolean isDefaultBilling = false;
 
 	@Column(name = "label")
 	private String label = "HOME"; // HOME, WORK, OTHER
@@ -58,7 +48,7 @@ public class Address {
 	private String receiverPhoneNumber;
 
 	@ManyToMany(mappedBy = "addresses")
-	private List<User> users = new ArrayList<>();
+	private List<UserProfile> profiles = new ArrayList<>();
 
 	public Address(String country, String state, String city, String pincode, String street, String buildingName) {
 		this.country = country;
@@ -73,7 +63,7 @@ public class Address {
 	}
 
 	public Address(Long addressId, String street, String buildingName, String city, String state, String country,
-			String pincode, List<User> users) {
+			String pincode, List<UserProfile> profiles) {
 		this.addressId = addressId;
 		this.street = street;
 		this.buildingName = buildingName;
@@ -81,7 +71,7 @@ public class Address {
 		this.state = state;
 		this.country = country;
 		this.pincode = pincode;
-		this.users = users;
+		this.profiles = profiles;
 	}
 
 	public Long getAddressId() {
@@ -140,29 +130,15 @@ public class Address {
 		this.pincode = pincode;
 	}
 
-	public List<User> getUsers() {
-		return users;
+	public List<UserProfile> getProfiles() {
+		return profiles;
+	}
+ 
+	public void setProfiles(List<UserProfile> profiles) {
+		this.profiles = profiles;
 	}
 
-	public void setUsers(List<User> users) {
-		this.users = users;
-	}
 
-	public boolean isDefaultShipping() {
-		return isDefaultShipping;
-	}
-
-	public void setDefaultShipping(boolean defaultShipping) {
-		isDefaultShipping = defaultShipping;
-	}
-
-	public boolean isDefaultBilling() {
-		return isDefaultBilling;
-	}
-
-	public void setDefaultBilling(boolean defaultBilling) {
-		isDefaultBilling = defaultBilling;
-	}
 
 	public String getLabel() {
 		return label;

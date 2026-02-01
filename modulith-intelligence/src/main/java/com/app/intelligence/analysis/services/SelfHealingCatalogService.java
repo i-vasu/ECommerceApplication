@@ -3,23 +3,24 @@ package com.app.intelligence.analysis.services;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Autonomous Self-Healing Catalog & Inventory Re-balancing.
  * Monitors product health and adjusts visibility/ordering automatically.
  */
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class SelfHealingCatalogService {
+ 
+    private static final Logger log = LoggerFactory.getLogger(SelfHealingCatalogService.class);
 
     private final ProductRepo productRepo;
     private final JdbcTemplate jdbcTemplate;

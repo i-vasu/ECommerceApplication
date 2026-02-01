@@ -4,7 +4,6 @@ import com.app.core.events.OrderCancelledEvent;
 import com.app.core.events.OrderCreatedEvent;
 import com.app.core.events.ProductCreatedEvent;
 import com.app.core.events.ProductUpdatedEvent;
-
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

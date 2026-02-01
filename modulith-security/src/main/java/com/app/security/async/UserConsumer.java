@@ -1,13 +1,12 @@
 package com.app.security.async;
 
+import com.app.core.async.EventProducer;
+import com.app.core.events.ERPNextSyncRequestEvent;
+import com.app.security.repositories.UserRepo;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Component;
-
-import com.app.security.repositories.UserRepo;
-import com.app.core.events.ERPNextSyncRequestEvent;
-import com.app.core.async.EventProducer;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class UserConsumer implements StreamListener<String, ObjectRecord<String, String>> {
@@ -54,7 +53,7 @@ public class UserConsumer implements StreamListener<String, ObjectRecord<String,
 
             // Priority 3: Try parsing as generic JSON to extract ID
             try {
-                com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(json);
+                tools.jackson.databind.JsonNode node = objectMapper.readTree(json);
                 if (node.has("userId")) {
                     processEvent(node.get("userId").asLong(),
                             node.has("eventType") ? node.get("eventType").asText() : "USER_REGISTERED");

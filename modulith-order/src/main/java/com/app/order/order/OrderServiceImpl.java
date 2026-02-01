@@ -1,76 +1,61 @@
 package com.app.order.order;
 
-import com.app.security.UserService;
 import com.app.cart.domain.CartService;
-import com.app.core.audit.AuditTrail;
-import com.app.finance.payment.PaymentService;
-import com.app.logistics.inventory.InventoryReservationService;
-import com.app.governance.states.OrderEvent;
-import com.app.governance.states.OrderStatus;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.tracing.Tracer;
-import java.util.Map;
+import com.app.cart.repositories.CartItemRepo;
+import com.app.cart.repositories.CartRepo;
+import com.app.catalog.entities.Product;
+import com.app.catalog.repositories.ProductRepo;
 import com.app.checkout.pipeline.OptimizedCheckoutService;
-import com.app.security.repositories.AddressRepo;
-import com.app.security.entities.Address;
-import com.app.order.entities.OrderHistory;
-import com.app.order.repositories.OrderHistoryRepo;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.ArrayList;
-
-import com.app.order.mappers.OrderMapper;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import com.app.core.events.OrderCreatedEvent;
-import com.app.core.events.OrderCreatedEvent.OrderItemData;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
-
-import com.app.cart.entities.Cart;
-import com.app.cart.entities.CartItem;
-import com.app.cart.repositories.CartRepo;
+import com.app.core.async.EventProducer;
+import com.app.core.audit.AuditTrail;
+import com.app.finance.payment.PaymentService;
+import com.app.governance.states.OrderStatus;
+import com.app.logistics.inventory.InventoryReservationService;
+import com.app.order.async.OrderProducer;
 import com.app.order.entities.Order;
+import com.app.order.entities.OrderHistory;
 import com.app.order.entities.OrderItem;
-import com.app.catalog.entities.Product;
+import com.app.order.mappers.OrderMapper;
 import com.app.order.payloads.OrderDTO;
-import com.app.order.payloads.OrderItemDTO;
 import com.app.order.payloads.OrderResponse;
-import com.app.cart.repositories.CartItemRepo;
-import com.app.order.repositories.OrderRepo;
+import com.app.order.repositories.OrderHistoryRepo;
 import com.app.order.repositories.OrderItemRepo;
-
+import com.app.order.repositories.OrderRepo;
+import com.app.security.entities.Address;
+import com.app.security.repositories.AddressRepo;
 import com.app.security.repositories.UserRepo;
-import com.app.catalog.repositories.ProductRepo;
-
-import org.springframework.transaction.annotation.Transactional;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.tracing.Tracer;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-
-import com.app.order.async.OrderProducer;
-import com.app.core.async.EventProducer;
-import com.app.core.multitenancy.TenantContext;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Transactional(readOnly = true)
 @Service
 public class OrderServiceImpl implements OrderService {
 
-	private final UserRepo userRepo;
 	private final ApplicationEventPublisher eventPublisher;
 	private final CartRepo cartRepo;
 	private final OrderRepo orderRepo;
+	private final UserRepo userRepo;
 
 	private final OrderItemRepo orderItemRepo;
 	private final CartItemRepo cartItemRepo;
-	private final UserService userService;
+	private final com.app.core.contracts.UserServiceContract userService;
 	private final CartService cartService;
 	private final OrderMapper orderMapper;
 	private final PaymentService paymentService;
@@ -88,9 +73,9 @@ public class OrderServiceImpl implements OrderService {
 	private final com.app.governance.rules.RuleEngineService ruleEngine;
 	private final com.app.core.services.RedisLockService lockService;
 
-	public OrderServiceImpl(UserRepo userRepo, ApplicationEventPublisher eventPublisher, CartRepo cartRepo,
-			OrderRepo orderRepo, OrderItemRepo orderItemRepo, CartItemRepo cartItemRepo,
-			UserService userService, CartService cartService, OrderMapper orderMapper,
+	public OrderServiceImpl(ApplicationEventPublisher eventPublisher, CartRepo cartRepo,
+			OrderRepo orderRepo, UserRepo userRepo, OrderItemRepo orderItemRepo, CartItemRepo cartItemRepo,
+			com.app.core.contracts.UserServiceContract userService, CartService cartService, OrderMapper orderMapper,
 			PaymentService paymentService,
 			InventoryReservationService inventoryReservationService, OptimizedCheckoutService optimizedCheckoutService,
 			AddressRepo addressRepo, OrderHistoryRepo orderHistoryRepo, MeterRegistry meterRegistry, Tracer tracer,
@@ -99,10 +84,10 @@ public class OrderServiceImpl implements OrderService {
 			com.app.governance.states.OperationalStateMachineService operationalStateMachine,
 			com.app.governance.rules.RuleEngineService ruleEngine,
 			com.app.core.services.RedisLockService lockService) {
-		this.userRepo = userRepo;
 		this.eventPublisher = eventPublisher;
 		this.cartRepo = cartRepo;
 		this.orderRepo = orderRepo;
+		this.userRepo = userRepo;
 		this.orderItemRepo = orderItemRepo;
 		this.cartItemRepo = cartItemRepo;
 		this.userService = userService;
@@ -163,7 +148,10 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		try {
-			var cart = cartRepo.findCartByEmailAndCartId(emailId, cartId);
+			var user = userRepo.findByEmail(emailId)
+					.orElseThrow(() -> new ResourceNotFoundException("User", "email", emailId));
+
+			var cart = cartRepo.findCartByUserIdAndCartId(user.getUserId(), cartId);
 			if (cart == null) {
 				throw new ResourceNotFoundException("Cart", "cartId", cartId);
 			}
@@ -202,7 +190,7 @@ public class OrderServiceImpl implements OrderService {
 			var order = new Order();
 			try {
 				order.setEmail(emailId);
-				order.setUserId(cart.getUser() != null ? cart.getUser().getUserId() : null);
+				order.setUserId(user.getUserId());
 				order.setOrderDate(LocalDate.now());
 
 				/**
@@ -247,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
 									() -> new ResourceNotFoundException("Product", "productId",
 											cartItem.getProductId()));
 
-					orderItem.setProduct(product);
+					orderItem.setProductId(product.getProductId());
 					orderItem.setItemCode(cartItem.getItemCode());
 					orderItem.setProductName(cartItem.getProductName());
 					orderItem.setQuantity(cartItem.getQuantity());
@@ -365,8 +353,8 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrderResponse getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
-		if (pageSize > com.app.config.AppConstants.MAX_PAGE_SIZE) {
-			pageSize = com.app.config.AppConstants.MAX_PAGE_SIZE;
+		if (pageSize > com.app.core.constants.AppConstants.MAX_PAGE_SIZE) {
+			pageSize = com.app.core.constants.AppConstants.MAX_PAGE_SIZE;
 		}
 
 		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -482,7 +470,7 @@ public class OrderServiceImpl implements OrderService {
 				}
 
 				if (product != null) {
-					orderItem.setProduct(product);
+					orderItem.setProductId(product.getProductId());
 				} else {
 					log.warn(
 							"Marketplace Order Item Product Not Found for Item Code: {} (Order email: {}). Proceeding without linking to internal Product.",

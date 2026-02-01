@@ -3,7 +3,6 @@ package com.app.finance.pricing;
 import com.app.finance.pricing.contracts.OrderSummary;
 import com.app.finance.pricing.contracts.OrderTotal;
 import com.app.finance.pricing.contracts.OrderTotalInput;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

@@ -1,15 +1,13 @@
 package com.app.marketing.notification.async;
 
+import com.app.core.events.OrderConfirmedEvent;
+import com.app.core.events.OrderStatusEvent;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.app.core.events.OrderConfirmedEvent;
-import com.app.core.events.OrderStatusEvent;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import tools.jackson.databind.ObjectMapper;
 
 @Log4j2
 @RequiredArgsConstructor

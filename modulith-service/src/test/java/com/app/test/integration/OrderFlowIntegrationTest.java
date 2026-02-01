@@ -1,12 +1,13 @@
 package com.app.test.integration;
 
+import com.app.catalog.entities.Product;
+import com.app.catalog.repositories.ProductRepo;
 import com.app.governance.states.OrderStatus;
 import com.app.order.entities.Order;
 import com.app.order.entities.OrderItem;
-import com.app.catalog.entities.Product;
-import com.app.security.entities.User;
 import com.app.order.repositories.OrderRepo;
-import com.app.catalog.repositories.ProductRepo;
+import com.app.security.entities.User;
+import com.app.security.entities.UserProfile;
 import com.app.security.repositories.UserRepo;
 import com.app.test.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -51,10 +52,13 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         product = productRepo.save(product);
 
         User user = new User();
-        user.setFirstName("TestUser");
-        user.setLastName("TestFamily");
         user.setEmail("test@example.com");
-        user.setMobileNumber("1234567890");
+        UserProfile profile = new UserProfile();
+        profile.setFirstName("TestUser");
+        profile.setLastName("TestFamily");
+        profile.setMobileNumber("1234567890");
+        profile.setUser(user);
+        user.setProfile(profile);
         user = userRepo.save(user);
 
         // When: Order is created
@@ -64,9 +68,9 @@ public class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         order.setTotalAmount(java.math.BigDecimal.valueOf(99.99));
 
         OrderItem orderItem = new OrderItem();
-        orderItem.setProduct(product);
+        orderItem.setProductId(product.getProductId());
         orderItem.setQuantity(1);
-        orderItem.setOrderedPrice(99.99);
+        orderItem.setOrderedPrice(java.math.BigDecimal.valueOf(99.99));
 
         order.setOrderItems(new ArrayList<>());
         order.getOrderItems().add(orderItem);

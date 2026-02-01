@@ -1,28 +1,17 @@
 package com.app.support.admin.views;
 
 import com.app.core.logging.MemoryAppender;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.dependency.JsModule;
-import com.vaadin.flow.component.dependency.NpmPackage;
-import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.server.StreamResource;
-import java.io.File;
-import java.io.FileInputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.Command;
-import jakarta.annotation.security.RolesAllowed;
+import com.vaadin.flow.server.StreamResource;
 import io.micrometer.core.instrument.MeterRegistry;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.security.RolesAllowed;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.time.LocalDateTime;
-import java.util.stream.Collectors;
+import java.io.FileInputStream;
 
 @Route("admin/tech-monitoring")
 @RolesAllowed("ADMIN")

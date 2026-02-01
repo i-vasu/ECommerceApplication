@@ -1,15 +1,15 @@
 package com.app.catalog;
 
-import java.util.List;
-import java.nio.file.Path;
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.app.catalog.entities.Product;
 import com.app.catalog.payloads.ProductDTO;
 import com.app.catalog.payloads.ProductResponse;
 import com.app.catalog.review.payloads.ProductReviewDTO;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
 
 public interface ProductService {
 

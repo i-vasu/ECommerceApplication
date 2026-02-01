@@ -1,6 +1,7 @@
 package com.app.logistics.inventory;
 
 import com.app.logistics.inventory.payloads.InventoryRequest;
+
 import java.util.List;
 
 public interface InventoryService {

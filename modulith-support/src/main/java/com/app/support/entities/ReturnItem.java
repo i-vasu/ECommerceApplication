@@ -1,7 +1,6 @@
 package com.app.support.entities;
 
 import jakarta.persistence.*;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

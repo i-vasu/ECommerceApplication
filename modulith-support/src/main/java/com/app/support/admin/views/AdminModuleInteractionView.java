@@ -6,9 +6,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
-import lombok.RequiredArgsConstructor;
 import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.core.JavaPackage;
 
 import java.util.stream.Collectors;
 

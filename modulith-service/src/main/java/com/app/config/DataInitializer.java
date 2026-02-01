@@ -2,13 +2,14 @@ package com.app.config;
 
 import com.app.security.entities.Role;
 import com.app.security.entities.User;
+import com.app.security.entities.UserProfile;
 import com.app.security.repositories.RoleRepo;
 import com.app.security.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Set;
 
@@ -35,9 +36,14 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepo.findByEmail(adminEmail).isEmpty()) {
             User admin = new User();
             admin.setEmail(adminEmail);
-            admin.setFirstName("AdminUser");
-            admin.setLastName("SystemAdmin");
-            admin.setMobileNumber("9000000000");
+            
+            UserProfile profile = new UserProfile();
+            profile.setFirstName("AdminUser");
+            profile.setLastName("SystemAdmin");
+            profile.setMobileNumber("9000000000");
+            profile.setUser(admin);
+            admin.setProfile(profile);
+            
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setVerified(true);
             admin.setRoles(Set.of(adminRole));

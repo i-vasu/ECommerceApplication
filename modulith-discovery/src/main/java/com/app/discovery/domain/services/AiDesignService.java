@@ -1,18 +1,18 @@
 package com.app.discovery.domain.services;
 
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import reactor.core.publisher.Flux;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Base64;
-import org.springframework.core.ParameterizedTypeReference;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import reactor.core.publisher.Flux;
+
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @RequiredArgsConstructor

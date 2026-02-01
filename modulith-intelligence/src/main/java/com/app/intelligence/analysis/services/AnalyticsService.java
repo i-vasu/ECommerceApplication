@@ -1,8 +1,9 @@
 package com.app.intelligence.analysis.services;
 
 import com.app.catalog.payloads.ProductDTO;
-import java.util.List;
+
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface AnalyticsService {
     void trackProductView(Long productId);

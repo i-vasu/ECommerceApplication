@@ -1,6 +1,8 @@
 package com.app.order.config;
 
 import com.app.order.services.ProductEventListener;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.Consumer;
@@ -8,9 +10,6 @@ import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
-import jakarta.annotation.PostConstruct;
-
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Configuration

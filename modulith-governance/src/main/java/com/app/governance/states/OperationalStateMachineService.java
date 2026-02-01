@@ -1,13 +1,10 @@
 package com.app.governance.states;
 
-import com.app.governance.states.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 /**
  * Unified Operational State Machine Service.
@@ -37,7 +34,7 @@ public class OperationalStateMachineService {
     private final com.app.governance.audit.OperationalAuditRepo auditRepo;
     private final org.springframework.statemachine.persist.StateMachinePersister<Object, Object, String> persister;
     private final com.app.core.events.OutboxRepo outboxRepo;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final tools.jackson.databind.ObjectMapper objectMapper;
 
     public OperationalStateMachineService(
             org.springframework.context.ApplicationEventPublisher eventPublisher,
@@ -58,7 +55,7 @@ public class OperationalStateMachineService {
             com.app.governance.audit.OperationalAuditRepo auditRepo,
             org.springframework.statemachine.persist.StateMachinePersister<Object, Object, String> persister,
             com.app.core.events.OutboxRepo outboxRepo,
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+            tools.jackson.databind.ObjectMapper objectMapper) {
         this.eventPublisher = eventPublisher;
         this.orderStateMachineFactory = orderStateMachineFactory;
         this.paymentStateMachineFactory = paymentStateMachineFactory;

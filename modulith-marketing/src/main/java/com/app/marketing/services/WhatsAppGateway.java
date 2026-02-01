@@ -1,7 +1,7 @@
 package com.app.marketing.services;
 
-import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * Gateway for WhatsApp Business API.

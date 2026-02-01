@@ -1,8 +1,10 @@
 package com.app.finance.promo.entities;
 
 import jakarta.persistence.*;
-import lombok.*;
-import com.app.catalog.entities.Product;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "flash_sale_products")

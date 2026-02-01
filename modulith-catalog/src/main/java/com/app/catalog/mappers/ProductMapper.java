@@ -2,7 +2,6 @@ package com.app.catalog.mappers;
 
 import com.app.catalog.entities.Product;
 import com.app.catalog.payloads.ProductDTO;
-
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

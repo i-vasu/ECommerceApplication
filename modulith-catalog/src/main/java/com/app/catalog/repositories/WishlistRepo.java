@@ -8,7 +8,8 @@ import java.util.Optional;
 
 @Repository
 public interface WishlistRepo extends JpaRepository<Wishlist, Long> {
-    Optional<Wishlist> findByUserEmail(String email);
-
+    @org.springframework.data.jpa.repository.Query("SELECT w FROM Wishlist w WHERE w.userId = :userId")
     Optional<Wishlist> findByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
 }

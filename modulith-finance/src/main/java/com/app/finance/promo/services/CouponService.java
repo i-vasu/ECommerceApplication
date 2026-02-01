@@ -1,6 +1,7 @@
 package com.app.finance.promo.services;
 
 import com.app.finance.promo.payloads.CouponDTO;
+
 import java.util.List;
 
 public interface CouponService {

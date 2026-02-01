@@ -9,6 +9,7 @@ import java.util.List;
 public record ProductUpdatedEvent(
         Long productId,
         String itemCode,
+        String productName,
         BigDecimal oldPrice,
         BigDecimal newPrice,
         Integer oldQuantity,

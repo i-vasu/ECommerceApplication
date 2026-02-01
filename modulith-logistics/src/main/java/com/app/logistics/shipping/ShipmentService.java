@@ -1,8 +1,9 @@
 package com.app.logistics.shipping;
 
-import java.util.Map;
-import com.app.logistics.entities.Shipment;
 import com.app.core.events.ShipmentRequestedEvent;
+import com.app.logistics.entities.Shipment;
+
+import java.util.Map;
 
 public interface ShipmentService {
     Shipment createShipment(ShipmentRequestedEvent event);

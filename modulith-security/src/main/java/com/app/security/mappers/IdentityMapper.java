@@ -12,7 +12,24 @@ import org.mapstruct.ReportingPolicy;
 public interface IdentityMapper {
 
     @Mapping(target = "password", ignore = true)
+    @Mapping(source = "profile.firstName", target = "firstName")
+    @Mapping(source = "profile.lastName", target = "lastName")
+    @Mapping(source = "profile.mobileNumber", target = "mobileNumber")
+    @Mapping(source = "profile.avatarUrl", target = "avatarUrl")
+    @Mapping(source = "profile.dateOfBirth", target = "dateOfBirth")
+    @Mapping(source = "profile.gender", target = "gender")
+    @Mapping(source = "profile.preferences", target = "preferences")
+    @Mapping(source = "loyalty.rewardPoints", target = "rewardPoints")
+    @Mapping(source = "profile.addresses", target = "address", qualifiedByName = "mapFirstAddress")
     UserDTO userToUserDTO(User user);
+
+    @org.mapstruct.Named("mapFirstAddress")
+    default AddressDTO mapFirstAddress(java.util.List<Address> addresses) {
+        if (addresses == null || addresses.isEmpty()) {
+            return null;
+        }
+        return addressToAddressDTO(addresses.get(0));
+    }
 
     User userDTOToUser(UserDTO userDTO);
 

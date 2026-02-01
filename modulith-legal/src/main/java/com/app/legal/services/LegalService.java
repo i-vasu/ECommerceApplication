@@ -1,10 +1,10 @@
 package com.app.legal.services;
 
+import com.app.core.ResourceNotFoundException;
 import com.app.legal.entities.LegalAcceptance;
 import com.app.legal.entities.LegalAgreement;
 import com.app.legal.repositories.LegalAcceptanceRepo;
 import com.app.legal.repositories.LegalAgreementRepo;
-import com.app.core.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

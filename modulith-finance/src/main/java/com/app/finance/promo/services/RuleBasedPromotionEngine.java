@@ -3,18 +3,13 @@ package com.app.finance.promo.services;
 import com.app.finance.promo.PromotionService;
 import com.app.finance.promo.entities.PromotionRule;
 import com.app.finance.promo.repositories.PromotionRuleRepo;
-import com.app.finance.pricing.contracts.OrderSummary;
-
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Advanced SpEL-based Promotion Engine.
@@ -51,8 +46,13 @@ public class RuleBasedPromotionEngine implements PromotionService {
             // SEGMENT VALIDATION
             if (rule.getCustomerSegmentId() != null) {
                 var user = userRepo.findByEmail(email).orElse(null);
-                boolean inSegment = user != null && user.getSegments().stream()
-                        .anyMatch(s -> s.getId().equals(rule.getCustomerSegmentId()));
+                
+                boolean inSegment = false;
+                if (user != null && user.getLoyalty() != null) {
+                    inSegment = user.getLoyalty().getSegments().stream()
+                            .anyMatch(s -> s.getId().equals(rule.getCustomerSegmentId()));
+                }
+                
                 if (!inSegment)
                     continue;
             }

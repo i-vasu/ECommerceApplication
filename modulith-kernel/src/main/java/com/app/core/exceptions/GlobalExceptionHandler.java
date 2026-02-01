@@ -4,6 +4,7 @@ import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
 import com.app.core.payloads.ApiResponse;
 import com.app.core.payloads.ErrorResponse;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;

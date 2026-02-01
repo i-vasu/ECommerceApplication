@@ -1,6 +1,6 @@
 package com.app.catalog.entities;
 
-import com.app.security.entities.User;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,20 +20,19 @@ public class Wishlist {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long wishlistId;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @jakarta.persistence.Column(name = "user_id", unique = true, nullable = false)
+    private Long userId;
 
     @ManyToMany
     @JoinTable(name = "wishlist_products", joinColumns = @JoinColumn(name = "wishlist_id"), inverseJoinColumns = @JoinColumn(name = "product_id"))
     private List<Product> products = new ArrayList<>();
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
-    public User getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
     public List<Product> getProducts() {

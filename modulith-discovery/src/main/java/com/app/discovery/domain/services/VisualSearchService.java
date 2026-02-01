@@ -1,35 +1,33 @@
 package com.app.discovery.domain.services;
 
-import com.app.catalog.payloads.ProductDTO;
-import com.app.catalog.repositories.ProductRepo;
-import com.app.discovery.domain.repositories.ProductEmbeddingRepo;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
 import ai.djl.ModelException;
 import ai.djl.inference.Predictor;
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.ImageFactory;
 import ai.djl.modality.cv.transform.Resize;
+import ai.djl.ndarray.NDList;
 import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ModelZoo;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.training.util.ProgressBar;
+import ai.djl.translate.Batchifier;
 import ai.djl.translate.TranslateException;
 import ai.djl.translate.Translator;
 import ai.djl.translate.TranslatorContext;
-import ai.djl.translate.Batchifier;
-import ai.djl.ndarray.NDList;
+import com.app.catalog.payloads.ProductDTO;
+import com.app.catalog.repositories.ProductRepo;
+import com.app.discovery.domain.repositories.ProductEmbeddingRepo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @Log4j2

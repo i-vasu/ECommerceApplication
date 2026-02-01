@@ -1,7 +1,6 @@
 package com.app.order.payloads;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 
 public class TokenRefreshRequest {
     @NotBlank

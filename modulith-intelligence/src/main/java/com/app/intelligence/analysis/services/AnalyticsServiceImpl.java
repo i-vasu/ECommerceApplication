@@ -1,32 +1,33 @@
 package com.app.intelligence.analysis.services;
 
-import com.app.catalog.payloads.ProductDTO;
 import com.app.catalog.entities.Product;
-import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.mappers.ProductMapper;
+import com.app.catalog.payloads.ProductDTO;
+import com.app.catalog.repositories.ProductRepo;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Gatherers;
 import java.util.stream.Collectors;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
-import org.springframework.jdbc.core.JdbcTemplate;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import java.util.stream.Gatherers;
 
-@Log4j2
 @Service
 @RequiredArgsConstructor
 public class AnalyticsServiceImpl implements AnalyticsService {
+ 
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsServiceImpl.class);
 
     private final StringRedisTemplate redisTemplate;
     private final ProductRepo productRepo;

@@ -1,31 +1,31 @@
 package com.app.checkout.pipeline;
 
-import com.app.logistics.inventory.InventoryService.InventoryLock;
-import com.app.logistics.shipping.TaxCalculationService.TaxCalculation;
-import com.app.logistics.shipping.ShippingCalculationService.ShippingCost;
-import com.app.security.AddressValidationService.AddressValidation;
 import com.app.cart.entities.Cart;
-import com.app.security.entities.Address;
-import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.entities.Product;
+import com.app.catalog.repositories.ProductRepo;
 import com.app.checkout.domain.FlashSaleService;
 import com.app.checkout.domain.FraudDetectionService;
 import com.app.checkout.domain.PriceGuardService;
+import com.app.core.APIException;
 import com.app.governance.rules.RuleEngineService;
 import com.app.governance.states.OperationalStateMachineService;
 import com.app.governance.states.OrderEvent;
-import com.app.core.APIException;
+import com.app.logistics.inventory.InventoryService.InventoryLock;
+import com.app.logistics.shipping.ShippingCalculationService.ShippingCost;
+import com.app.logistics.shipping.TaxCalculationService.TaxCalculation;
+import com.app.security.AddressValidationService.AddressValidation;
+import com.app.security.entities.Address;
 import io.micrometer.context.ContextExecutorService;
 import io.micrometer.context.ContextSnapshot;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.annotation.Observed;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.Counter;
 import jakarta.annotation.PostConstruct;
-import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +43,7 @@ public class OptimizedCheckoutService {
 
     private final java.util.List<CheckoutActivity<?>> activities;
     private final ProductRepo productRepo;
+    private final com.app.security.repositories.UserRepo userRepo;
     private final FlashSaleService flashSaleService;
     private final FraudDetectionService fraudService;
     private final PriceGuardService priceGuard;
@@ -58,6 +59,7 @@ public class OptimizedCheckoutService {
     public OptimizedCheckoutService(
             java.util.List<CheckoutActivity<?>> activities,
             ProductRepo productRepo,
+            com.app.security.repositories.UserRepo userRepo,
             FlashSaleService flashSaleService,
             FraudDetectionService fraudService,
             PriceGuardService priceGuard,
@@ -67,6 +69,7 @@ public class OptimizedCheckoutService {
             OperationalStateMachineService stateMachineService) {
         this.activities = activities;
         this.productRepo = productRepo;
+        this.userRepo = userRepo;
         this.flashSaleService = flashSaleService;
         this.fraudService = fraudService;
         this.priceGuard = priceGuard;
@@ -97,9 +100,10 @@ public class OptimizedCheckoutService {
         log.info("Starting optimized checkout for cart: {}", cart.getCartId());
 
         // 1. Autonomous Fraud Check
-        if (fraudService.isFraudulent(cart, cart.getUser())) {
+        var user = userRepo.findById(cart.getUserId()).orElse(null);
+        if (fraudService.isFraudulent(cart, user)) {
             log.warn("Fraud detected for user {}! Blocking checkout.",
-                    (cart.getUser() != null) ? cart.getUser().getEmail() : "unknown");
+                    (user != null) ? user.getEmail() : "unknown");
             throw new APIException(
                     "Security violation: Checkout blocked. Our risk engine detected suspicious activity.");
         }
@@ -107,14 +111,14 @@ public class OptimizedCheckoutService {
         // 2. Dynamic SpEL Policy Check
         Map<String, Object> context = new java.util.HashMap<>();
         context.put("cart", cart);
-        context.put("user", cart.getUser());
+        context.put("user", user);
 
         // Rule: Unverified users cannot check out > 10,000 INR
         String checkoutRule = "(!user.verified && cart.totalPrice < 10000) || user.verified";
 
         if (!ruleEngine.evaluate(checkoutRule, context)) {
             log.warn("Checkout policy violation for user {}",
-                    (cart.getUser() != null) ? cart.getUser().getEmail() : "unknown");
+                    (user != null) ? user.getEmail() : "unknown");
             throw new APIException(
                     "Policy Violation: Unverified accounts are limited to ₹10,000 per transaction. Please verify your email.");
         }

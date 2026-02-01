@@ -1,9 +1,9 @@
 package com.app.checkout.pipeline;
 
 import com.app.cart.entities.Cart;
-import com.app.security.entities.Address;
 import com.app.finance.promo.CouponValidationService;
 import com.app.finance.promo.CouponValidationService.CouponDiscount;
+import com.app.security.entities.Address;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

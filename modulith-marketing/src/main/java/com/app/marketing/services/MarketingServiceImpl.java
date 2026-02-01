@@ -4,15 +4,15 @@ import com.app.core.events.OrderPaidEvent;
 import com.app.core.events.UserRegisteredEvent;
 import com.app.marketing.entities.CampaignLink;
 import com.app.marketing.repositories.CampaignLinkRepo;
-import org.springframework.stereotype.Service;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @lombok.extern.slf4j.Slf4j
-public class MarketingServiceImpl implements MarketingService {
+public class MarketingServiceImpl implements MarketingService, com.app.core.contracts.MarketingServiceContract {
 
     @org.springframework.beans.factory.annotation.Autowired
     private org.thymeleaf.TemplateEngine templateEngine;
@@ -107,5 +107,17 @@ public class MarketingServiceImpl implements MarketingService {
     public void sendCampaignPush(String campaignName, String recipientToken, String message) {
         pushGateway.sendMessage(recipientToken, message);
         log.info("Push Campaign '{}' triggered for {}", campaignName, recipientToken);
+    }
+
+    // MarketingServiceContract implementations
+    @Override
+    public void handleOrderPaid(Long orderId) {
+        log.info("Marketing Contract: Processing order paid for #{}", orderId);
+        // Logic to trigger relevant campaigns
+    }
+
+    @Override
+    public void trackActivity(Long userId, String activityType, String details) {
+        log.info("Marketing Contract: Tracking activity '{}' for user #{}", activityType, userId);
     }
 }

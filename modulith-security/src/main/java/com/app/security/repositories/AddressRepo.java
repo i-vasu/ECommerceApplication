@@ -1,10 +1,9 @@
 package com.app.security.repositories;
 
+import com.app.security.entities.Address;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import com.app.security.entities.Address;
 
 import java.util.List;
 
@@ -18,7 +17,7 @@ public interface AddressRepo extends JpaRepository<Address, Long> {
 	 * Find all addresses for a specific user
 	 * Performance: 100x faster than findAll() for user-specific queries
 	 */
-	@Query("SELECT a FROM Address a JOIN a.users u WHERE u.userId = :userId")
+	@Query("SELECT a FROM Address a JOIN a.profiles p JOIN p.user u WHERE u.userId = :userId")
 	List<Address> findByUserId(Long userId);
 
 }

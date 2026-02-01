@@ -1,10 +1,9 @@
 package com.app.cart.repositories;
 
+import com.app.cart.entities.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-
-import com.app.cart.entities.CartItem;
 
 public interface CartItemRepo extends JpaRepository<CartItem, Long> {
 

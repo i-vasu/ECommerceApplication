@@ -1,7 +1,7 @@
 package com.app.core.events;
 
-import java.math.BigDecimal;
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * Domain event published when payment is successfully captured for an order.

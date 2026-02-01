@@ -1,37 +1,34 @@
 package com.app.payment;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import com.app.finance.entities.Payment;
+import com.app.finance.payloads.PaymentDTO;
+import com.app.finance.payment.PaymentServiceImpl;
+import com.app.finance.payment.mappers.PaymentMapper;
+import com.app.finance.repositories.PaymentRepo;
+import com.app.order.entities.Order;
+import com.app.order.repositories.OrderRepo;
+import com.razorpay.RazorpayClient;
+import com.razorpay.RazorpayException;
+import com.razorpay.Utils;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import com.app.finance.payment.mappers.PaymentMapper;
-import com.app.finance.repositories.PaymentRepo;
-import com.app.finance.payment.PaymentServiceImpl;
-import com.app.order.repositories.OrderRepo;
-import com.app.order.entities.Order;
-import com.app.finance.entities.Payment;
-import com.app.finance.payloads.PaymentDTO;
-import com.razorpay.RazorpayClient;
-import com.razorpay.RazorpayException;
-import com.razorpay.Utils;
 import java.util.Optional;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.mockStatic;
-import org.mockito.MockedStatic;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
@@ -52,7 +49,17 @@ class PaymentServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private tools.jackson.databind.ObjectMapper objectMapper;
+
+    @Mock
+    private com.app.core.contracts.OrderAmountProvider orderProvider;
+
+    @Mock
+    private com.app.core.multitenancy.RazorpayCredentialProvider credentialProvider;
+    @Mock
+    private com.app.security.services.WalletService walletService;
+    @Mock
+    private com.app.core.services.RedisLockService lockService;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;
@@ -63,24 +70,31 @@ class PaymentServiceTest {
         Long orderId = 101L;
         Order order = new Order();
         order.setOrderId(orderId);
-        order.setTotalAmount(500.0);
+        order.setTotalAmount(java.math.BigDecimal.valueOf(500.0));
 
-        when(orderRepo.findById(orderId)).thenReturn(Optional.of(order));
+        lenient().when(orderRepo.findById(orderId)).thenReturn(Optional.of(order));
+        lenient().when(orderProvider.getOrderSummary(orderId)).thenReturn(Optional.of(new com.app.core.contracts.OrderAmountProvider.OrderSummary(orderId, "test@test.com", java.math.BigDecimal.valueOf(500.0), "PENDING")));
+        lenient().when(walletService.getBalance(anyString())).thenReturn(1000.0);
+        lenient().when(credentialProvider.getKeyId()).thenReturn("test_key");
+        lenient().when(credentialProvider.getKeySecret()).thenReturn("test_secret");
 
         // Mock Razorpay Order
         com.razorpay.Order mockRzOrder = mock(com.razorpay.Order.class);
-        when(mockRzOrder.get("id")).thenReturn("order_rzp_123");
+        lenient().when(mockRzOrder.get("id")).thenReturn("order_rzp_123");
 
-        // Fix for NullPointerException: Mockito deep stubs don't handle public fields
-        // well.
-        // We must manually set the 'orders' field on the mocked RazorpayClient.
-        com.razorpay.OrderClient mockOrderClient = mock(com.razorpay.OrderClient.class);
-        ReflectionTestUtils.setField(razorpayClient, "orders", mockOrderClient);
-
-        when(mockOrderClient.create(any(JSONObject.class))).thenReturn(mockRzOrder);
+        lenient().when(paymentRepo.findByOrderId(orderId)).thenReturn(java.util.List.of());
+        lenient().when(paymentRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        String pgOrderId = paymentService.createInternalOrder(orderId);
+        String pgOrderId;
+        try (org.mockito.MockedConstruction<RazorpayClient> mocked = org.mockito.Mockito.mockConstruction(RazorpayClient.class,
+                (mock, context) -> {
+                    com.razorpay.OrderClient mockOrderClient = mock(com.razorpay.OrderClient.class);
+                    ReflectionTestUtils.setField(mock, "orders", mockOrderClient);
+                    when(mockOrderClient.create(any(JSONObject.class))).thenReturn(mockRzOrder);
+                })) {
+            pgOrderId = paymentService.createInternalOrder(orderId);
+        }
 
         // Assert
         assertEquals("order_rzp_123", pgOrderId);
@@ -96,12 +110,12 @@ class PaymentServiceTest {
         Order order = new Order();
         Payment payment = new Payment();
         payment.setPgOrderId("order_rzp_123");
-        order.setPayment(payment);
+        
+        lenient().when(paymentRepo.findByOrderId(orderId)).thenReturn(java.util.List.of(payment));
+        lenient().when(lockService.tryLock(anyString(), any())).thenReturn(true);
 
-        when(orderRepo.findById(orderId)).thenReturn(Optional.of(order));
-
-        // Inject secret using Reflection (as it is @Value)
-        ReflectionTestUtils.setField(paymentService, "secret", "test_secret");
+        // Mock credential provider secret
+        lenient().when(credentialProvider.getKeySecret()).thenReturn("test_secret");
 
         // Strategy: Mock standard failure behavior.
         // Since verifyPaymentSignature computes HMAC, dummy data will return false.
@@ -119,13 +133,14 @@ class PaymentServiceTest {
         String payId = "pay_123";
         String sign = "valid_sign";
 
-        Order order = new Order();
         Payment payment = new Payment();
         payment.setPgOrderId("order_rzp_123");
-        order.setPayment(payment);
-
-        when(orderRepo.findById(orderId)).thenReturn(Optional.of(order));
-        ReflectionTestUtils.setField(paymentService, "secret", "test_secret");
+        
+        lenient().when(paymentRepo.findByOrderId(orderId)).thenReturn(java.util.List.of(payment));
+        lenient().when(paymentRepo.findByPgOrderId("order_rzp_123")).thenReturn(payment);
+        lenient().when(orderProvider.getOrderSummary(orderId)).thenReturn(Optional.of(new com.app.core.contracts.OrderAmountProvider.OrderSummary(orderId, "test@test.com", java.math.BigDecimal.valueOf(500.0), "PENDING")));
+        lenient().when(credentialProvider.getKeySecret()).thenReturn("test_secret");
+        lenient().when(lockService.tryLock(anyString(), any())).thenReturn(true);
 
         PaymentDTO expectedDto = new PaymentDTO(null, null, null, null, null, "captured");
         when(paymentMapper.paymentToPaymentDTO(any(Payment.class))).thenReturn(expectedDto);

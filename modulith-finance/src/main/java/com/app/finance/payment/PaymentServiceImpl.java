@@ -1,45 +1,42 @@
 package com.app.finance.payment;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.context.ApplicationEventPublisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.app.core.services.RedisLockService;
-import com.app.core.events.OrderStatusEvent;
-
+import com.app.catalog.review.services.SocialProofService;
+import com.app.core.ResourceNotFoundException;
+import com.app.core.async.EventProducer;
+import com.app.core.audit.AuditTrail;
 import com.app.core.contracts.OrderAmountProvider;
 import com.app.core.contracts.OrderAmountProvider.OrderSummary;
+import com.app.core.events.OrderPaidEvent;
+import com.app.core.events.OrderStatusEvent;
+import com.app.core.multitenancy.RazorpayCredentialProvider;
+import com.app.core.services.RedisLockService;
 import com.app.finance.entities.Payment;
-import com.app.core.ResourceNotFoundException;
 import com.app.finance.payloads.PaymentDTO;
+import com.app.finance.payment.mappers.PaymentMapper;
 import com.app.finance.repositories.PaymentRepo;
+import com.app.finance.repositories.RefundRepo;
+import com.app.security.services.WalletService;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
-import com.app.core.events.OrderPaidEvent;
-import com.app.finance.payment.mappers.PaymentMapper;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.app.core.async.EventProducer;
-import com.app.core.audit.AuditTrail;
-import com.app.governance.states.OrderStatus;
-import com.app.security.services.WalletService;
-import com.app.core.APIException;
-import com.app.core.multitenancy.RazorpayCredentialProvider;
-import com.app.catalog.review.services.SocialProofService;
-import com.app.finance.entities.Refund;
-import com.app.finance.repositories.RefundRepo;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import java.time.Duration;
 import io.github.resilience4j.retry.annotation.Retry;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
+@org.springframework.context.annotation.Primary
 public class PaymentServiceImpl implements PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);

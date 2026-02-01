@@ -1,6 +1,7 @@
 package com.app.discovery.domain.entities;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;

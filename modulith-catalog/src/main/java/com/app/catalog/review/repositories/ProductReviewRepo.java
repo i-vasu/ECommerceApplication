@@ -1,10 +1,11 @@
 package com.app.catalog.review.repositories;
 
-import com.app.catalog.review.entities.ProductReview;
 import com.app.catalog.entities.Product;
+import com.app.catalog.review.entities.ProductReview;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 
 public interface ProductReviewRepo extends JpaRepository<ProductReview, Long> {

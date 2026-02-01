@@ -1,6 +1,5 @@
 package com.app.marketing.services;
 
-import com.app.marketing.services.NotificationGateway;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

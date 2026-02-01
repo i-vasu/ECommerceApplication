@@ -11,7 +11,7 @@ public interface CartService {
 
 	Page<CartDTO> getAllCarts(Pageable pageable);
 
-	CartDTO getCart(String emailId, Long cartId);
+	CartDTO getCart(Long userId, Long cartId);
 
 	CartDTO updateProductQuantityInCart(Long cartId, Long productId, String itemCode, Integer quantity);
 

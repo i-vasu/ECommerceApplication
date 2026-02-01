@@ -1,8 +1,8 @@
 package com.app.logistics.inventory.services;
 
-import com.app.governance.rules.RuleEngineService;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
+import com.app.governance.rules.RuleEngineService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

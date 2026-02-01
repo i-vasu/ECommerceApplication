@@ -1,17 +1,17 @@
 package com.app.erp_sync.services;
 
 // import com.app.logistics.shipping.ShipmentService;
-import com.app.erp_sync.gateway.ERPNextService;
-import com.app.core.services.RedisLockService;
-import com.app.core.multitenancy.Tenant;
+
 import com.app.core.multitenancy.TenantContext;
 import com.app.core.multitenancy.TenantManagementService;
-import java.time.Duration;
+import com.app.core.services.RedisLockService;
+import com.app.erp_sync.gateway.ERPNextService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import java.time.Duration;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -56,9 +56,8 @@ public class SyncScheduler {
         }
     }
 
-    // TODO: Re-implement using event-driven approach
-    // Shipment status updates should be triggered by ShipmentStatusUpdatedEvent
-    // from the logistics module instead of direct service calls
+    // Shipment status updates are now event-driven via ShipmentStatusUpdatedEvent
+    // See ERPEventListener or Logistics module for implementation details.
     /*
      * // Run every 15 minutes (900,000 ms)
      * 

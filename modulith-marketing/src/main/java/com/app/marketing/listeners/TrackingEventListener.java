@@ -1,7 +1,6 @@
 package com.app.marketing.listeners;
 
 import com.app.core.events.OrderCreatedEvent;
-import com.app.core.events.OrderCreatedEvent.OrderItemData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.event.EventListener;

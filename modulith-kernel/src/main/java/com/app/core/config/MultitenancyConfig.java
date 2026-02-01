@@ -22,7 +22,7 @@ public class MultitenancyConfig {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("com.app");
+        em.setPackagesToScan("com.app", "org.springframework.statemachine.data.jpa");
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
 
         Map<String, Object> properties = new HashMap<>();

@@ -1,12 +1,10 @@
 package com.app.support.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
-
+// Correct for BOTH Jackson 2 and Jackson 3
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ticket_messages")

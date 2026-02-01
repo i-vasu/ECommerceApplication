@@ -1,33 +1,24 @@
 package com.app.security;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.app.core.APIException;
+import com.app.core.security.JWTUtil;
+import com.app.security.entities.RefreshToken;
+import com.app.security.payloads.LoginCredentials;
+import com.app.security.payloads.TokenRefreshRequest;
+import com.app.security.payloads.TokenRefreshResponse;
+import com.app.security.payloads.UserDTO;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import com.app.security.payloads.LoginCredentials;
-import com.app.security.payloads.UserDTO;
-import com.app.core.security.JWTUtil;
-import com.app.security.entities.RefreshToken;
-import com.app.security.payloads.TokenRefreshRequest;
-import com.app.security.payloads.TokenRefreshResponse;
-import com.app.core.APIException;
-import com.app.security.UserService;
-
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.validation.Valid;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")

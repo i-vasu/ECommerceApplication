@@ -1,16 +1,15 @@
 package com.app.security.security;
 
-import java.util.Optional;
-
+import com.app.core.ResourceNotFoundException;
+import com.app.security.entities.User;
+import com.app.security.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.app.security.entities.User;
-import com.app.core.ResourceNotFoundException;
-import com.app.security.repositories.UserRepo;
+import java.util.Optional;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {

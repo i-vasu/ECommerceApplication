@@ -10,10 +10,9 @@ import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.repositories.ProductVariantRepo;
 import com.app.core.events.ERPItemSyncRequestedEvent;
 import com.app.core.events.ProductCreatedEvent;
-import com.app.core.events.ProductUpdatedEvent;
 import com.app.core.events.ProductEnrichedEvent;
+import com.app.core.events.ProductUpdatedEvent;
 import com.app.core.multitenancy.ERPNextCredentialProvider;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,7 +25,6 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -149,6 +147,7 @@ public class CatalogERPListener {
             eventPublisher.publishEvent(new ProductUpdatedEvent(
                     product.getProductId(),
                     product.getItemCode(),
+                    product.getProductName(),
                     oldPrice,
                     product.getSpecialPrice(),
                     oldQty,

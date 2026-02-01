@@ -1,6 +1,7 @@
 package com.app.catalog.services;
 
 import com.app.catalog.payloads.ProductDTO;
+
 import java.util.List;
 
 public interface PersonalizationService {

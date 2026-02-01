@@ -2,6 +2,7 @@ package com.app.marketing.services;
 
 import com.app.core.events.OrderPaidEvent;
 import com.app.core.events.UserRegisteredEvent;
+
 import java.util.Map;
 
 public interface MarketingService {

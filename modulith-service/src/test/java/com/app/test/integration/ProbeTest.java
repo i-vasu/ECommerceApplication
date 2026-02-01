@@ -1,10 +1,10 @@
 package com.app.test.integration;
 
-import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.context.WebApplicationContext;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.client.RestTestClient;
+import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ProbeTest {

@@ -14,6 +14,9 @@ public class OrderTotalInput {
     // User Email (for personalized discounts)
     private String email;
 
+    // User ID
+    private Long userId;
+
     // Address (for Tax/Shipping)
     private String shippingCountry;
     private String shippingState;
@@ -31,10 +34,11 @@ public class OrderTotalInput {
     public OrderTotalInput() {
     }
 
-    public OrderTotalInput(Long id, String email, String shippingCountry, String shippingState, String shippingZip,
+    public OrderTotalInput(Long id, String email, Long userId, String shippingCountry, String shippingState, String shippingZip,
             String currencyCode, String couponCode, List<ItemInput> items) {
         this.id = id;
         this.email = email;
+        this.userId = userId;
         this.shippingCountry = shippingCountry;
         this.shippingState = shippingState;
         this.shippingZip = shippingZip;
@@ -58,6 +62,14 @@ public class OrderTotalInput {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getShippingCountry() {
@@ -112,6 +124,7 @@ public class OrderTotalInput {
     public static class OrderTotalInputBuilder {
         private Long id;
         private String email;
+        private Long userId;
         private String shippingCountry;
         private String shippingState;
         private String shippingZip;
@@ -126,6 +139,11 @@ public class OrderTotalInput {
 
         public OrderTotalInputBuilder email(String email) {
             this.email = email;
+            return this;
+        }
+
+        public OrderTotalInputBuilder userId(Long userId) {
+            this.userId = userId;
             return this;
         }
 
@@ -160,7 +178,7 @@ public class OrderTotalInput {
         }
 
         public OrderTotalInput build() {
-            return new OrderTotalInput(id, email, shippingCountry, shippingState, shippingZip, currencyCode, couponCode,
+            return new OrderTotalInput(id, email, userId, shippingCountry, shippingState, shippingZip, currencyCode, couponCode,
                     items);
         }
     }

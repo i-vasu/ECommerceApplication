@@ -1,9 +1,8 @@
 package com.app.catalog.services;
 
-import com.app.governance.rules.RuleEngineService;
 import com.app.catalog.entities.Product;
+import com.app.governance.rules.RuleEngineService;
 import lombok.RequiredArgsConstructor;
-// import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;

@@ -1,15 +1,16 @@
 package com.app.discovery.domain.services;
 
-import jdk.incubator.vector.*;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.Arena;
-import java.lang.foreign.ValueLayout;
-import org.springframework.stereotype.Service;
+import jdk.incubator.vector.FloatVector;
+import jdk.incubator.vector.VectorOperators;
+import jdk.incubator.vector.VectorSpecies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  * Java 25 Vector API (SIMD) Optimized Visual Search

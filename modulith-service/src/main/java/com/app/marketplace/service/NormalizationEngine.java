@@ -1,13 +1,13 @@
 package com.app.marketplace.service;
 
+import com.app.catalog.payloads.ProductDTO;
 import com.app.order.payloads.OrderDTO;
 import com.app.order.payloads.OrderItemDTO;
-import com.app.catalog.payloads.ProductDTO;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 @Component
 public class NormalizationEngine {

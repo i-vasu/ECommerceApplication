@@ -1,10 +1,11 @@
 package com.app.catalog.payloads;
 
-import java.util.List;
-import java.util.Map;
+import com.app.catalog.review.payloads.ProductReviewDTO;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import com.app.catalog.review.payloads.ProductReviewDTO;
+import java.util.List;
+import java.util.Map;
 
 public record ProductDTO(
         Long productId,

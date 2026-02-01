@@ -52,62 +52,61 @@ class ModulithArchitectureTest {
         ArchRule rule = noClasses()
                 .that().resideInAPackage("com.app.core..")
                 .should().dependOnClassesThat().resideInAnyPackage(
-                        "com.app.identity..",
-                        "com.app.product..",
+                        "com.app.security..",
+                        "com.app.catalog..",
                         "com.app.order..",
                         "com.app.cart..",
-                        "com.app.payment..",
-                        "com.app.shipping..",
+                        "com.app.finance.payment..",
+                        "com.app.logistics.shipping..",
                         "com.app.marketplace..",
-                        "com.app.review..",
+                        "com.app.catalog.review..",
                         "com.app.marketing..",
-                        "com.app.analytics..");
+                        "com.app.intelligence.analytics..");
 
         rule.check(allClasses);
     }
 
     /**
-     * Rule 3: Identity module should not depend on Order or Product modules
-     * Identity is a foundational domain
+     * Rule 3: Security module should not depend on Order or Catalog modules
+     * Security is a foundational domain
      */
     @Test
-    void identityShouldNotDependOnOrderOrProduct() {
+    void securityShouldNotDependOnOrderOrCatalog() {
         ArchRule rule = noClasses()
-                .that().resideInAPackage("com.app.identity..")
+                .that().resideInAPackage("com.app.security..")
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "com.app.order..",
                         "com.app.cart..",
-                        "com.app.product..",
-                        "com.app.payment..",
-                        "com.app.shipping..");
+                        "com.app.catalog..",
+                        "com.app.finance..",
+                        "com.app.logistics..");
 
         rule.check(allClasses);
     }
 
     /**
-     * Rule 4: Product module should not depend on Order module
-     * Product can depend on Identity for user info
+     * Rule 4: Catalog module should not depend on Order module
+     * Catalog can depend on Security for user info
      */
     @Test
-    void productShouldNotDependOnOrder() {
+    void catalogShouldNotDependOnOrder() {
         ArchRule rule = noClasses()
-                .that().resideInAPackage("com.app.product..")
+                .that().resideInAPackage("com.app.catalog..")
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "com.app.order..",
                         "com.app.cart..",
-                        "com.app.payment..",
-                        "com.app.shipping..");
+                        "com.app.finance..",
+                        "com.app.logistics..");
 
         rule.check(allClasses);
     }
 
     /**
-     * Rule 5: Order module can depend on Product and Identity
-     * This validates our dependency hierarchy: Kernel <- Identity <- Product <-
-     * Order
+     * Rule 5: Order module can depend on Catalog and Security
+     * This validates our dependency hierarchy: Kernel <- Security <- Catalog <- Order
      */
     @Test
-    void orderCanDependOnProductAndIdentity() {
+    void orderCanDependOnCatalogAndSecurity() {
         // This is allowed - just documenting the dependency direction
         // Order is at the top of the dependency hierarchy
     }
@@ -121,6 +120,7 @@ class ModulithArchitectureTest {
     void crossModuleServiceCallsShouldUseContracts() {
         // This rule checks that services implement contract interfaces
         // In practice, we'd check that UserService implements UserServiceContract, etc.
+        // Also checks that 'order' doesn't use implementation services from others.
 
         ArchRule rule = noClasses()
                 .that().resideInAPackage("com.app.order..")
@@ -129,9 +129,7 @@ class ModulithArchitectureTest {
                 .andShould().dependOnClassesThat()
                 .resideInAPackage("com.app.marketing.services..");
 
-        // Note: This rule will fail until we fully migrate to contracts
-        // Keep it commented for now, enable after migration
-        // rule.check(allClasses);
+         rule.check(allClasses);
     }
 
     /**
@@ -143,7 +141,7 @@ class ModulithArchitectureTest {
         ArchRule rule = noClasses()
                 .that().resideInAPackage("com.app.order..")
                 .should().dependOnClassesThat()
-                .resideInAPackage("com.app.product.entities..")
+                .resideInAPackage("com.app.catalog.entities..")
                 .orShould().dependOnClassesThat()
                 .resideInAPackage("com.app.security.entities..");
 

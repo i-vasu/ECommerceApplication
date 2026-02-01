@@ -1,6 +1,5 @@
 package com.app.test.performance;
 
-import com.app.catalog.repositories.ProductRepo;
 import com.app.catalog.repositories.CategoryRepo;
 import com.app.logistics.repositories.ShipmentRepo;
 import com.app.test.AbstractIntegrationTest;

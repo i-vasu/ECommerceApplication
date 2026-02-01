@@ -1,13 +1,12 @@
 package com.app.core.crac;
 
+import jakarta.annotation.PostConstruct;
 import org.crac.Context;
 import org.crac.Resource;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import jakarta.annotation.PostConstruct;
 
 @Component
 public class CracResource implements Resource {

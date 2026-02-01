@@ -40,23 +40,25 @@ public class LoyaltyAutomationService {
     }
 
     private void processTier(User user) {
+        if (user.getLoyalty() == null) return;
+
         Map<String, Object> context = new HashMap<>();
-        context.put("rewardPoints", user.getRewardPoints());
+        context.put("rewardPoints", user.getLoyalty().getRewardPoints());
         
         // Dynamic Strategy: Upgrade to PLATINUM if points > 5000
         String platinumRule = "rewardPoints > 5000";
         String goldRule = "rewardPoints > 1000";
 
         if (ruleEngine.evaluate(platinumRule, context)) {
-            if (!"PLATINUM".equals(user.getCustomerGroup())) {
+            if (!"PLATINUM".equals(user.getLoyalty().getCustomerGroup())) {
                 log.info("User {} promoted to PLATINUM tier!", user.getEmail());
-                user.setCustomerGroup("PLATINUM");
+                user.getLoyalty().setCustomerGroup("PLATINUM");
                 userRepo.save(user);
             }
         } else if (ruleEngine.evaluate(goldRule, context)) {
-            if (!"GOLD".equals(user.getCustomerGroup())) {
+            if (!"GOLD".equals(user.getLoyalty().getCustomerGroup())) {
                 log.info("User {} promoted to GOLD tier!", user.getEmail());
-                user.setCustomerGroup("GOLD");
+                user.getLoyalty().setCustomerGroup("GOLD");
                 userRepo.save(user);
             }
         }

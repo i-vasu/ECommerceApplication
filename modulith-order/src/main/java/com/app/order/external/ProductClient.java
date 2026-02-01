@@ -1,7 +1,8 @@
 package com.app.order.external;
 
-import java.util.List;
 import com.app.catalog.payloads.ProductDTO;
+
+import java.util.List;
 
 public interface ProductClient {
 

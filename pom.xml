@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.1</version>
+		<version>4.0.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
@@ -22,11 +22,11 @@
 		<spring-cloud.version>2025.1.0</spring-cloud.version>
 		<spring-ai.version>2.0.0-M1</spring-ai.version>
 		<spring-modulith.version>2.0.0</spring-modulith.version>
-		<springdoc.version>2.7.0</springdoc.version>
+		<springdoc.version>2.8.0</springdoc.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<modelmapper.version>3.2.1</modelmapper.version>
 		<loki-logback.version>1.5.2</loki-logback.version>
-		<spring-boot-admin.version>3.4.1</spring-boot-admin.version>
+		<spring-boot-admin.version>4.0.0-M1</spring-boot-admin.version>
 		<archunit.version>1.3.0</archunit.version>
 		<logstash-logback.version>8.0</logstash-logback.version>
 		<rest-assured.version>5.5.0</rest-assured.version>
@@ -35,16 +35,18 @@
 		<awaitility.version>4.2.2</awaitility.version>
 		<mockito.version>5.14.2</mockito.version>
 		<assertj.version>3.26.3</assertj.version>
-		<jacoco.version>0.8.12</jacoco.version>
+		<jacoco.version>0.8.14</jacoco.version>
+		<skipTests>false</skipTests>
+		<jacoco.skip>${skipTests}</jacoco.skip>
 		<pitest.version>1.17.0</pitest.version>
 		<maven-surefire.version>3.5.2</maven-surefire.version>
 		<maven-compiler.version>3.13.0</maven-compiler.version>
 		<spotless.version>2.44.2</spotless.version>
 		<lombok.version>1.18.42</lombok.version>
-		<jackson-3.version>3.0.3</jackson-3.version>
+		<jackson-3.version>3.0.4</jackson-3.version>
 		<!-- Override Spring Boot's Log4j2 version -->
 		<log4j2.version>2.25.3</log4j2.version>
-		<vaadin.version>24.5.3</vaadin.version>
+		<vaadin.version>25.0.4</vaadin.version>
 	</properties>
 
 	<modules>
@@ -73,22 +75,22 @@
 			<dependency>
 				<groupId>tools.jackson.core</groupId>
 				<artifactId>jackson-databind</artifactId>
-				<version>${jackson-3.version}</version>
+				<version>{jackson-3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>tools.jackson.core</groupId>
 				<artifactId>jackson-core</artifactId>
-				<version>${jackson-3.version}</version>
+				<version>{jackson-3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>tools.jackson.dataformat</groupId>
 				<artifactId>jackson-dataformat-smile</artifactId>
-				<version>${jackson-3.version}</version>
+				<version>{jackson-3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>tools.jackson.datatype</groupId>
 				<artifactId>jackson-datatype-jsr310</artifactId>
-				<version>3.0.0-rc1</version>
+				<version>{jackson-3.version}</version>
 			</dependency>
 
 			<!-- Log4j 3 Support -->
@@ -160,6 +162,12 @@
 				<version>4.0.0</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.vaadin</groupId>
+				<artifactId>vaadin-dev</artifactId> 
+				<optional>true</optional>
+				<version>${vaadin.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.vaadin</groupId>
@@ -333,6 +341,15 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<jvmArguments>
+						--add-modules jdk.incubator.vector
+					</jvmArguments>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
 					<classifier>exec</classifier>
 				</configuration>
 			</plugin>
@@ -347,4 +364,5 @@
             <optional>true</optional>
         </dependency>
     </dependencies>
+
 </project>

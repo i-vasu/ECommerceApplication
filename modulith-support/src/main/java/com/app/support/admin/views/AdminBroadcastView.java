@@ -13,7 +13,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
-import lombok.RequiredArgsConstructor;
 
 @Route("admin/broadcasts")
 @RolesAllowed("ADMIN")

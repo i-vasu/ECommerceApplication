@@ -10,7 +10,7 @@ import org.springframework.statemachine.config.builders.StateMachineTransitionCo
 import java.util.EnumSet;
 
 @Configuration
-@EnableStateMachineFactory
+@EnableStateMachineFactory(name = "cartStateMachineFactory")
 @Log4j2
 public class CartStateMachineConfig extends EnumStateMachineConfigurerAdapter<CartState, CartEvent> {
 

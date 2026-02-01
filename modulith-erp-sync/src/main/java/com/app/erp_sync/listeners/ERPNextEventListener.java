@@ -1,10 +1,6 @@
 package com.app.erp_sync.listeners;
 
-import com.app.core.events.RestockRequestedEvent;
-import com.app.core.events.RestockCompletedEvent;
-import com.app.core.events.ProductCreatedEvent;
-import com.app.core.events.ProductUpdatedEvent;
-import com.app.core.events.ProductDeletedEvent;
+import com.app.core.events.*;
 import com.app.erp_sync.gateway.ERPNextService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;

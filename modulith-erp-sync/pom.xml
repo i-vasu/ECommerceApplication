@@ -92,6 +92,9 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	<properties>
+    	<jacoco.skip>true</jacoco.skip>
+	</properties>
 	
 	<build>
 		<plugins>

@@ -3,8 +3,8 @@ package com.app.logistics.inventory;
 import com.app.logistics.inventory.payloads.InventoryRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class InventoryServiceImpl implements InventoryService {

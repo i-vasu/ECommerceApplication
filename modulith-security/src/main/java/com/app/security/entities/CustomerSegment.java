@@ -25,15 +25,15 @@ public class CustomerSegment {
     private String ruleExpression; // SpEL, e.g., "#user.totalSpent > 10000"
 
     @ManyToMany(mappedBy = "segments")
-    private Set<User> users = new HashSet<>();
+    private Set<UserLoyalty> loyalties = new HashSet<>();
 
     public CustomerSegment() {}
-    public CustomerSegment(Long id, String name, String description, String ruleExpression, Set<User> users) {
+    public CustomerSegment(Long id, String name, String description, String ruleExpression, Set<UserLoyalty> loyalties) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.ruleExpression = ruleExpression;
-        this.users = users;
+        this.loyalties = loyalties;
     }
 
     public Long getId() { return id; }
@@ -44,6 +44,6 @@ public class CustomerSegment {
     public void setDescription(String description) { this.description = description; }
     public String getRuleExpression() { return ruleExpression; }
     public void setRuleExpression(String ruleExpression) { this.ruleExpression = ruleExpression; }
-    public Set<User> getUsers() { return users; }
-    public void setUsers(Set<User> users) { this.users = users; }
+    public Set<UserLoyalty> getLoyalties() { return loyalties; }
+    public void setLoyalties(Set<UserLoyalty> loyalties) { this.loyalties = loyalties; }
 }

@@ -1,8 +1,8 @@
 package com.app.catalog.entities;
 
 import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "dynamic_pricing_rules")

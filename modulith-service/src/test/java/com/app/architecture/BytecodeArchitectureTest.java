@@ -1,8 +1,6 @@
 package com.app.architecture;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.lang.classfile.ClassFile;

@@ -1,9 +1,10 @@
 package com.app.security.payloads;
 
-import java.util.Set;
+import com.app.security.entities.Role;
+
 import java.time.LocalDate;
 import java.util.Map;
-import com.app.security.entities.Role;
+import java.util.Set;
 
 public record UserDTO(
                 Long userId,

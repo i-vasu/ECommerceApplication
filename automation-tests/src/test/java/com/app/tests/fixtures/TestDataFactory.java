@@ -3,6 +3,7 @@ package com.app.tests.fixtures;
 import com.app.order.entities.Order;
 import com.app.finance.entities.Payment;
 import com.app.security.entities.User;
+import com.app.security.entities.UserProfile;
 import com.app.order.payloads.OrderDTO;
 import com.app.governance.states.OrderStatus;
 
@@ -40,7 +41,7 @@ public class TestDataFactory {
         }
 
         public OrderBuilder withPayment(Payment payment) {
-            order.setPayment(payment);
+            order.setPaymentId(payment.getPaymentId());
             return this;
         }
 
@@ -101,9 +102,15 @@ public class TestDataFactory {
         }
 
         public UserBuilder withName(String name) {
-            user.setFirstName(name.split(" ")[0]);
+            UserProfile profile = user.getProfile();
+            if (profile == null) {
+                profile = new UserProfile();
+                profile.setUser(user);
+                user.setProfile(profile);
+            }
+            profile.setFirstName(name.split(" ")[0]);
             if (name.split(" ").length > 1) {
-                user.setLastName(name.split(" ")[1]);
+                profile.setLastName(name.split(" ")[1]);
             }
             return this;
         }

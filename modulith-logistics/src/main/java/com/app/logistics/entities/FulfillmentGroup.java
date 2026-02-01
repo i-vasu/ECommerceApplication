@@ -3,9 +3,6 @@ package com.app.logistics.entities;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Table("fulfillment_groups")
 public class FulfillmentGroup {
 

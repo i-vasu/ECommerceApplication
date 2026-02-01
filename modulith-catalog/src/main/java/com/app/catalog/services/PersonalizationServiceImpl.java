@@ -1,14 +1,13 @@
 package com.app.catalog.services;
 
+import com.app.catalog.mappers.ProductMapper;
 import com.app.catalog.payloads.ProductDTO;
 import com.app.catalog.repositories.ProductRepo;
-import com.app.catalog.mappers.ProductMapper;
 import lombok.RequiredArgsConstructor;
-// import lombok.extern.log4j.Log4j2;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;

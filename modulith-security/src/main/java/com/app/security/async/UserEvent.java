@@ -1,9 +1,5 @@
 package com.app.security.async;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
 /**
  * Internal event structure for user-related messages.
  */

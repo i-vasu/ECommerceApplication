@@ -1,14 +1,15 @@
 package com.app.marketing.services;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.app.security.entities.User;
+import com.app.security.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Service;
-import com.app.security.repositories.UserRepo;
-import com.app.security.entities.User;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class BlogEventListener implements StreamListener<String, MapRecord<String, String, String>> {
@@ -35,7 +36,8 @@ public class BlogEventListener implements StreamListener<String, MapRecord<Strin
         for (User user : users) {
             try {
                 Map<String, Object> vars = new HashMap<>();
-                vars.put("firstName", user.getFirstName());
+                String firstName = (user.getProfile() != null) ? user.getProfile().getFirstName() : "Customer";
+                vars.put("firstName", firstName);
                 vars.put("blogTitle", blogTitle);
                 vars.put("blogContent", blogContent);
 
