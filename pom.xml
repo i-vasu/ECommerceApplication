@@ -75,23 +75,19 @@
 			<dependency>
 				<groupId>tools.jackson.core</groupId>
 				<artifactId>jackson-databind</artifactId>
-				<version>{jackson-3.version}</version>
+				<version>${jackson-3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>tools.jackson.core</groupId>
 				<artifactId>jackson-core</artifactId>
-				<version>{jackson-3.version}</version>
+				<version>${jackson-3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>tools.jackson.dataformat</groupId>
 				<artifactId>jackson-dataformat-smile</artifactId>
-				<version>{jackson-3.version}</version>
+				<version>${jackson-3.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>tools.jackson.datatype</groupId>
-				<artifactId>jackson-datatype-jsr310</artifactId>
-				<version>{jackson-3.version}</version>
-			</dependency>
+
 
 			<!-- Log4j 3 Support -->
 			<dependency>
@@ -341,16 +337,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<classifier>exec</classifier>
 					<jvmArguments>
 						--add-modules jdk.incubator.vector
 					</jvmArguments>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<classifier>exec</classifier>
 				</configuration>
 			</plugin>
 		</plugins>

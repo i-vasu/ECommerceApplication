@@ -126,22 +126,17 @@
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>3.0.0-rc1</version>
+            <version>${jackson-3.version}</version>
         </dependency>
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>3.0.0-rc1</version>
+            <version>${jackson-3.version}</version>
         </dependency>
         <dependency>
             <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-smile</artifactId>
-            <version>3.0.0-rc1</version>
-        </dependency>
-        <dependency>
-            <groupId>tools.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>3.0.0-rc1</version>
+            <version>${jackson-3.version}</version>
         </dependency>
         <!-- Log4j 3 Core & API -->
         <dependency>
