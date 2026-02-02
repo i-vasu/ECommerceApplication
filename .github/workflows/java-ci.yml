@@ -39,11 +39,6 @@ jobs:
           MINIO_ROOT_PASSWORD: minioadmin
         ports:
           - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live"
-          --health-interval 30s
-          --health-timeout 20s
-          --health-retries 3
 
     steps:
     - uses: actions/checkout@v4
@@ -54,6 +49,19 @@ jobs:
         java-version: '25-ea'
         distribution: 'zulu'
         cache: maven
+
+    - name: Wait for Services
+      run: |
+        echo "Waiting for MinIO..."
+        for i in {1..30}; do
+          if curl -s http://localhost:9000/minio/health/live > /dev/null; then
+            echo "MinIO is ready!"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "MinIO failed to start."
+        exit 1
         
     - name: Run Tests
       run: mvn -B test
