@@ -24,7 +24,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       redis:
-        image: docker.io/dragonflydb/dragonfly
+        image: redis:alpine
         ports:
           - 6379:6379
         options: >-
@@ -32,28 +32,40 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      minio:
-        image: minio/minio
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live"
-          --health-interval 30s
-          --health-timeout 20s
-          --health-retries 3
-
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
-        java-version: '21'
-        distribution: 'temurin'
+        java-version: '25-ea'
+        distribution: 'zulu'
         cache: maven
+
+    - name: Start MinIO
+      run: |
+        docker run -d -p 9000:9000 --name minio \
+          -e "MINIO_ROOT_USER=minioadmin" \
+          -e "MINIO_ROOT_PASSWORD=minioadmin" \
+          minio/minio server /data
+
+    - name: Wait for Services
+      run: |
+        echo "Waiting for MinIO..."
+        for i in {1..30}; do
+          if curl -s -f http://localhost:9000/minio/health/live > /dev/null; then
+            echo "MinIO is ready!"
+            exit 0
+          fi
+          echo "Waiting for MinIO... attempt $i"
+          sleep 5
+        done
+        echo "MinIO failed to start. Logs:"
+        docker logs minio
+        exit 1
+
+    - name: Build Reactor
+      run: mvn install -DskipTests -Dmaven.javadoc.skip=true -B -V
         
     - name: Run Tests
       run: mvn -B test
