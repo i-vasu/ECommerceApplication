@@ -53,13 +53,15 @@ jobs:
       run: |
         echo "Waiting for MinIO..."
         for i in {1..30}; do
-          if curl -s http://localhost:9000/minio/health/live > /dev/null; then
+          if curl -s -f http://localhost:9000/minio/health/live > /dev/null; then
             echo "MinIO is ready!"
             exit 0
           fi
-          sleep 2
+          echo "Waiting for MinIO... attempt $i"
+          sleep 5
         done
-        echo "MinIO failed to start."
+        echo "MinIO failed to start. Logs:"
+        docker logs minio
         exit 1
 
     - name: Build Reactor

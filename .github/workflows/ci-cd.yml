@@ -35,6 +35,9 @@ jobs:
         run: |
           mvn -pl automation-tests exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
       
+      - name: Build Reactor
+        run: mvn install -DskipTests -Dmaven.javadoc.skip=true -B -V
+
       - name: Run Unit Tests
         if: matrix.test-suite == 'unit'
         run: |
