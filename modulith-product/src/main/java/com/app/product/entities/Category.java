@@ -2,6 +2,7 @@ package com.app.product.entities;
 
 import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -30,5 +31,6 @@ public class Category {
 	private String categoryName;
 
 	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+	@BatchSize(size = 20) // Bolt: Optimization to prevent N+1 queries during category traversal
 	private List<Product> products;
 }
