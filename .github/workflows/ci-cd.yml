@@ -33,7 +33,7 @@ jobs:
       - name: Install Playwright dependencies
         if: matrix.test-suite == 'e2e'
         run: |
-          mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
+          mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium" -pl automation-tests
       
       - name: Run Unit Tests
         if: matrix.test-suite == 'unit'
