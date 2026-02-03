@@ -19,6 +19,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
 import jakarta.validation.constraints.Email;
+import org.hibernate.annotations.BatchSize;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,6 +42,7 @@ public class Order {
 	private String email;
 
 	@OneToMany(mappedBy = "order", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@BatchSize(size = 20)
 	private List<OrderItem> orderItems = new ArrayList<>();
 
 	private LocalDate orderDate;
@@ -70,8 +72,10 @@ public class Order {
 	private String erpNextOrderName;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 20)
 	private List<FulfillmentGroup> fulfillmentGroups = new ArrayList<>();
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 20)
 	private List<com.app.commerce.promotion.entities.OrderAdjustment> adjustments = new ArrayList<>();
 }

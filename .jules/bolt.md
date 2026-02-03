@@ -1,0 +1,3 @@
+## 2026-02-03 - [Missing Batch Fetching on Core Entities]
+**Learning:** Core entities like `Product`, `Category`, and `Order` had multiple `OneToMany` collections without `@BatchSize`. This causes N+1 query issues when fetching lists of these entities (e.g., product catalog, order history). The default lazy loading behavior triggers a separate query for each child collection access.
+**Action:** Audit all new `OneToMany` and `ManyToMany` relationships. Always apply `@BatchSize(size = 20)` (or appropriate size) or use `JOIN FETCH` / EntityGraphs for critical paths. Prefer batch fetching for general-purpose entities to safeguard against accidental N+1 loops.
