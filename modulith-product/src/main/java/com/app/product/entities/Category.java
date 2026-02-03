@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Data
@@ -30,5 +31,6 @@ public class Category {
 	private String categoryName;
 
 	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+	@BatchSize(size = 20)
 	private List<Product> products;
 }
