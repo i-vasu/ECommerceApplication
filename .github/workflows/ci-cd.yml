@@ -33,17 +33,17 @@ jobs:
       - name: Install Playwright dependencies
         if: matrix.test-suite == 'e2e'
         run: |
-          mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
+          mvn exec:java -pl automation-tests -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
       
       - name: Run Unit Tests
         if: matrix.test-suite == 'unit'
         run: |
-          mvn test -pl order-service,product-service,marketplace-service -Dtest='*Test'
+          mvn test -pl modulith-service -Dtest='*Test'
       
       - name: Run Integration Tests
         if: matrix.test-suite == 'integration'
         run: |
-          mvn test -pl order-service,product-service -Dtest='*IntegrationTest'
+          mvn test -pl modulith-service -Dtest='*IntegrationTest'
       
       - name: Run E2E Tests
         if: matrix.test-suite == 'e2e'
@@ -53,7 +53,7 @@ jobs:
       - name: Run Architecture Tests
         if: matrix.test-suite == 'architecture'
         run: |
-          mvn test -pl product-service -Dtest=ArchitectureTest
+          mvn test -pl modulith-service -Dtest=ModulithArchitectureTest
       
       - name: Upload Test Results
         if: always()
