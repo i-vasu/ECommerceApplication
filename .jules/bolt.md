@@ -1,0 +1,3 @@
+## 2026-02-04 - N+1 Query Optimization in Product Catalog
+**Learning:** The `Product` catalog suffered from N+1 query issues. Methods like `getAllProducts` or `getProductsByCategory` fetched a list of products and then the mapper accessed lazy-loaded collections (`variants`, `reviews`, `media`) for each product, causing N * M queries.
+**Action:** Applied `@BatchSize(size = 20)` to `products` in `Category` and `variants`, `media`, `reviews`, `bundleItems`, `priceLists` in `Product`. This ensures Hibernate fetches these collections in batches using `WHERE id IN (...)`, drastically reducing database roundtrips.
