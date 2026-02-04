@@ -314,4 +314,12 @@ public class User {
 	public void setSegments(Set<com.app.identity.entities.CustomerSegment> segments) {
 		this.segments = segments;
 	}
+
+	public String getCustomerGroup() {
+		return customerGroup;
+	}
+
+	public void setCustomerGroup(String customerGroup) {
+		this.customerGroup = customerGroup;
+	}
 }
