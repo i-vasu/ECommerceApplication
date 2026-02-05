@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
 import com.app.commerce.states.OrderStatus;
 
 import jakarta.persistence.CascadeType;
@@ -41,6 +42,8 @@ public class Order {
 	private String email;
 
 	@OneToMany(mappedBy = "order", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	// Bolt: Batch fetching to solve N+1 query problem
+	@BatchSize(size = 20)
 	private List<OrderItem> orderItems = new ArrayList<>();
 
 	private LocalDate orderDate;
@@ -70,8 +73,12 @@ public class Order {
 	private String erpNextOrderName;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	// Bolt: Batch fetching to solve N+1 query problem
+	@BatchSize(size = 20)
 	private List<FulfillmentGroup> fulfillmentGroups = new ArrayList<>();
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	// Bolt: Batch fetching to solve N+1 query problem
+	@BatchSize(size = 20)
 	private List<com.app.commerce.promotion.entities.OrderAdjustment> adjustments = new ArrayList<>();
 }
