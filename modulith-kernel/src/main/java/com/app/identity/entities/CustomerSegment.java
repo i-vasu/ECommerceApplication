@@ -29,7 +29,4 @@ public class CustomerSegment {
 
     @Column(length = 1000)
     private String ruleExpression; // SpEL, e.g., "#user.totalSpent > 10000"
-
-    @ManyToMany(mappedBy = "segments")
-    private Set<User> users = new HashSet<>();
 }

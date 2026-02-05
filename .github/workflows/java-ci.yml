@@ -39,11 +39,6 @@ jobs:
           MINIO_ROOT_PASSWORD: minioadmin
         ports:
           - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live"
-          --health-interval 30s
-          --health-timeout 20s
-          --health-retries 3
 
     steps:
     - uses: actions/checkout@v4
