@@ -33,14 +33,14 @@ public abstract class AbstractIntegrationTest {
 
     static {
         try {
-            postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:17-alpine"))
+            postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15-alpine"))
                     .withDatabaseName("ecommerce_test")
                     .withUsername("test")
                     .withPassword("test")
                     .withReuse(true);
 
             dragonflydb = new GenericContainer<>(
-                    DockerImageName.parse("docker.dragonflydb.io/dragonflydb/dragonfly:latest"))
+                    DockerImageName.parse("redis:alpine"))
                     .withExposedPorts(6379)
                     .withReuse(true);
 

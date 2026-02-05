@@ -207,6 +207,14 @@ public class User {
 		this.rewardPoints = rewardPoints;
 	}
 
+	public String getCustomerGroup() {
+		return customerGroup;
+	}
+
+	public void setCustomerGroup(String customerGroup) {
+		this.customerGroup = customerGroup;
+	}
+
 	public String getVerificationCode() {
 		return verificationCode;
 	}
