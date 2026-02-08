@@ -305,13 +305,21 @@ public class User {
 
 	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(name = "user_segment_map", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "segment_id"))
-	private Set<com.app.identity.entities.CustomerSegment> segments = new HashSet<>();
+	private Set<CustomerSegment> segments = new HashSet<>();
 
-	public Set<com.app.identity.entities.CustomerSegment> getSegments() {
+	public Set<CustomerSegment> getSegments() {
 		return segments;
 	}
 
-	public void setSegments(Set<com.app.identity.entities.CustomerSegment> segments) {
+	public void setSegments(Set<CustomerSegment> segments) {
 		this.segments = segments;
+	}
+
+	public String getCustomerGroup() {
+		return customerGroup;
+	}
+
+	public void setCustomerGroup(String customerGroup) {
+		this.customerGroup = customerGroup;
 	}
 }
