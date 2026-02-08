@@ -68,6 +68,7 @@ class ProductServiceTest {
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, new java.util.HashMap<>());
 
         when(categoryRepo.findById(categoryId)).thenReturn(Optional.of(category));
+        when(productRepo.existsByCategoryAndProductNameAndDescription(category, product.getProductName(), product.getDescription())).thenReturn(false);
         when(productRepo.save(any(Product.class))).thenReturn(savedProduct);
         when(productMapper.productToProductDTO(savedProduct)).thenReturn(expectedDTO);
 
