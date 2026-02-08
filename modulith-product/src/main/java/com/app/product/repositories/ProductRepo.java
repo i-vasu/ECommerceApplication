@@ -23,6 +23,8 @@ public interface ProductRepo extends JpaRepository<Product, Long> {
 
 	List<Product> findByCategory(Category category);
 
+	boolean existsByCategoryAndProductNameAndDescription(Category category, String productName, String description);
+
 	// ParadeDB BM25 Search Query
 	// Syntax: WHERE index_name @@@ 'query_string'
 	@Query(value = "SELECT * FROM products p WHERE products_search_idx @@@ :keyword", nativeQuery = true)
