@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.app.commerce.states.OrderStatus;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,6 +41,7 @@ public class Order {
 	@Column(nullable = false)
 	private String email;
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "order", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -69,9 +71,11 @@ public class Order {
 
 	private String erpNextOrderName;
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<FulfillmentGroup> fulfillmentGroups = new ArrayList<>();
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<com.app.commerce.promotion.entities.OrderAdjustment> adjustments = new ArrayList<>();
 }
