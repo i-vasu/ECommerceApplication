@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.app.review.entities.ProductReview;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.CascadeType;
@@ -54,12 +55,15 @@ public class Product extends ExtensibleEntity {
 	@JoinColumn(name = "category_id")
 	private Category category;
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProductVariant> variants = new ArrayList<>();
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProductMedia> media = new ArrayList<>();
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProductReview> reviews = new ArrayList<>();
 
@@ -74,9 +78,11 @@ public class Product extends ExtensibleEntity {
 
 	private boolean isBundle = false;
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "bundleProduct", cascade = CascadeType.ALL)
 	private List<BundleItem> bundleItems = new ArrayList<>();
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
 	private List<ProductPriceList> priceLists = new ArrayList<>();
 

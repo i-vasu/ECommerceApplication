@@ -2,6 +2,7 @@ package com.app.product.entities;
 
 import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,6 +30,7 @@ public class Category {
 	@Size(min = 5, message = "Category name must contain atleast 5 characters")
 	private String categoryName;
 
+	@BatchSize(size = 20)
 	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
 	private List<Product> products;
 }
