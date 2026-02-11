@@ -1,6 +1,6 @@
 package com.app.checkout.pipeline;
 
-import com.app.cart.entities.Cart;
+import com.app.core.contracts.CartContract;
 import com.app.security.AddressValidationService;
 import com.app.security.AddressValidationService.AddressValidation;
 import com.app.security.entities.Address;
@@ -19,7 +19,7 @@ public class AddressValidationActivity implements CheckoutActivity<AddressValida
     }
 
     @Override
-    public AddressValidation execute(Cart cart, Address address) {
+    public AddressValidation execute(CartContract cart, Address address) {
         if (address == null) {
             return new AddressValidation(false, "Address is missing");
         }

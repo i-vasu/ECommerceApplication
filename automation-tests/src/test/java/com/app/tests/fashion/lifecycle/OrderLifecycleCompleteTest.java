@@ -1,8 +1,9 @@
 package com.app.tests.fashion.lifecycle;
 
 import com.app.tests.utils.AuthHelper;
-import org.junit.jupiter.api.*;
 import io.restassured.response.Response;
+import org.junit.jupiter.api.*;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 

@@ -1,6 +1,6 @@
 package com.app.checkout.pipeline;
 
-import com.app.cart.entities.Cart;
+import com.app.core.contracts.CartContract;
 import com.app.governance.states.InventoryEvent;
 import com.app.governance.states.OperationalStateMachineService;
 import com.app.logistics.inventory.InventoryService;
@@ -23,10 +23,10 @@ public class InventoryActivity implements CheckoutActivity<InventoryLock> {
     }
 
     @Override
-    public InventoryLock execute(Cart cart, Address address) {
-        java.util.List<InventoryRequest> requests = cart.getCartItems().stream()
-                .map(item -> new InventoryRequest(item.getItemCode(),
-                        item.getQuantity()))
+    public InventoryLock execute(CartContract cart, Address address) {
+        java.util.List<InventoryRequest> requests = cart.items().stream()
+                .map(item -> new InventoryRequest(item.itemCode(),
+                        item.quantity()))
                 .toList();
         InventoryLock lock = inventoryService.lockStock(requests);
         if (lock.locked()) {

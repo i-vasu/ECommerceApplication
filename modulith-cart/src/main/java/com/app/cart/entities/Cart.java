@@ -23,7 +23,7 @@ public class Cart {
 	@UpdateTimestamp
 	private LocalDateTime lastUpdated;
 
-	@jakarta.persistence.Column(name = "user_id", unique = true, nullable = false)
+	@jakarta.persistence.Column(name = "user_id", unique = true, nullable = true)
 	private Long userId;
 
 	@OneToMany(mappedBy = "cart", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, orphanRemoval = true)

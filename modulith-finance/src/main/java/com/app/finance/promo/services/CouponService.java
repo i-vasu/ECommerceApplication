@@ -8,11 +8,11 @@ public interface CouponService {
 
     CouponDTO createCoupon(CouponDTO couponDTO);
 
-    CouponDTO validateCoupon(String code, Double orderAmount);
+    CouponDTO validateCoupon(String code, java.math.BigDecimal orderAmount);
 
-    Double calculateDiscount(String code, Double orderAmount);
+    java.math.BigDecimal calculateDiscount(String code, java.math.BigDecimal orderAmount);
 
-    void applyCoupon(String code, Long userId, Long orderId, Double discountApplied);
+    void applyCoupon(String code, Long userId, Long orderId, java.math.BigDecimal discountApplied);
 
     List<CouponDTO> getAllActiveCoupons();
 

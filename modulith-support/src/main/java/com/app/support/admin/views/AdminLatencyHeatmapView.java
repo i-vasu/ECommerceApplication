@@ -18,7 +18,7 @@ import java.util.Arrays;
  * Latency Distribution Heatmap (Native Visualizer).
  * Visualizes request latencies using Micrometer Histogram buckets.
  */
-@Route("admin/latency-heatmap")
+@Route(value = "admin/latency", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminLatencyHeatmapView extends VerticalLayout {
 

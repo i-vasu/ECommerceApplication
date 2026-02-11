@@ -19,4 +19,8 @@ public interface CouponRepo extends JpaRepository<Coupon, Long> {
 
     @Query("SELECT c FROM Coupon c WHERE c.code = :code AND c.active = true AND c.validFrom <= :now AND c.validTo >= :now")
     Optional<Coupon> findActiveByCode(String code, LocalDateTime now);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Coupon c SET c.usedCount = c.usedCount + 1 WHERE c.couponId = :couponId AND (c.usageLimit IS NULL OR c.usedCount < c.usageLimit)")
+    int incrementUsedCountAtomic(Long couponId);
 }

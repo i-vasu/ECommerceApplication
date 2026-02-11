@@ -27,6 +27,8 @@ public class OrderStateMachineConfig extends EnumStateMachineConfigurerAdapter<O
         transitions
             .withExternal().source(OrderState.PENDING).target(OrderState.PAYMENT_CAPTURED).event(OrderEvent.PAY)
             .and()
+            .withExternal().source(OrderState.PENDING).target(OrderState.PAYMENT_FAILED).event(OrderEvent.PAY_FAIL)
+            .and()
             .withExternal().source(OrderState.PAYMENT_CAPTURED).target(OrderState.PROCESSING).event(OrderEvent.APPROVE)
             .and()
             .withExternal().source(OrderState.PROCESSING).target(OrderState.SHIPPED).event(OrderEvent.SHIP)
@@ -36,6 +38,8 @@ public class OrderStateMachineConfig extends EnumStateMachineConfigurerAdapter<O
             .withExternal().source(OrderState.PENDING).target(OrderState.CANCELLED).event(OrderEvent.CANCEL)
             .and()
             .withExternal().source(OrderState.PAYMENT_CAPTURED).target(OrderState.CANCELLED).event(OrderEvent.CANCEL)
+            .and()
+            .withExternal().source(OrderState.PROCESSING).target(OrderState.CANCELLED).event(OrderEvent.CANCEL)
             .and()
             .withExternal().source(OrderState.PAYMENT_CAPTURED).target(OrderState.REFUNDED).event(OrderEvent.REFUND)
             .and()

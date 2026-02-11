@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.FileInputStream;
 
-@Route("admin/tech-monitoring")
+@Route(value = "admin/tech-monitoring", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminTechDashboardView extends VerticalLayout {
 

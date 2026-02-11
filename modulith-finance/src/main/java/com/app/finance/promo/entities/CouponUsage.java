@@ -20,7 +20,7 @@ public class CouponUsage {
 
     private Long orderId;
 
-    private Double discountApplied;
+    private java.math.BigDecimal discountApplied;
 
     @Column(name = "used_at")
     private LocalDateTime usedAt = LocalDateTime.now();
@@ -28,7 +28,7 @@ public class CouponUsage {
     public CouponUsage() {
     }
 
-    public CouponUsage(Long usageId, Coupon coupon, Long userId, Long orderId, Double discountApplied,
+    public CouponUsage(Long usageId, Coupon coupon, Long userId, Long orderId, java.math.BigDecimal discountApplied,
             LocalDateTime usedAt) {
         this.usageId = usageId;
         this.coupon = coupon;
@@ -70,11 +70,11 @@ public class CouponUsage {
         this.orderId = orderId;
     }
 
-    public Double getDiscountApplied() {
+    public java.math.BigDecimal getDiscountApplied() {
         return discountApplied;
     }
 
-    public void setDiscountApplied(Double discountApplied) {
+    public void setDiscountApplied(java.math.BigDecimal discountApplied) {
         this.discountApplied = discountApplied;
     }
 

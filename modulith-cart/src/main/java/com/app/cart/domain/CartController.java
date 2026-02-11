@@ -74,4 +74,19 @@ public class CartController implements CartApi {
 		var cartDTO = cartService.applyCoupon(cartId, couponCode);
 		return ResponseEntity.ok(ApiResponse.success(cartDTO, "Coupon applied successfully"));
 	}
+
+	@Override
+	@PutMapping("/public/carts/{cartId}/address/{addressId}")
+	public ResponseEntity<ApiResponse<CartDTO>> updateCartAddress(@PathVariable Long cartId,
+			@PathVariable Long addressId) {
+		var cartDTO = cartService.updateCartAddress(cartId, addressId);
+		return ResponseEntity.ok(ApiResponse.success(cartDTO, "Cart address updated and totals recalculated"));
+	}
+
+	@Override
+	@PostMapping("/public/carts/{guestCartId}/merge/user/{userId}")
+	public ResponseEntity<ApiResponse<CartDTO>> mergeCarts(@PathVariable Long guestCartId, @PathVariable Long userId) {
+		var cartDTO = cartService.mergeCarts(guestCartId, userId);
+		return ResponseEntity.ok(ApiResponse.success(cartDTO, "Guest cart merged successfully"));
+	}
 }

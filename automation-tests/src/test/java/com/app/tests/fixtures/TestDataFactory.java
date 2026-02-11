@@ -1,13 +1,11 @@
 package com.app.tests.fixtures;
 
-import com.app.order.entities.Order;
 import com.app.finance.entities.Payment;
+import com.app.governance.states.OrderStatus;
+import com.app.order.entities.Order;
 import com.app.security.entities.User;
 import com.app.security.entities.UserProfile;
-import com.app.order.payloads.OrderDTO;
-import com.app.governance.states.OrderStatus;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 /**

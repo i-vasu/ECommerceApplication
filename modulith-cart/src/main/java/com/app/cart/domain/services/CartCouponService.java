@@ -13,10 +13,10 @@ public class CartCouponService {
 
     private final CouponService couponService;
 
-    public Double applyCouponToCart(String couponCode, Double cartTotal) {
+    public java.math.BigDecimal applyCouponToCart(String couponCode, java.math.BigDecimal cartTotal) {
         try {
             couponService.validateCoupon(couponCode, cartTotal);
-            Double discount = couponService.calculateDiscount(couponCode, cartTotal);
+            java.math.BigDecimal discount = couponService.calculateDiscount(couponCode, cartTotal);
 
             log.info("Applied coupon {} to cart. Discount: {}", couponCode, discount);
             return discount;
@@ -26,12 +26,13 @@ public class CartCouponService {
         }
     }
 
-    public Double getFinalCartPrice(String couponCode, Double cartTotal) {
+    public java.math.BigDecimal getFinalCartPrice(String couponCode, java.math.BigDecimal cartTotal) {
         if (couponCode == null || couponCode.isEmpty()) {
             return cartTotal;
         }
 
-        Double discount = applyCouponToCart(couponCode, cartTotal);
-        return Math.max(0, cartTotal - discount);
+        java.math.BigDecimal discount = applyCouponToCart(couponCode, cartTotal);
+        java.math.BigDecimal finalPrice = cartTotal.subtract(discount);
+        return finalPrice.compareTo(java.math.BigDecimal.ZERO) < 0 ? java.math.BigDecimal.ZERO : finalPrice;
     }
 }

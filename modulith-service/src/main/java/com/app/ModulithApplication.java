@@ -19,8 +19,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Modulithic
 @EnableAsync
 @EnableAdminServer
-@EnableJpaRepositories(basePackages = {"com.app", "org.springframework.statemachine.data.jpa"}, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.REGEX, pattern = "(com\\.app\\.logistics\\.repositories\\..*|com\\.app\\.support\\.repositories\\.jdbc\\..*|com\\.app\\.discovery\\.domain\\.repositories\\.jdbc\\..*|com\\.app\\.logistics\\.inventory\\.repositories\\..*|com\\.app\\.logistics\\.shipping\\.repositories\\..*)"))
-@org.springframework.data.jdbc.repository.config.EnableJdbcRepositories(basePackages = {"com.app.logistics.repositories", "com.app.support.repositories.jdbc", "com.app.discovery.domain.repositories.jdbc", "com.app.logistics.inventory.repositories", "com.app.logistics.shipping.repositories"})
+@EnableJpaRepositories(basePackages = {"com.app", "org.springframework.statemachine.data.jpa"}, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.REGEX, pattern = "(com\\.app\\.support\\.repositories\\.jdbc\\..*|com\\.app\\.discovery\\.domain\\.repositories\\.jdbc\\..*)"))
+@org.springframework.data.jdbc.repository.config.EnableJdbcRepositories(basePackages = {"com.app.support.repositories.jdbc", "com.app.discovery.domain.repositories.jdbc"})
 @EntityScan(basePackageClasses = {ModulithApplication.class, org.springframework.statemachine.data.jpa.JpaRepositoryStateMachine.class})
 public class ModulithApplication {
 

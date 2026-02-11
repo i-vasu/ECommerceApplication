@@ -4,6 +4,7 @@ import com.app.core.constants.AppConstants;
 import com.app.core.payloads.ApiResponse;
 import com.app.core.version.ApiVersion;
 import com.app.order.payloads.OrderDTO;
+import com.app.order.payloads.OrderRequest;
 import com.app.order.payloads.OrderResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +26,8 @@ public class OrderController implements OrderApi {
 	@PostMapping("/public/users/{emailId}/carts/{cartId}/payments/{paymentMethod}/order")
 	@Override
 	public ResponseEntity<ApiResponse<OrderDTO>> orderProducts(@PathVariable String emailId, @PathVariable Long cartId,
-			@PathVariable String paymentMethod) {
-		OrderDTO order = orderService.placeOrder(emailId, cartId, paymentMethod);
+			@PathVariable String paymentMethod, @RequestBody(required = false) OrderRequest request) {
+		OrderDTO order = orderService.placeOrder(emailId, cartId, paymentMethod, request);
 
 		return new ResponseEntity<>(ApiResponse.success(order, "Order placed successfully"), HttpStatus.CREATED);
 	}
@@ -69,6 +70,14 @@ public class OrderController implements OrderApi {
 		OrderDTO order = orderService.updateOrder(emailId, orderId, orderStatus);
 
 		return ResponseEntity.ok(ApiResponse.success(order, "Order status updated successfully"));
+	}
+
+	@PutMapping("public/users/{emailId}/orders/{orderId}/cancel")
+	public ResponseEntity<ApiResponse<OrderDTO>> cancelOrder(@PathVariable String emailId,
+			@PathVariable Long orderId) {
+		OrderDTO order = orderService.updateOrder(emailId, orderId, "CANCELLED");
+
+		return ResponseEntity.ok(ApiResponse.success(order, "Order cancelled successfully"));
 	}
 
 }

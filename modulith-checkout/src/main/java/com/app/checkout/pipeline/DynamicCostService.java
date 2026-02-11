@@ -1,6 +1,6 @@
 package com.app.checkout.pipeline;
 
-import com.app.cart.entities.Cart;
+import com.app.core.contracts.CartContract;
 import com.app.governance.rules.RuleEngineService;
 import com.app.security.entities.Address;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +22,11 @@ public class DynamicCostService {
 
     private final RuleEngineService ruleEngine;
 
-    public BigDecimal calculateShipping(Cart cart, Address address) {
+    public BigDecimal calculateShipping(CartContract cart, Address address) {
         Map<String, Object> context = new HashMap<>();
         context.put("cart", cart);
         context.put("address", address);
-        context.put("total", cart.getTotalPrice());
+        context.put("total", cart.subTotal());
         
         // Dynamic Rule: Free shipping for orders > 500, otherwise flat 50
         String shippingRule = "total > 500 ? 0 : 50";
@@ -35,9 +35,9 @@ public class DynamicCostService {
         return BigDecimal.valueOf(cost != null ? cost : 50.0);
     }
 
-    public BigDecimal calculateTax(Cart cart, Address address) {
+    public BigDecimal calculateTax(CartContract cart, Address address) {
         Map<String, Object> context = new HashMap<>();
-        context.put("total", cart.getTotalPrice());
+        context.put("total", cart.subTotal());
         context.put("state", address.getState());
 
         // Dynamic Rule: 18% GST for most states, maybe lower for others

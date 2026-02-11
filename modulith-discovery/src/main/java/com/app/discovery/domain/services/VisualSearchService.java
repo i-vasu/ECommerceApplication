@@ -129,15 +129,12 @@ public class VisualSearchService {
                     (String) row.get("image"),
                     (String) row.get("description"),
                     0,
-                    row.get("price") != null ? ((Number) row.get("price")).doubleValue() : 0.0,
-                    0.0,
-                    row.get("price") != null ? ((Number) row.get("price")).doubleValue() : 0.0,
+                    row.get("price") != null ? new java.math.BigDecimal(row.get("price").toString()) : java.math.BigDecimal.ZERO,
+                    java.math.BigDecimal.ZERO,
+                    row.get("price") != null ? new java.math.BigDecimal(row.get("price").toString()) : java.math.BigDecimal.ZERO,
                     new ArrayList<>(),
                     new ArrayList<>(),
                     new ArrayList<>(),
-                    null,
-                    new java.util.HashMap<>(),
-                    null,
                     null)).toList();
         } catch (Exception e) {
             log.error("Failed to find similar products: {}", e.getMessage());

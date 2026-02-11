@@ -85,7 +85,7 @@ public class OrderReturnListener {
                 double proRataPrice = item.getOrderedPrice().subtract(discountPerItem).doubleValue();
                 double itemRefund = proRataPrice * qty;
 
-                validatedItems.add(new ValidatedReturnItem(itemId, qty, proRataPrice));
+                validatedItems.add(new ValidatedReturnItem(itemId, item.getItemCode(), qty, proRataPrice));
                 totalRefund += itemRefund;
 
                 // Mark item as return requested

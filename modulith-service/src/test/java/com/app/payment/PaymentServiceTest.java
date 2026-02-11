@@ -1,7 +1,7 @@
 package com.app.payment;
 
+import com.app.core.payloads.PaymentDTO;
 import com.app.finance.entities.Payment;
-import com.app.finance.payloads.PaymentDTO;
 import com.app.finance.payment.PaymentServiceImpl;
 import com.app.finance.payment.mappers.PaymentMapper;
 import com.app.finance.repositories.PaymentRepo;
@@ -73,7 +73,7 @@ class PaymentServiceTest {
         order.setTotalAmount(java.math.BigDecimal.valueOf(500.0));
 
         lenient().when(orderRepo.findById(orderId)).thenReturn(Optional.of(order));
-        lenient().when(orderProvider.getOrderSummary(orderId)).thenReturn(Optional.of(new com.app.core.contracts.OrderAmountProvider.OrderSummary(orderId, "test@test.com", java.math.BigDecimal.valueOf(500.0), "PENDING")));
+        lenient().when(orderProvider.getOrderSummary(orderId)).thenReturn(Optional.of(new com.app.core.contracts.OrderAmountProvider.OrderSummary(orderId, "test@test.com", java.math.BigDecimal.valueOf(500.0), "PENDING", java.math.BigDecimal.ZERO, java.util.Collections.emptyMap(), java.util.Collections.emptyList())));
         lenient().when(walletService.getBalance(anyString())).thenReturn(1000.0);
         lenient().when(credentialProvider.getKeyId()).thenReturn("test_key");
         lenient().when(credentialProvider.getKeySecret()).thenReturn("test_secret");
@@ -138,7 +138,7 @@ class PaymentServiceTest {
         
         lenient().when(paymentRepo.findByOrderId(orderId)).thenReturn(java.util.List.of(payment));
         lenient().when(paymentRepo.findByPgOrderId("order_rzp_123")).thenReturn(payment);
-        lenient().when(orderProvider.getOrderSummary(orderId)).thenReturn(Optional.of(new com.app.core.contracts.OrderAmountProvider.OrderSummary(orderId, "test@test.com", java.math.BigDecimal.valueOf(500.0), "PENDING")));
+        lenient().when(orderProvider.getOrderSummary(orderId)).thenReturn(Optional.of(new com.app.core.contracts.OrderAmountProvider.OrderSummary(orderId, "test@test.com", java.math.BigDecimal.valueOf(500.0), "PENDING", java.math.BigDecimal.ZERO, java.util.Collections.emptyMap(), java.util.Collections.emptyList())));
         lenient().when(credentialProvider.getKeySecret()).thenReturn("test_secret");
         lenient().when(lockService.tryLock(anyString(), any())).thenReturn(true);
 

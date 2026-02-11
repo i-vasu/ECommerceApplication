@@ -33,7 +33,12 @@ public class SupportService {
         ticket.setStatus("OPEN");
         ticket.setCreatedAt(LocalDateTime.now());
 
-        // Autonomous Categorization
+        // Autonomous Categorization & Escalation
+        ticket.setPriority(analyzePriority(ticketDTO.getMessage()));
+        if ("URGENT".equals(ticket.getPriority())) {
+            ticket.setAssignedQueue("concierge");
+        }
+
         if (ticket.getRelatedOrderId() != null) {
             autoCategorize(ticket);
         }
@@ -131,6 +136,7 @@ public class SupportService {
             String type = audit.getType();
             if ("SLA_VIOLATION".equals(type)) {
                 ticket.setCategory("LOGISTICS");
+                ticket.setPriority("HIGH");
                 return;
             }
             if (audit.getDetail().contains("Shipment")) {
@@ -142,6 +148,18 @@ public class SupportService {
                 return;
             }
         }
+    }
+
+    private String analyzePriority(String message) {
+        if (message == null) return "LOW";
+        String lower = message.toLowerCase();
+        if (lower.contains("urgent") || lower.contains("legal") || lower.contains("lawsuit") || lower.contains("fraud")) {
+            return "URGENT";
+        }
+        if (lower.contains("broken") || lower.contains("not working") || lower.contains("didn't receive")) {
+            return "HIGH";
+        }
+        return "MEDIUM";
     }
 
     @Transactional(readOnly = true)

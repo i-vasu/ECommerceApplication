@@ -40,6 +40,12 @@ class ProductServiceTest {
     @Mock
     private StringRedisTemplate redisTemplate;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private com.app.core.async.EventProducer eventProducer;
+
     @InjectMocks
     private ProductServiceImpl productService;
 
@@ -62,7 +68,9 @@ class ProductServiceTest {
         savedProduct.setProductName("Test Product");
 
         ProductDTO expectedDTO;
-        expectedDTO = new ProductDTO(1L, "Test Product", "CODE123", "image.png", "Desc", 10, 100.0, 10.0, 90.0, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
+        expectedDTO = new ProductDTO(1L, "Test Product", "CODE123", "image.png", "Desc", 10,
+                BigDecimal.valueOf(100.0), BigDecimal.valueOf(10.0), BigDecimal.valueOf(90.0), new ArrayList<>(),
+                new ArrayList<>(), new ArrayList<>(), null);
 
         when(categoryRepo.findById(categoryId)).thenReturn(Optional.of(category));
         when(productRepo.save(any(Product.class))).thenReturn(savedProduct);
@@ -91,6 +99,7 @@ class ProductServiceTest {
         // Arrange
         Product product = new Product();
         product.setProductId(1L);
+        product.setItemCode("ITEM001");
 
         when(productRepo.findById(1L)).thenReturn(Optional.of(product));
 
@@ -99,7 +108,6 @@ class ProductServiceTest {
 
         // Assert
         verify(productRepo).delete(product);
-        // Verify Redis publish
-        verify(redisTemplate).convertAndSend(eq("product-sync-topic"), any(String.class));
+        verify(eventProducer).publish(eq("product_events"), any());
     }
 }

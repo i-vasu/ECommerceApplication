@@ -1,9 +1,9 @@
 # High-Level Architecture: Multi-Marketplace Integration
 
-This document outlines the system architecture for integrating various e-commerce marketplaces with our core fulfillment system (ERPNext).
+This document outlines the system architecture for integrating various e-commerce marketplaces with our core fulfillment system (Custom ERP).
 
 ## 1. System Overview
-The architecture is designed to be **highly modular**, **scalable**, and **resource-efficient** (fitting within a 4.5GB RAM budget).
+The architecture is designed to be **highly modular**, **scalable**, and **resource-efficient**.
 
 ```mermaid
 graph TD
@@ -11,7 +11,7 @@ graph TD
     B --> C{Marketplace Integration Service}
     C -->|Normalize| D(OrderDTO)
     D --> E[Core Business Service]
-    E -->|Sales Order| F[ERPNext]
+    E -->|Sales Order| F[Custom Java ERP]
     F -->|Inventory Sync| E
     E -->|Stock Update| C
     C -->|Update Status| A
@@ -36,9 +36,9 @@ graph TD
 - **Role**: The "Orchestrator" of business logic.
 - **Key Modules**:
     - **Order Processor**: Validates normalized orders against business rules.
-    - **Inventory Manager**: Syncs stock levels between ERPNext and the Integration Service.
+    - **Inventory Manager**: Manages stock levels internally (PostgreSQL + Redis).
     - **Store Manager**: Handles multi-store credentials and configurations.
-- **Responsibility**: Interfacing with **ERPNext** for fulfillment and acting as the source of truth for business states.
+- **Responsibility**: Managing fulfillment and acting as the source of truth for business states.
 
 ## 3. Deployment Topology
 - **Consolidated Services**: To save memory, multiple adapters are hosted within the single MIS service.

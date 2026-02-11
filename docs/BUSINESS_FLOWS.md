@@ -48,15 +48,15 @@ This document provides a comprehensive map of the end-to-end business flows with
 
 ---
 
-## 4. Multi-Tenant ERPNext Synchronization
-*Managed by: `modulith-service`*
+## 4. Multi-Tenant Product Management (Internal)
+*Managed by: `modulith-catalog`*
 
-*   **Scheduled Background Sync**:
-    *   **Process**: `SyncScheduler` (distributed) → Acquires `RedisLock` per Tenant → Delta Fetch from ERPNext REST API → Local Database/Search Index Update.
-    *   **Key APIs**: `POST /api/admin/products/sync` (Manual Force Sync).
+*   **Centralized Catalog Management**:
+    *   **Process**: Admin Product Creation → Database Insert (PostgreSQL) → Async Search Index Update (ParadeDB) → Cache Invalidation.
+    *   **Key APIs**: `POST /api/admin/products`.
 *   **Tenant Provisioning**:
-    *   **Process**: Fashion Brand Onboarding → `ERPNextSetupService` execution → Custom DocType creation (Size Charts, Style Guides) on target ERPNext site.
-    *   **Key APIs**: `POST /api/admin/setup/erpnext`.
+    *   **Process**: Fashion Brand Onboarding → Tenant Configuration (Database) → Asset Isolation.
+    *   **Key APIs**: `POST /api/admin/tenants`.
 
 ---
 
@@ -67,7 +67,7 @@ This document provides a comprehensive map of the end-to-end business flows with
     *   **Process**: Internal Order Creation (State: PENDING) → Tokenized Razorpay Order Issuance → Webhook/Signature Verification → `OrderPaidEvent` Publication.
     *   **Key APIs**: `POST /api/v1/create/{orderId}`, `POST /api/v1/verify`.
 *   **Supply Chain Ingestion**:
-    *   **Process**: `OrderPaidEvent` received → Inventory module confirms stock deduction → ERPNext Invoicing → Marketplace updates (Amazon/Flipkart) via internal ingestion service.
+    *   **Process**: `OrderPaidEvent` received → Inventory module confirms stock deduction → GST Invoicing (Internal) → Marketplace updates (Amazon/Flipkart) via internal ingestion service.
     *   **Key APIs**: `POST /api/v1/admin/ingestOrder`.
 
 ---
@@ -76,7 +76,7 @@ This document provides a comprehensive map of the end-to-end business flows with
 *Managed by: `modulith-catalog` and `modulith-service`*
 
 *   **Logistics & Shipment Tracking**:
-    *   **Process**: Shipment creation in ERP → Logistics Provider Webhook Reception → Internal Shipment State Machine Update → Customer Notification dispatch.
+    *   **Process**: Shipment creation in Internal Logistics Module → Logistics Provider Webhook Reception → Internal Shipment State Machine Update → Customer Notification dispatch.
     *   **Key APIs**: `GET /api/v1/shipments/track/{trackingNumber}`.
 *   **Verified Review Ecosystem**:
     *   **Process**: User review submission → Cross-reference with Redis `user:purchases` set (populated by `OrderCompletedEvent`) → "Verified Purchase" badge assignment.

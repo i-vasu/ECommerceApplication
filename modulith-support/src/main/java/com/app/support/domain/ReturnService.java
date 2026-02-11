@@ -20,9 +20,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@Log4j2
 @RequiredArgsConstructor
 public class ReturnService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ReturnService.class);
 
     private final ReturnRequestRepo returnRequestRepo;
     private final ApplicationEventPublisher eventPublisher;
@@ -68,6 +68,7 @@ public class ReturnService {
                     ReturnItem item = new ReturnItem();
                     item.setReturnRequest(request);
                     item.setOrderItemId(vItem.orderItemId());
+                    item.setItemCode(vItem.itemCode());
                     item.setQuantity(vItem.quantity());
                     item.setUnitRefundAmount(vItem.unitRefundAmount());
                     return item;
@@ -110,7 +111,7 @@ public class ReturnService {
                 request.getRefundAmount(),
                 request.getRefundType().name(),
                 request.getItems().stream()
-                        .map(i -> new ReturnApprovedEvent.ApprovedReturnItem(i.getOrderItemId(), i.getQuantity()))
+                        .map(i -> new ReturnApprovedEvent.ApprovedReturnItem(i.getOrderItemId(), i.getItemCode(), i.getQuantity()))
                         .toList()));
     }
 

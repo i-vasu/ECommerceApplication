@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -40,17 +39,18 @@ class CouponServiceTest {
         testCoupon.setCouponId(1L);
         testCoupon.setCode("SAVE20");
         testCoupon.setDiscountType(Coupon.DiscountType.PERCENTAGE);
-        testCoupon.setDiscountValue(20.0);
-        testCoupon.setMinOrderAmount(100.0);
-        testCoupon.setMaxDiscountAmount(50.0);
+        testCoupon.setDiscountValue(java.math.BigDecimal.valueOf(20.0));
+        testCoupon.setMinOrderAmount(java.math.BigDecimal.valueOf(100.0));
+        testCoupon.setMaxDiscountAmount(java.math.BigDecimal.valueOf(50.0));
         testCoupon.setValidFrom(LocalDateTime.now().minusDays(1));
         testCoupon.setValidTo(LocalDateTime.now().plusDays(30));
         testCoupon.setUsageLimit(100);
         testCoupon.setUsedCount(10);
         testCoupon.setActive(true);
 
-        testCouponDTO = new CouponDTO(1L, "SAVE20", null, Coupon.DiscountType.PERCENTAGE, 20.0, 100.0, 50.0, null, null,
-                100, 10, null, true);
+        testCouponDTO = new CouponDTO(1L, "SAVE20", null, Coupon.DiscountType.PERCENTAGE, 
+                java.math.BigDecimal.valueOf(20.0), java.math.BigDecimal.valueOf(100.0), java.math.BigDecimal.valueOf(50.0), 
+                null, null, 100, 10, null, null, true);
     }
 
     @Test
@@ -59,9 +59,9 @@ class CouponServiceTest {
                 .thenReturn(Optional.of(testCoupon));
         when(couponMapper.toDTO(testCoupon)).thenReturn(testCouponDTO);
 
-        Double discount = couponService.calculateDiscount("SAVE20", 200.0);
+        java.math.BigDecimal discount = couponService.calculateDiscount("SAVE20", java.math.BigDecimal.valueOf(200.0));
 
-        assertEquals(40.0, discount); // 20% of 200
+        org.assertj.core.api.Assertions.assertThat(discount).isEqualByComparingTo(java.math.BigDecimal.valueOf(40.0)); // 20% of 200
         verify(couponRepo).findActiveByCode(eq("SAVE20"), any(LocalDateTime.class));
     }
 
@@ -71,25 +71,26 @@ class CouponServiceTest {
                 .thenReturn(Optional.of(testCoupon));
         when(couponMapper.toDTO(testCoupon)).thenReturn(testCouponDTO);
 
-        Double discount = couponService.calculateDiscount("SAVE20", 500.0);
+        java.math.BigDecimal discount = couponService.calculateDiscount("SAVE20", java.math.BigDecimal.valueOf(500.0));
 
-        assertEquals(50.0, discount); // Capped at maxDiscountAmount
+        org.assertj.core.api.Assertions.assertThat(discount).isEqualByComparingTo(java.math.BigDecimal.valueOf(50.0)); // Capped at maxDiscountAmount
     }
 
     @Test
     void testCalculateDiscount_FixedAmount() {
         testCoupon.setDiscountType(Coupon.DiscountType.FIXED_AMOUNT);
-        testCoupon.setDiscountValue(30.0);
+        testCoupon.setDiscountValue(java.math.BigDecimal.valueOf(30.0));
 
-        CouponDTO fixedCouponDTO = new CouponDTO(1L, "SAVE20", null, Coupon.DiscountType.FIXED_AMOUNT, 30.0, 100.0,
-                50.0, null, null, 100, 10, null, true);
+        CouponDTO fixedCouponDTO = new CouponDTO(1L, "SAVE20", null, Coupon.DiscountType.FIXED_AMOUNT, 
+                java.math.BigDecimal.valueOf(30.0), java.math.BigDecimal.valueOf(100.0), java.math.BigDecimal.valueOf(50.0), 
+                null, null, 100, 10, null, null, true);
 
         when(couponRepo.findActiveByCode(eq("SAVE20"), any(LocalDateTime.class)))
                 .thenReturn(Optional.of(testCoupon));
         when(couponMapper.toDTO(testCoupon)).thenReturn(fixedCouponDTO);
 
-        Double discount = couponService.calculateDiscount("SAVE20", 200.0);
+        java.math.BigDecimal discount = couponService.calculateDiscount("SAVE20", java.math.BigDecimal.valueOf(200.0));
 
-        assertEquals(30.0, discount);
+        org.assertj.core.api.Assertions.assertThat(discount).isEqualByComparingTo(java.math.BigDecimal.valueOf(30.0));
     }
 }

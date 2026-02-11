@@ -14,16 +14,25 @@ public class FinanceEventListener {
 
     private final PaymentService paymentService;
 
-    public FinanceEventListener(PaymentService paymentService) {
+    private final com.app.core.events.EventIdempotencyService idempotencyService;
+
+    public FinanceEventListener(PaymentService paymentService, com.app.core.events.EventIdempotencyService idempotencyService) {
         this.paymentService = paymentService;
+        this.idempotencyService = idempotencyService;
     }
 
     @ApplicationModuleListener
     public void onOrderCancelled(OrderCancelledEvent event) {
+        String eventId = "ORDER-CANCEL-FINANCE-" + event.orderId();
+        if (idempotencyService.isEventProcessed(eventId, "FINANCE_MODULE", "OrderCancelledEvent")) {
+            return;
+        }
+
         log.info("Finance: Received OrderCancelledEvent for Order ID: {}. Initiating refund audit.", event.orderId());
         try {
             paymentService.processRefundForOrder(event.orderId(), event.reason());
             log.info("Finance: Refund process initiated for Order ID: {}", event.orderId());
+            idempotencyService.markEventAsProcessed(eventId, "FINANCE_MODULE", "OrderCancelledEvent");
 
         } catch (Exception e) {
             log.error("Finance: Failed to initiate refund for Order ID: {}. Error: {}", event.orderId(),

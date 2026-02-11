@@ -24,8 +24,8 @@ public interface DiscoveryJdbcRepo extends Repository<Object, Long> {
             "  AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
             "ORDER BY (bm25_score * 0.7 + semantic_score * 0.3) DESC LIMIT 50")
     List<Map<String, Object>> searchHybrid(@Param("query") String query,
-            @Param("minPrice") Double minPrice,
-            @Param("maxPrice") Double maxPrice);
+            @Param("minPrice") java.math.BigDecimal minPrice,
+            @Param("maxPrice") java.math.BigDecimal maxPrice);
 
     @Modifying
     @Query("UPDATE products SET feature_vector = :vector::vector WHERE product_id = :productId")

@@ -1,6 +1,6 @@
 package com.app.checkout.pipeline;
 
-import com.app.cart.entities.Cart;
+import com.app.core.contracts.CartContract;
 import com.app.logistics.shipping.TaxCalculationService;
 import com.app.logistics.shipping.TaxCalculationService.TaxCalculation;
 import com.app.security.entities.Address;
@@ -19,8 +19,8 @@ public class TaxActivity implements CheckoutActivity<TaxCalculation> {
     }
 
     @Override
-    public TaxCalculation execute(Cart cart, Address address) {
+    public TaxCalculation execute(CartContract cart, Address address) {
         String state = (address != null) ? address.getState() : "Default";
-        return taxCalculationService.calculateGST(cart.getTotalPrice().doubleValue(), state);
+        return taxCalculationService.calculateGST(cart.subTotal(), state);
     }
 }

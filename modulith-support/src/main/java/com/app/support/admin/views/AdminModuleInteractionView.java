@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * Module Interaction Topology (Spring Modulith Visualizer).
  * Analyzes the internal architecture and displays the "Monolith Topology".
  */
-@Route("admin/module-topology")
+@Route(value = "admin/module-map", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminModuleInteractionView extends VerticalLayout {
 

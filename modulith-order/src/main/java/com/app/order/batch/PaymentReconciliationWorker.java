@@ -2,7 +2,6 @@ package com.app.order.batch;
 
 import com.app.finance.payment.PaymentService;
 import com.app.governance.states.OrderStatus;
-import com.app.logistics.inventory.InventoryReservationService;
 import com.app.order.entities.Order;
 import com.app.order.repositories.OrderRepo;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,8 @@ public class PaymentReconciliationWorker {
 
     private final OrderRepo orderRepo;
     private final PaymentService paymentService;
-    private final InventoryReservationService inventoryService;
+    private final com.app.governance.states.OperationalStateMachineService operationalStateMachine;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /**
      * Runs every 30 minutes to clean up stale pending orders.
@@ -52,14 +52,31 @@ public class PaymentReconciliationWorker {
     }
 
     private void expireOrder(Order order) {
-        log.warn("Expiring stale order {}. Releasing stock.", order.getOrderId());
-        order.setOrderStatus(OrderStatus.CANCELLED);
+        log.warn("Expiring stale order {}. Triggering state machine.", order.getOrderId());
+        
+        // GAP-03: Use State Machine for consistent lifecycle management
+        try {
+            operationalStateMachine.triggerOrderEvent(order.getOrderId(), com.app.governance.states.OrderEvent.CANCEL);
+            order.setOrderStatus(OrderStatus.CANCELLED);
+            orderRepo.save(order);
+            
+            // Note: Inventory release and other cleanups are handled by event listeners responding to OrderCancelledEvent
+            // which should be published by OrderServiceImpl or here if we publish manually.
+            // Let's publish manually to be safe if the state machine trigger doesn't do it.
+            var items = order.getOrderItems().stream()
+                    .map(item -> new com.app.core.events.OrderCancelledEvent.CancelledItem(item.getItemCode(), item.getQuantity()))
+                    .toList();
+            
+            eventPublisher.publishEvent(new com.app.core.events.OrderCancelledEvent(
+                    order.getOrderId(),
+                    order.getUserId(),
+                    order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0,
+                    "Expired due to non-payment (Stale Order)",
+                    items
+            ));
 
-        // Release stock
-        for (var item : order.getOrderItems()) {
-            inventoryService.releaseStock(item.getItemCode(), item.getQuantity());
+        } catch (Exception e) {
+            log.error("Failed to expire order {}: {}", order.getOrderId(), e.getMessage());
         }
-
-        orderRepo.save(order);
     }
 }

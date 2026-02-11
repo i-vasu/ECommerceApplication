@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Route(value = "admin/global-analytics")
+@Route(value = "admin/global-analytics", layout = AdminMainLayout.class)
 @PageTitle("Global Intelligence & Analytics | Vaabhi Admin")
 @RolesAllowed("ADMIN")
-@Log4j2
 public class GlobalAnalyticsView extends VerticalLayout {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalAnalyticsView.class);
 
     private final OperationalAuditRepo auditRepo;
     private final RuleEngineService ruleEngine;

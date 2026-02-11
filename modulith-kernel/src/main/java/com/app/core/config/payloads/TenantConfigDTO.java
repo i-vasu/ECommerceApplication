@@ -10,6 +10,8 @@ public record TenantConfigDTO(
         String logoUrl,
         String accentColor,
         String supportEmail,
+        String heroVideoUrl,
+        String heroPosterUrl,
         Map<String, String> socialLinks,
         Map<String, String> staticPages,
         Map<String, Object> footerMenu) {

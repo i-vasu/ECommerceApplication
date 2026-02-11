@@ -1,7 +1,7 @@
 package com.app.finance.payment.mappers;
 
+import com.app.core.payloads.PaymentDTO;
 import com.app.finance.entities.Payment;
-import com.app.finance.payloads.PaymentDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

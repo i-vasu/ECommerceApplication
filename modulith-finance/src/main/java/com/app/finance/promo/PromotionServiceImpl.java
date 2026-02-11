@@ -17,13 +17,13 @@ public class PromotionServiceImpl implements PromotionService {
     public BigDecimal applyCoupon(String code, BigDecimal subTotal, String email) {
         try {
             // Validate first
-            couponService.validateCoupon(code, subTotal.doubleValue());
+            couponService.validateCoupon(code, subTotal);
 
             // Calculate discount
-            Double discount = couponService.calculateDiscount(code, subTotal.doubleValue());
+            java.math.BigDecimal discount = couponService.calculateDiscount(code, subTotal);
 
             // Return as negative BigDecimal
-            return BigDecimal.valueOf(discount).negate();
+            return discount.negate();
         } catch (Exception e) {
             // Silently return ZERO for pricing module if invalid
             return BigDecimal.ZERO;

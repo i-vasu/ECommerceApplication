@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-@Route("admin/analytics-native")
+@Route(value = "admin/analytics-native", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminDashboardView extends VerticalLayout {
 
@@ -263,6 +263,9 @@ public class AdminDashboardView extends VerticalLayout {
 
                 Map<String, Object> userCount = analyticsRepo.getUserCount();
                 container.add(createCard("Total Customers", userCount.get("user_count").toString(), "purple"));
+
+                Map<String, Object> productCount = analyticsRepo.getProductCount();
+                container.add(createCard("Total Products", productCount.get("product_count").toString(), "orange"));
 
                 add(container);
         }

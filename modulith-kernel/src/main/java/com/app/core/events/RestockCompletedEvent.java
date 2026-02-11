@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 /**
  * Published when restock order is completed in ERP system.
  * 
- * Publishers: modulith-erp-sync (ERPNextService)
+ * Publishers: Internal ERP service
  * Listeners: modulith-logistics (updates inventory levels)
  * 
  * @param productId        Product that was restocked

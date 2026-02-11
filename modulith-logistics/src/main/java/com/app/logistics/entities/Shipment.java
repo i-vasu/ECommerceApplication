@@ -1,12 +1,13 @@
 package com.app.logistics.entities;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
-@Table("shipments")
+@Entity
+@Table(name = "shipments")
 public class Shipment {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long shipmentId;
 
     private Long orderId;
@@ -20,6 +21,8 @@ public class Shipment {
     private String externalOrderId; // Shiprocket order ID
     private String externalShipmentId; // Shiprocket shipment ID
     private String courierName; // Assigned courier name (e.g., "Delhivery", "Blue Dart")
+    
+    private String manifestUrl; // Generated Manifest PDF URL
 
     public Shipment() {
     }
@@ -107,5 +110,13 @@ public class Shipment {
 
     public void setCourierName(String courierName) {
         this.courierName = courierName;
+    }
+
+    public String getManifestUrl() {
+        return manifestUrl;
+    }
+
+    public void setManifestUrl(String manifestUrl) {
+        this.manifestUrl = manifestUrl;
     }
 }

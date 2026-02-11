@@ -14,6 +14,9 @@ public interface ProductMapper {
 
     @Mapping(target = "averageRating", source = "reviews", qualifiedByName = "calculateAverageRating")
     @Mapping(target = "sizeGuide", source = "category.sizeChart.data")
+    @Mapping(target = "materialStory", expression = "java((String) product.getExtensionAttributes().get(\"materialStory\"))")
+    @Mapping(target = "stylistNotes", expression = "java((String) product.getExtensionAttributes().get(\"stylistNotes\"))")
+    @Mapping(target = "modelMeasurements", expression = "java((String) product.getExtensionAttributes().get(\"modelMeasurements\"))")
     ProductDTO productToProductDTO(Product product);
 
     Product productDTOToProduct(ProductDTO productDTO);

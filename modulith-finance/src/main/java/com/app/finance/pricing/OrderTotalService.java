@@ -36,6 +36,9 @@ public class OrderTotalService {
                         }
                     } catch (Exception e) {
                         log.error("Error in pricing module {}: {}", module.getName(), e.getMessage());
+                        if (module.isCritical()) {
+                            throw new RuntimeException("Critical pricing module " + module.getName() + " failed: " + e.getMessage(), e);
+                        }
                     }
                 });
 

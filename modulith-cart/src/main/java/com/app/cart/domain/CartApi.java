@@ -29,4 +29,10 @@ public interface CartApi {
 
         @Operation(summary = "Delete Product from Cart", description = "Removes a product from the cart")
         ResponseEntity<ApiResponse<String>> deleteProductFromCart(Long cartId, Long productId);
+
+        @Operation(summary = "Update Cart Address", description = "Sets the address for the cart and recalculates totals")
+        ResponseEntity<ApiResponse<CartDTO>> updateCartAddress(Long cartId, Long addressId);
+
+        @Operation(summary = "Merge Guest Cart", description = "Merges a guest cart into a user's cart")
+        ResponseEntity<ApiResponse<CartDTO>> mergeCarts(Long guestCartId, Long userId);
 }

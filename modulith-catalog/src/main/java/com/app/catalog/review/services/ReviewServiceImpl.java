@@ -7,7 +7,9 @@ import com.app.catalog.review.payloads.ProductReviewDTO;
 import com.app.catalog.review.repositories.ProductReviewRepo;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
+import com.app.core.multitenancy.TenantContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ProductRepo productRepo;
     private final ReviewMapper reviewMapper;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     @Transactional
@@ -36,7 +39,10 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         // 2. Verified Purchase check
-        boolean isVerified = false; 
+        String tenantId = TenantContext.getTenantId();
+        String key = String.format("user:%s:purchases:%s", tenantId, reviewDTO.email());
+        Boolean isVerified = redisTemplate.opsForSet().isMember(key, String.valueOf(productId));
+        if (isVerified == null) isVerified = false;
 
         var review = reviewMapper.toEntity(reviewDTO);
         review.setProduct(product);

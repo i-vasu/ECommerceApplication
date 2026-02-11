@@ -34,6 +34,8 @@ public class TenantConfigController {
                 .logoUrl("/logo.png")
                 .accentColor("#2563eb")
                 .supportEmail("support@vaabhi.com")
+                .heroVideoUrl("https://videos.pexels.com/video-files/5753063/5753063-uhd_2560_1440_25fps.mp4")
+                .heroPosterUrl("https://images.pexels.com/photos/7190333/pexels-photo-7190333.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2")
                 .socialLinks(Map.of(
                         "instagram", "https://instagram.com/vaabhi",
                         "facebook", "https://facebook.com/vaabhi"))

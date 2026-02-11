@@ -36,16 +36,16 @@ public class CouponController {
     @GetMapping("/validate/{code}")
     public ResponseEntity<Map<String, Object>> validateCoupon(
             @PathVariable String code,
-            @RequestParam Double orderAmount) {
+            @RequestParam java.math.BigDecimal orderAmount) {
 
         CouponDTO coupon = couponService.validateCoupon(code, orderAmount);
-        Double discount = couponService.calculateDiscount(code, orderAmount);
+        java.math.BigDecimal discount = couponService.calculateDiscount(code, orderAmount);
 
         return ResponseEntity.ok(Map.of(
                 "valid", true,
                 "coupon", coupon,
                 "discountAmount", discount,
-                "finalAmount", orderAmount - discount));
+                "finalAmount", orderAmount.subtract(discount)));
     }
 
     @GetMapping("/{code}")

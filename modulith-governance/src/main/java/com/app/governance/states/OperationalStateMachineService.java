@@ -35,6 +35,7 @@ public class OperationalStateMachineService {
     private final org.springframework.statemachine.persist.StateMachinePersister<Object, Object, String> persister;
     private final com.app.core.events.OutboxRepo outboxRepo;
     private final tools.jackson.databind.ObjectMapper objectMapper;
+    private final org.springframework.statemachine.data.jpa.JpaStateMachineRepository jpaStateMachineRepository;
 
     public OperationalStateMachineService(
             org.springframework.context.ApplicationEventPublisher eventPublisher,
@@ -55,7 +56,8 @@ public class OperationalStateMachineService {
             com.app.governance.audit.OperationalAuditRepo auditRepo,
             org.springframework.statemachine.persist.StateMachinePersister<Object, Object, String> persister,
             com.app.core.events.OutboxRepo outboxRepo,
-            tools.jackson.databind.ObjectMapper objectMapper) {
+            tools.jackson.databind.ObjectMapper objectMapper,
+            org.springframework.statemachine.data.jpa.JpaStateMachineRepository jpaStateMachineRepository) {
         this.eventPublisher = eventPublisher;
         this.orderStateMachineFactory = orderStateMachineFactory;
         this.paymentStateMachineFactory = paymentStateMachineFactory;
@@ -75,6 +77,7 @@ public class OperationalStateMachineService {
         this.persister = persister;
         this.outboxRepo = outboxRepo;
         this.objectMapper = objectMapper;
+        this.jpaStateMachineRepository = jpaStateMachineRepository;
     }
 
     @org.springframework.transaction.annotation.Transactional
@@ -150,11 +153,22 @@ public class OperationalStateMachineService {
 
     @SuppressWarnings("unchecked")
     private <S, E> void processEvent(StateMachine<S, E> machine, E event, String entityType, Long id) {
-        log.info("Triggering {} Event: {} for ID: {}", entityType, event, id);
+        String machineId = machine.getId();
+        if (machineId == null) {
+            String prefix = entityType.length() >= 3 ? entityType.substring(0, 3).toUpperCase() : entityType.toUpperCase();
+            machineId = prefix + "-" + id;
+            log.warn("Machine ID was null from factory for {} ID {}, using generated ID: {}", entityType, id, machineId);
+        }
+
+        log.info("Triggering {} Event: {} for ID: {} (Machine ID: {})", entityType, event, id, machineId);
         try {
-            persister.restore((StateMachine<Object, Object>) machine, machine.getId());
+            if (jpaStateMachineRepository.existsById(machineId)) {
+                persister.restore((StateMachine<Object, Object>) machine, machineId);
+            } else {
+                log.info("No persistent state found for {} ID {}, starting fresh.", entityType, id);
+            }
         } catch (Exception e) {
-            log.warn("No persistent state found for {} ID {}, starting fresh.", entityType, id);
+            log.warn("Error restoring state for {} ID {}: {}", entityType, id, e.getMessage());
         }
 
         machine.start();
@@ -192,9 +206,11 @@ public class OperationalStateMachineService {
             }
 
             try {
-                persister.persist((StateMachine<Object, Object>) machine, machine.getId());
+                persister.persist((StateMachine<Object, Object>) machine, machineId);
             } catch (Exception e) {
                 log.error("Failed to persist state for {} (ID: {}): {}", entityType, id, e.getMessage());
+                // If persistence fails, we should still consider it a success if the transition worked,
+                // but for debugging we'll keep the log.
             }
         }
 

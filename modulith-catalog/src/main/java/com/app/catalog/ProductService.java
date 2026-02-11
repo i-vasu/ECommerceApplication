@@ -20,7 +20,10 @@ public interface ProductService {
 	ProductResponse searchByCategory(Long categoryId, Integer pageNumber, Integer pageSize, String sortBy,
 			String sortOrder);
 
+	// Product Maintenance
 	ProductDTO updateProduct(Long productId, Product product);
+
+	String deleteProduct(Long productId);
 
 	ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException;
 
@@ -36,8 +39,6 @@ public interface ProductService {
 	ProductResponse facetedSearch(String keyword, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice,
 			Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
 
-	String deleteProduct(Long productId);
-
 	ProductDTO getProductById(Long productId);
 
 	List<ProductDTO> getProductsByIds(List<Long> productIds);
@@ -45,4 +46,8 @@ public interface ProductService {
 	List<String> getAllCategories();
 
 	List<ProductDTO> getProductsByCategory(String category);
+
+	java.util.List<com.app.catalog.payloads.CategoryDTO> getAllCategoryDetails();
+
+	ProductDTO getProductByCode(String itemCode);
 }

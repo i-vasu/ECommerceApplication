@@ -22,4 +22,8 @@ public interface CartService {
 	CartDTO applyCoupon(Long cartId, String couponCode);
 
 	CartDTO removeCoupon(Long cartId);
+	
+	CartDTO mergeCarts(Long guestCartId, Long userId);
+	
+	CartDTO updateCartAddress(Long cartId, Long addressId);
 }

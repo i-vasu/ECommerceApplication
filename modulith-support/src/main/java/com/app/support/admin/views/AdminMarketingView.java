@@ -21,7 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 import java.util.Map;
 
-@Route("admin/marketing-native")
+@Route(value = "admin/marketing", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminMarketingView extends VerticalLayout {
 

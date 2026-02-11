@@ -20,7 +20,7 @@ public class SimpleSearchService implements SearchService {
     }
 
     @Override
-    public List<ProductDTO> searchProducts(String query, Double minPrice, Double maxPrice) {
+    public List<ProductDTO> searchProducts(String query, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice) {
         return new ArrayList<>();
     }
 

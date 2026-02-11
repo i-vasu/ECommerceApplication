@@ -1,10 +1,10 @@
 package com.app.tests.e2e;
 
-import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 
 public class OrderFlowTest extends BaseE2ETest {
 

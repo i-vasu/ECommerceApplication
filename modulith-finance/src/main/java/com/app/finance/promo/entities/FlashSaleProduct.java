@@ -24,7 +24,7 @@ public class FlashSaleProduct {
 
     private Long productId; // Reference to product
 
-    private Double flashPrice;
+    private java.math.BigDecimal flashPrice;
     private Integer flashQuantity;
     private Integer soldQuantity = 0;
 

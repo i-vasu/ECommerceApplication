@@ -3,8 +3,6 @@ package com.app.tests.e2e;
 import com.microsoft.playwright.*;
 import org.junit.jupiter.api.*;
 
-import java.nio.file.Paths;
-
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /**

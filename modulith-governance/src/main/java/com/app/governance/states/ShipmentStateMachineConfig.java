@@ -25,7 +25,13 @@ public class ShipmentStateMachineConfig extends EnumStateMachineConfigurerAdapte
     @Override
     public void configure(StateMachineTransitionConfigurer<ShipmentState, ShipmentEvent> transitions) throws Exception {
         transitions
-            .withExternal().source(ShipmentState.PENDING).target(ShipmentState.READY_FOR_PICKUP).event(ShipmentEvent.ASSIGN_CARRIER)
+            .withExternal().source(ShipmentState.PENDING).target(ShipmentState.PICKED).event(ShipmentEvent.PICK)
+            .and()
+            .withExternal().source(ShipmentState.PICKED).target(ShipmentState.PACKED).event(ShipmentEvent.PACK)
+            .and()
+            .withExternal().source(ShipmentState.PACKED).target(ShipmentState.READY_FOR_PICKUP).event(ShipmentEvent.ASSIGN_CARRIER)
+            .and()
+            .withExternal().source(ShipmentState.PENDING).target(ShipmentState.READY_FOR_PICKUP).event(ShipmentEvent.ASSIGN_CARRIER) // Keep legacy path just in case
             .and()
             .withExternal().source(ShipmentState.READY_FOR_PICKUP).target(ShipmentState.PICKED_UP).event(ShipmentEvent.PICKUP)
             .and()

@@ -68,7 +68,7 @@ public abstract class AbstractIntegrationTest {
             }
         } else {
             // H2 Fallback
-            registry.add("spring.datasource.url", () -> "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL");
+            registry.add("spring.datasource.url", () -> "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
             registry.add("spring.datasource.username", () -> "sa");
             registry.add("spring.datasource.password", () -> "");
             registry.add("spring.datasource.driver-class-name", () -> "org.h2.Driver");
@@ -79,7 +79,7 @@ public abstract class AbstractIntegrationTest {
             registry.add("spring.data.redis.port", () -> "6379");
         }
 
-        registry.add("app.erpnext.enabled", () -> "false");
+
         registry.add("app.razorpay.enabled", () -> "false");
         registry.add("app.marketplace.enabled", () -> "false");
         registry.add("app.shipping.enabled", () -> "false");

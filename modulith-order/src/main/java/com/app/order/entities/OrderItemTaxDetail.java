@@ -21,6 +21,6 @@ public class OrderItemTaxDetail {
     private OrderItem orderItem;
 
     private String taxName; // e.g. "CGST", "SGST", "IGST"
-    private double taxRate; // e.g. 9.0
+    private java.math.BigDecimal taxRate; // e.g. 9.0
     private java.math.BigDecimal taxAmount; // calculated amount
 }

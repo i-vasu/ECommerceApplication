@@ -1,6 +1,5 @@
 package com.app.tests.fashion;
 
-import com.app.tests.fixtures.TestDataFactory;
 import com.app.tests.utils.AuthHelper;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;

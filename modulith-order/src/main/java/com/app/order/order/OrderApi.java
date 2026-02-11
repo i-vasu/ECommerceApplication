@@ -2,10 +2,12 @@ package com.app.order.order;
 
 import com.app.core.payloads.ApiResponse;
 import com.app.order.payloads.OrderDTO;
+import com.app.order.payloads.OrderRequest;
 import com.app.order.payloads.OrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
@@ -13,7 +15,8 @@ import java.util.List;
 public interface OrderApi {
 
     @Operation(summary = "Place Order", description = "Places an order for a user from a specific cart")
-    ResponseEntity<ApiResponse<OrderDTO>> orderProducts(String emailId, Long cartId, String paymentMethod);
+    ResponseEntity<ApiResponse<OrderDTO>> orderProducts(String emailId, Long cartId, String paymentMethod,
+            @RequestBody(required = false) OrderRequest request);
 
     @Operation(summary = "Get All Orders", description = "Retrieves all orders (Admin only)")
     ResponseEntity<ApiResponse<OrderResponse>> getAllOrders(Integer pageNumber, Integer pageSize, String sortBy,

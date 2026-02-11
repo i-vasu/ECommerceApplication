@@ -15,6 +15,8 @@ public interface InventoryService {
 
     void confirmStock(String itemCode, int quantity, String lockId);
 
+    void releaseStock(String itemCode, int quantity);
+
     public record InventoryLock(boolean locked, String lockId) {
     }
 }

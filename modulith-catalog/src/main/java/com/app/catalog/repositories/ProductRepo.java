@@ -20,6 +20,7 @@ public interface ProductRepo extends JpaRepository<Product, Long> {
 
 	Product findByItemCode(String itemCode);
 
+	Page<Product> findByCategory(Category category, Pageable pageable);
 	List<Product> findByCategory(Category category);
 
 	// ParadeDB BM25 Search Query

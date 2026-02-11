@@ -14,6 +14,6 @@ public record ReturnValidatedEvent(
         String refundType,
         double totalRefundAmount,
         List<ValidatedReturnItem> items) implements Serializable {
-    public record ValidatedReturnItem(Long orderItemId, Integer quantity, Double unitRefundAmount) {
+    public record ValidatedReturnItem(Long orderItemId, String itemCode, Integer quantity, Double unitRefundAmount) {
     }
 }

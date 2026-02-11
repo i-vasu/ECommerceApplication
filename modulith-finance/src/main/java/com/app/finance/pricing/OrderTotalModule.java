@@ -28,5 +28,12 @@ public interface OrderTotalModule {
      * Calculate and return a Total line item.
      * Can assume previous totals are already in summary.
      */
+    /**
+     * If true, failure in this module will fail the entire order calculation.
+     */
+    default boolean isCritical() {
+        return false;
+    }
+
     OrderTotal calculate(OrderSummary summary, OrderTotalInput input);
 }

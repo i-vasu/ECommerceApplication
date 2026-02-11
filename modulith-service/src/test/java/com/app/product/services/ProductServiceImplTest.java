@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -23,14 +22,28 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ProductServiceImplTest {
+class ProductServiceImplTest {
 
     @Mock
     private ProductRepo productRepo;
     @Mock
     private CategoryRepo categoryRepo;
     @Mock
-    private ModelMapper modelMapper;
+    private com.app.catalog.mappers.ProductMapper productMapper;
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock
+    private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    @Mock
+    private com.app.core.async.EventProducer eventProducer;
+    @Mock
+    private com.app.catalog.review.services.SocialProofService socialProofService;
+    @Mock
+    private com.app.catalog.review.services.ReviewService reviewService;
+    @Mock
+    private com.app.core.services.PurchaseVerificationService purchaseVerificationService;
+    @Mock
+    private com.app.core.utils.ContentSanitizer sanitizer;
 
     @InjectMocks
     private ProductServiceImpl productService;
@@ -44,22 +57,25 @@ public class ProductServiceImplTest {
         testCategory = new Category();
         testCategory.setCategoryId(1L);
         testCategory.setCategoryName("Apparel");
+        testCategory.setProducts(new java.util.ArrayList<>()); // Initialize products list
 
         testProduct = new Product();
         testProduct.setProductId(1L);
         testProduct.setProductName("Silk Saree");
         testProduct.setPrice(BigDecimal.valueOf(5000.0));
+        testProduct.setDiscount(BigDecimal.ZERO); // Initialize discount
         testProduct.setQuantity(10);
+        testProduct.setCategory(testCategory);
 
-        testProductDTO = new ProductDTO(1L, "Silk Saree", "ITEM001", "silk-saree.jpg", "Silk", 10, 5000.0, 0.0, 5000.0, null, null, null, null);
+        testProductDTO = new ProductDTO(1L, "Silk Saree", "ITEM001", "silk-saree.jpg", "Silk", 10,
+                BigDecimal.valueOf(5000.0), BigDecimal.ZERO, BigDecimal.valueOf(5000.0), null, null, null, null);
     }
 
     @Test
     void testAddProduct_Success() {
         when(categoryRepo.findById(1L)).thenReturn(Optional.of(testCategory));
-        when(modelMapper.map(any(ProductDTO.class), eq(Product.class))).thenReturn(testProduct);
         when(productRepo.save(any(Product.class))).thenReturn(testProduct);
-        when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(testProductDTO);
+        when(productMapper.productToProductDTO(testProduct)).thenReturn(testProductDTO);
 
         ProductDTO saved = productService.addProduct(1L, testProduct);
 
@@ -71,7 +87,7 @@ public class ProductServiceImplTest {
     @Test
     void testGetProductById_Found() {
         when(productRepo.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(modelMapper.map(testProduct, ProductDTO.class)).thenReturn(testProductDTO);
+        when(productMapper.productToProductDTO(testProduct)).thenReturn(testProductDTO);
 
         ProductDTO found = productService.getProductById(1L);
 
@@ -90,12 +106,14 @@ public class ProductServiceImplTest {
     void testUpdateProduct_Success() {
         when(productRepo.findById(1L)).thenReturn(Optional.of(testProduct));
         when(productRepo.save(any(Product.class))).thenReturn(testProduct);
-        when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(testProductDTO);
+        when(productMapper.productToProductDTO(any(Product.class))).thenReturn(testProductDTO);
 
         ProductDTO updated = productService.updateProduct(1L, testProduct);
 
         assertNotNull(updated);
         verify(productRepo).save(any());
+        // Verify EventProducer was called for Redis event
+        verify(eventProducer).publish(eq("product_events"), any());
     }
 
     @Test
@@ -105,5 +123,7 @@ public class ProductServiceImplTest {
         productService.deleteProduct(1L);
         
         verify(productRepo).delete(testProduct);
+        // Verify EventProducer was called for Redis event
+        verify(eventProducer).publish(eq("product_events"), any());
     }
 }

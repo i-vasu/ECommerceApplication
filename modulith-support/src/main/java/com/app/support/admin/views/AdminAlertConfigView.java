@@ -15,7 +15,7 @@ import jakarta.annotation.security.RolesAllowed;
 
 import java.util.Map;
 
-@Route("admin/alert-config")
+@Route(value = "admin/alerts", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminAlertConfigView extends VerticalLayout {
 

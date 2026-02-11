@@ -14,7 +14,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 
-@Route("admin/broadcasts")
+@Route(value = "admin/broadcasts", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminBroadcastView extends VerticalLayout {
 

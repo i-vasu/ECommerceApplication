@@ -40,8 +40,8 @@ public class NormalizationEngine {
         if (data.get("OrderItems") instanceof List<?> rawItems) {
             for (Object obj : rawItems) {
                 if (obj instanceof Map<?, ?> itemMap) {
-                    ProductDTO product = new ProductDTO(null, null, (String) itemMap.get("SellerSKU"), null, null, null, 0.0, 0.0, 0.0, null, null, null, null);
-                    items.add(new OrderItemDTO(null, product, ((Number) itemMap.get("QuantityOrdered")).intValue(), null, java.math.BigDecimal.valueOf(((Number) ((Map<?, ?>) itemMap.get("ItemPrice")).get("Amount")).doubleValue())));
+                    ProductDTO product = new ProductDTO(null, null, (String) itemMap.get("SellerSKU"), null, null, null, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO, null, null, null, null);
+                    items.add(new OrderItemDTO(null, product, ((Number) itemMap.get("QuantityOrdered")).intValue(), java.math.BigDecimal.ZERO, java.math.BigDecimal.valueOf(((Number) ((Map<?, ?>) itemMap.get("ItemPrice")).get("Amount")).doubleValue())));
                 }
             }
         }
@@ -72,8 +72,8 @@ public class NormalizationEngine {
         if (data.get("orderItems") instanceof List<?> rawItems) {
             for (Object obj : rawItems) {
                 if (obj instanceof Map<?, ?> itemMap) {
-                    ProductDTO product = new ProductDTO(null, null, (String) itemMap.get("sku"), null, null, null, 0.0, 0.0, 0.0, null, null, null, null);
-                    items.add(new OrderItemDTO(null, product, ((Number) itemMap.get("quantity")).intValue(), null, java.math.BigDecimal.valueOf(((Number) itemMap.get("price")).doubleValue())));
+                    ProductDTO product = new ProductDTO(null, null, (String) itemMap.get("sku"), null, null, null, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO, null, null, null, null);
+                    items.add(new OrderItemDTO(null, product, ((Number) itemMap.get("quantity")).intValue(), java.math.BigDecimal.ZERO, java.math.BigDecimal.valueOf(((Number) itemMap.get("price")).doubleValue())));
                 }
             }
         }

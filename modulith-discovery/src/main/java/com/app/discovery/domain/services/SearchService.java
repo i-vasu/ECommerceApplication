@@ -9,7 +9,7 @@ public interface SearchService {
 
     void indexProducts(List<ProductDTO> products);
 
-    List<ProductDTO> searchProducts(String query, Double minPrice, Double maxPrice);
+    List<ProductDTO> searchProducts(String query, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice);
 
     void deleteProduct(String productId);
 }

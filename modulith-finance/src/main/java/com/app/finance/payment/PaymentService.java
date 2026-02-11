@@ -1,6 +1,6 @@
 package com.app.finance.payment;
 
-import com.app.finance.payloads.PaymentDTO;
+import com.app.core.payloads.PaymentDTO;
 import com.app.finance.payloads.PaymentInitResponse;
 
 import java.util.Map;

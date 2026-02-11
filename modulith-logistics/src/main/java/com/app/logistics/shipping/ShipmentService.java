@@ -17,4 +17,10 @@ public interface ShipmentService {
     void cancelShipmentByOrderId(Long orderId);
 
     void updateAllStatuses();
+    
+    // Custom ERP Fulfillment Workflow
+    Shipment markAsPicked(Long orderId);
+    Shipment markAsPacked(Long orderId);
+    String generateManifest(Long orderId); // Returns URL to manifest PDF
+    Shipment getShipmentByOrderId(Long orderId);
 }

@@ -27,12 +27,12 @@ public class CustomDesignController implements CustomDesignApi {
     }
 
     @Override
-    public ResponseEntity<List<CustomDesign>> getUserDesigns(@PathVariable Long userId) {
+    public ResponseEntity<List<CustomDesign>> getUserDesigns(@PathVariable("userId") Long userId) {
         return ResponseEntity.ok(designService.getUserDesigns(userId));
     }
 
     @Override
-    public ResponseEntity<CustomDesign> getDesign(@PathVariable Long designId) {
+    public ResponseEntity<CustomDesign> getDesign(@PathVariable("designId") Long designId) {
         return ResponseEntity.ok(designService.getDesign(designId));
     }
 
@@ -53,5 +53,16 @@ public class CustomDesignController implements CustomDesignApi {
                 request.get("userPhotoUrl"),
                 request.get("sareeImageUrl"));
         return ResponseEntity.ok(resultUrl);
+    }
+
+    @PostMapping("/{designId}/order")
+    public ResponseEntity<Map<String, Object>> purchaseDesign(@PathVariable("designId") Long designId, @RequestParam String email) {
+        // Implementation that converts a custom AI design into a purchasable catalog product
+        var productDto = designService.convertToProduct(designId);
+        return ResponseEntity.ok(Map.of(
+            "success", true, 
+            "message", "Custom design converted to catalog product successfully.",
+            "data", productDto
+        ));
     }
 }

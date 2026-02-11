@@ -17,6 +17,7 @@ import com.app.governance.rules.RuleEngineService;
 import com.app.governance.states.OperationalStateMachineService;
 import com.app.intelligence.analysis.services.AnalyticsService;
 import com.app.logistics.inventory.InventoryReservationService;
+import com.app.security.AddressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -43,6 +44,7 @@ public class CartServiceImpl implements CartService {
 	private final RuleEngineService ruleEngine;
 	private final OperationalStateMachineService stateMachineService;
 	private final RedisLockService lockService;
+	private final AddressService addressService;
 
 	@Override
 	@Transactional
@@ -98,31 +100,19 @@ public class CartServiceImpl implements CartService {
 			newCartItem.setItemCode(effectiveItemCode);
 			newCartItem.setCart(cart);
 			newCartItem.setQuantity(quantity);
-			newCartItem.setDiscount(java.math.BigDecimal.valueOf(product.discount()));
-			newCartItem.setProductPrice(java.math.BigDecimal.valueOf(product.specialPrice()));
+			newCartItem.setDiscount(product.discount());
+			newCartItem.setProductPrice(product.specialPrice());
 
 			cartItemRepo.save(newCartItem);
 
 			// Track in Analytics
 			analyticsService.trackAddToCart(product.productId(), effectiveItemCode,
-					java.math.BigDecimal.valueOf(product.specialPrice()));
+					product.specialPrice());
 
 			// To be safe, reload or ensure consistency for calculation.
 			cart = cartRepo.findById(cartId).orElse(cart);
 
-			var input = OrderTotalInput.builder()
-					.id(cart.getCartId())
-					.userId(cart.getUserId())
-					.couponCode(cart.getCouponCode())
-					.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
-							item.getProductId(),
-							item.getItemCode(),
-							item.getProductPrice().doubleValue(),
-							item.getQuantity())).toList())
-					.build();
-
-			var summary = orderTotalService.calculate(input);
-			cart.setTotalPrice(summary.getFinalTotal());
+			recalculateCartTotals(cart);
 			cartRepo.save(cart);
 
 			var products = getCartProducts(cart);
@@ -147,20 +137,7 @@ public class CartServiceImpl implements CartService {
 		if (cart == null)
 			throw new ResourceNotFoundException("Cart", "cartId", cartId);
 
-		// Optional: Recalculate on View to ensure freshness
-		var input = OrderTotalInput.builder()
-				.id(cart.getCartId())
-				.userId(cart.getUserId())
-				.couponCode(cart.getCouponCode())
-				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
-						item.getProductId(),
-						item.getItemCode(),
-						item.getProductPrice().doubleValue(),
-						item.getQuantity())).toList())
-				.build();
-
-		var summary = orderTotalService.calculate(input);
-		cart.setTotalPrice(summary.getFinalTotal());
+		recalculateCartTotals(cart);
 
 		var products = getCartProducts(cart);
 		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
@@ -174,7 +151,7 @@ public class CartServiceImpl implements CartService {
 		if (cartItem != null) {
 			var product = productService.getProductById(productId);
 			if (product != null) {
-				cartItem.setProductPrice(java.math.BigDecimal.valueOf(product.specialPrice()));
+				cartItem.setProductPrice(product.specialPrice());
 				cartItemRepo.save(cartItem);
 
 				// Recalculate Cart Total
@@ -186,7 +163,7 @@ public class CartServiceImpl implements CartService {
 						.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 								item.getProductId(),
 								item.getItemCode(),
-								item.getProductPrice().doubleValue(),
+								item.getProductPrice(),
 								item.getQuantity())).toList())
 						.build();
 
@@ -217,20 +194,7 @@ public class CartServiceImpl implements CartService {
 		cartItem.setItemCode(effectiveItemCode);
 		cartItemRepo.save(cartItem);
 
-		// Recalculate Pipeline
-		var input = OrderTotalInput.builder()
-				.id(cart.getCartId())
-				.userId(cart.getUserId())
-				.couponCode(cart.getCouponCode())
-				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
-						item.getProductId(),
-						item.getItemCode(),
-						item.getProductPrice().doubleValue(),
-						item.getQuantity())).toList())
-				.build();
-
-		var summary = orderTotalService.calculate(input);
-		cart.setTotalPrice(summary.getFinalTotal());
+		recalculateCartTotals(cart);
 		cartRepo.save(cart);
 
 		var products = getCartProducts(cart);
@@ -259,7 +223,7 @@ public class CartServiceImpl implements CartService {
 				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
 						item.getProductId(),
 						item.getItemCode(),
-						item.getProductPrice().doubleValue(),
+						item.getProductPrice(),
 						item.getQuantity())).toList())
 				.build();
 
@@ -278,27 +242,14 @@ public class CartServiceImpl implements CartService {
 
 		// 1. Explicit Validation via CartCouponService
 		var currentSubtotal = cart.getCartItems().stream()
-				.mapToDouble(item -> item.getProductPrice().doubleValue() * item.getQuantity())
-				.sum();
+				.map(item -> item.getProductPrice().multiply(java.math.BigDecimal.valueOf(item.getQuantity())))
+				.reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 		cartCouponService.applyCouponToCart(couponCode, currentSubtotal);
 
 		// 2. Persist code
 		cart.setCouponCode(couponCode);
 
-		// 3. Recalculate using full pricing pipeline
-		var input = OrderTotalInput.builder()
-				.id(cart.getCartId())
-				.userId(cart.getUserId())
-				.couponCode(cart.getCouponCode())
-				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
-						item.getProductId(),
-						item.getItemCode(),
-						item.getProductPrice().doubleValue(),
-						item.getQuantity())).toList())
-				.build();
-
-		var summary = orderTotalService.calculate(input);
-		cart.setTotalPrice(summary.getFinalTotal());
+		recalculateCartTotals(cart);
 		cartRepo.save(cart);
 
 		var products = getCartProducts(cart);
@@ -313,29 +264,115 @@ public class CartServiceImpl implements CartService {
 
 		cart.setCouponCode(null);
 
-		// Recalculate
-		var input = OrderTotalInput.builder()
-				.id(cart.getCartId())
-				.userId(cart.getUserId())
-				.couponCode(cart.getCouponCode())
-				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
-						item.getProductId(),
-						item.getItemCode(),
-						item.getProductPrice().doubleValue(),
-						item.getQuantity())).toList())
-				.build();
-
-		var summary = orderTotalService.calculate(input);
-		cart.setTotalPrice(summary.getFinalTotal());
+		recalculateCartTotals(cart);
 		cartRepo.save(cart);
 
 		var products = getCartProducts(cart);
 		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
 	}
 
+	@Override
+	@Transactional
+	public CartDTO mergeCarts(Long guestCartId, Long userId) {
+		var guestCart = cartRepo.findById(guestCartId).orElse(null);
+		if (guestCart == null) {
+			// No guest cart to merge, just return user's cart if exists
+			var userCart = cartRepo.findByUserId(userId).orElse(null);
+			if (userCart != null) {
+				return getCart(userId, userCart.getCartId());
+			}
+			return null; 
+		}
+
+		var userCart = cartRepo.findByUserId(userId).orElse(null);
+
+		if (userCart == null) {
+			// User has no cart, simply assign guest cart to user
+			guestCart.setUserId(userId);
+			recalculateCartTotals(guestCart);
+			cartRepo.save(guestCart);
+			return getCart(userId, guestCart.getCartId());
+		}
+
+		// User has a cart, need to merge items
+		for (var guestItem : guestCart.getCartItems()) {
+			var existingItem = cartItemRepo.findCartItemByProductIdAndCartIdAndItemCode(
+					userCart.getCartId(), 
+					guestItem.getProductId(), 
+					guestItem.getItemCode());
+
+			if (existingItem != null) {
+				// Item exists, update quantity
+				existingItem.setQuantity(existingItem.getQuantity() + guestItem.getQuantity());
+				cartItemRepo.save(existingItem);
+			} else {
+				// Item doesn't exist, move it to user cart
+				// We need to create a new item copy because re-parenting managed entities can be tricky with cascade
+				var newItem = new CartItem();
+				newItem.setCart(userCart);
+				newItem.setProductId(guestItem.getProductId());
+				newItem.setItemCode(guestItem.getItemCode());
+				newItem.setProductName(guestItem.getProductName());
+				newItem.setQuantity(guestItem.getQuantity());
+				newItem.setProductPrice(guestItem.getProductPrice());
+				newItem.setDiscount(guestItem.getDiscount());
+				cartItemRepo.save(newItem);
+			}
+		}
+
+		// Delete guest cart after merge
+		cartRepo.delete(guestCart);
+
+		// Recalculate User Cart
+		return getCart(userId, userCart.getCartId());
+	}
+
 	private List<ProductDTO> getCartProducts(Cart cart) {
 		return cart.getCartItems().stream()
 				.map(p -> productService.getProductById(p.getProductId()))
 				.toList();
+	}
+
+	@Override
+	@Transactional
+	public CartDTO updateCartAddress(Long cartId, Long addressId) {
+		var cart = cartRepo.findById(cartId)
+				.orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
+
+		cart.setAddressId(addressId);
+
+		recalculateCartTotals(cart);
+		cartRepo.save(cart);
+
+		var products = getCartProducts(cart);
+		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
+	}
+
+	private void recalculateCartTotals(Cart cart) {
+		var inputBuilder = OrderTotalInput.builder()
+				.id(cart.getCartId())
+				.userId(cart.getUserId())
+				.couponCode(cart.getCouponCode())
+				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
+						item.getProductId(),
+						item.getItemCode(),
+						item.getProductPrice(),
+						item.getQuantity())).toList());
+
+		if (cart.getAddressId() != null) {
+			try {
+				var addr = addressService.getAddress(cart.getAddressId());
+				if (addr != null) {
+					inputBuilder.shippingState(addr.state());
+					inputBuilder.shippingZip(addr.pincode());
+					inputBuilder.shippingCountry(addr.country());
+				}
+			} catch (Exception e) {
+				log.warn("Failed to fetch address {} for cart pricing: {}", cart.getAddressId(), e.getMessage());
+			}
+		}
+
+		var summary = orderTotalService.calculate(inputBuilder.build());
+		cart.setTotalPrice(summary.getFinalTotal());
 	}
 }

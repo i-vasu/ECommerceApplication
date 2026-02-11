@@ -1,17 +1,8 @@
 package com.app.tests.e2e;
 
-import io.restassured.http.ContentType;
-import com.app.tests.e2e.BaseE2ETest;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
-
-import org.junit.jupiter.api.Disabled;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CommerceFlowTest extends BaseE2ETest {

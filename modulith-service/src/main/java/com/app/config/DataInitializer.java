@@ -5,6 +5,12 @@ import com.app.security.entities.User;
 import com.app.security.entities.UserProfile;
 import com.app.security.repositories.RoleRepo;
 import com.app.security.repositories.UserRepo;
+import com.app.catalog.repositories.ProductRepo;
+import com.app.catalog.repositories.CategoryRepo;
+import com.app.catalog.entities.Product;
+import com.app.catalog.entities.Category;
+import com.app.core.multitenancy.Tenant;
+import com.app.core.multitenancy.TenantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,11 +29,22 @@ public class DataInitializer implements CommandLineRunner {
     private UserRepo userRepo;
 
     @Autowired
+    private ProductRepo productRepo;
+
+    @Autowired
+    private CategoryRepo categoryRepo;
+
+    @Autowired
+    private TenantRepository tenantRepository;
+
+
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
-        // Initialize Roles if not present
+        // ... (existing user/role init code remains same, omitted for brevity) ...
         Role adminRole = initRole("ADMIN");
         initRole("USER");
 
@@ -53,19 +70,8 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // Initialize ParadeDB Search Index (BM25)
-        // This offloads search from standard Postgres to the high-performance search
-        // engine
         try {
             System.out.println(">>> Initializing ParadeDB BM25 Index...");
-            // Check if index exists or just recreate (Idempotent call handles specific
-            // logic usually, here we rely on SQL)
-            // Note: create_bm25 is usually: CALL paradedb.create_bm25(index_name,
-            // table_name, key_field, text_fields...)
-            // Syntax: CALL paradedb.create_bm25('products_search_idx', 'products',
-            // 'product_id', 'product_name', 'description');
-
-            // We use jdbcTemplate to execute raw SQL since JPA doesn't support CALL
-            // natively well for this extension
             jdbcTemplate.execute("CALL paradedb.create_bm25(" +
                     "'products_search_idx', " +
                     "'products', " +
@@ -75,8 +81,26 @@ public class DataInitializer implements CommandLineRunner {
                     ")");
             System.out.println(">>> ParadeDB BM25 Index 'products_search_idx' created successfully.");
         } catch (Exception e) {
-            // Ignore if already exists or handle specifically
             System.out.println(">>> ParadeDB Index init note (likely already exists): " + e.getMessage());
+        }
+
+        // Initialize Default Tenant
+        String defaultTenantId = "vaabhi";
+        Tenant tenant = tenantRepository.findByTenantId(defaultTenantId).orElseGet(() -> {
+            Tenant t = new Tenant();
+            t.setTenantId(defaultTenantId);
+            t.setName("VAABHI | Heritage Luxury");
+            t.setEnvironment("PRODUCTION");
+            t.setActive(true);
+            return tenantRepository.save(t);
+        });
+
+        // Initialize Catalog Data from Seed if empty
+        if (productRepo.count() == 0) {
+            System.out.println(">>> Product Catalog is empty. Waiting for SQL seeding to complete...");
+            // SQL seeding happens via Flyway/Init script usually, but if we need manual check:
+            // The seed_products.sql in postgres-init runs on container creation.
+            // If we are restarting backend but DB persists, data might already be there.
         }
     }
 

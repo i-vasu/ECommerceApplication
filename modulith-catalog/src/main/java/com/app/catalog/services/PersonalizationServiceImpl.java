@@ -67,14 +67,31 @@ public class PersonalizationServiceImpl implements PersonalizationService {
 
     @Override
     public List<ProductDTO> getTrending(int limit) {
-        // Mock implementation for now
-        return getNewlyDropped(limit);
+        // Implementation: Trending could be based on high view counts in last 24h
+        // For now, if bestsellers is empty, fallback to newly dropped.
+        List<ProductDTO> bestSellers = getBestSellers(limit);
+        if (bestSellers.isEmpty()) {
+            return getNewlyDropped(limit);
+        }
+        return bestSellers;
     }
 
     @Override
     public List<ProductDTO> getBestSellers(int limit) {
-        // Mock implementation for now
-        return getNewlyDropped(limit);
+        String tenantId = com.app.core.multitenancy.TenantContext.getTenantId();
+        String bestSellerKey = String.format("catalog:%s:bestsellers", tenantId);
+        
+        var productIds = redisTemplate.opsForZSet().reverseRange(bestSellerKey, 0, limit - 1);
+        
+        if (productIds == null || productIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return productIds.stream()
+                .map(id -> productRepo.findById(Long.parseLong(id)).orElse(null))
+                .filter(Objects::nonNull)
+                .map(productMapper::productToProductDTO)
+                .collect(Collectors.toList());
     }
 
     @Override

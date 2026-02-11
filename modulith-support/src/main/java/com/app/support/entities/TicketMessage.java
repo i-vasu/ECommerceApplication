@@ -1,8 +1,7 @@
 package com.app.support.entities;
 
-import jakarta.persistence.*;
-// Correct for BOTH Jackson 2 and Jackson 3
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 

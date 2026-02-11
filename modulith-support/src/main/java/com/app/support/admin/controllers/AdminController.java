@@ -1,90 +1,49 @@
 package com.app.support.admin.controllers;
 
-import com.app.support.domain.SupportService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Legacy Admin Controller - Refactored to redirect to Vaadin Native views.
+ */
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
     @GetMapping("/login")
     public String login() {
+        // Keeping this for Spring Security form login if needed, 
+        // Although Vaadin can handle its own login.
         return "admin/login";
     }
 
-    /*
-     * @Autowired
-     * private ProductService productService;
-     */
-
-    @Autowired
-    private SupportService supportService;
-
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        model.addAttribute("pageTitle", "Dashboard");
-        return "admin/dashboard";
+    public String dashboard() {
+        return "redirect:/admin/analytics-native";
     }
 
-    /*
-     * @GetMapping("/products")
-     * public String products(Model model) {
-     * model.addAttribute("pageTitle", "Products Management");
-     * try {
-     * var response = productService.getAllProducts(0, 100, "productName", "asc");
-     * model.addAttribute("products", response.content());
-     * } catch (Exception e) {
-     * model.addAttribute("error", "Failed to load products: " + e.getMessage());
-     * }
-     * return "admin/products";
-     * }
-     */
+    @GetMapping("/users")
+    public String users() {
+        return "redirect:/admin/users-native";
+    }
+
+    @GetMapping("/products")
+    public String products() {
+        return "redirect:/admin/products-native";
+    }
+
+    @GetMapping("/inventory")
+    public String inventory() {
+        return "redirect:/admin/inventory-native";
+    }
 
     @GetMapping("/support")
-    public String support(Model model, @RequestParam(defaultValue = "0") int page) {
-        model.addAttribute("pageTitle", "Support Tickets");
-        try {
-            var pageable = PageRequest.of(page, 20,
-                    Sort.by("createdAt").descending());
-            var tickets = supportService.getAllTickets(pageable);
-            model.addAttribute("tickets", tickets);
-            model.addAttribute("currentPage", page);
-            model.addAttribute("totalPages", tickets.getTotalPages());
-        } catch (Exception e) {
-            model.addAttribute("error", "Failed to load tickets: " + e.getMessage());
-            model.addAttribute("tickets", Page.empty());
-            model.addAttribute("currentPage", 0);
-            model.addAttribute("totalPages", 0);
-        }
-        return "admin/support";
+    public String support() {
+        return "redirect:/admin/support-native";
     }
 
-    @GetMapping("/support/{id}")
-    public String supportDetails(@PathVariable Long id, Model model) {
-        model.addAttribute("pageTitle", "Ticket Details");
-        try {
-            var ticket = supportService.getTicketById(id);
-            model.addAttribute("ticket", ticket);
-        } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-            return "redirect:/admin/support";
-        }
-        return "admin/support_details";
-    }
-
-    @PostMapping("/support/{id}/reply")
-    public String replyToTicket(@PathVariable Long id, @RequestParam String message) {
-        try {
-            supportService.adminReplyToTicket(id, message, "Admin");
-        } catch (Exception e) {
-            // log error
-        }
-        return "redirect:/admin/support/" + id;
+    @GetMapping("/orders")
+    public String orders() {
+        return "redirect:/admin/orders-native";
     }
 }

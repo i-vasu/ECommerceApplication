@@ -38,6 +38,9 @@ public interface AnalyticsJdbcRepo extends Repository<Object, Long> {
     @Query("SELECT COUNT(*) as user_count FROM users")
     Map<String, Object> getUserCount();
 
+    @Query("SELECT COUNT(*) as product_count FROM products")
+    Map<String, Object> getProductCount();
+
     @Query("SELECT * FROM view_daily_revenue ORDER BY order_date DESC LIMIT 30")
     List<Map<String, Object>> getDailyRevenueRecent();
 }

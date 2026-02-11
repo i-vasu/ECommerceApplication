@@ -23,11 +23,17 @@ public class AlertingEngineService {
     @Scheduled(fixedDelay = 60000) // Check every minute
     public void evaluateAlertRules() {
         log.debug("Evaluating Alert Rules...");
-        List<Map<String, Object>> activeRules = jdbcTemplate.queryForList(
-            "SELECT * FROM monitoring_alert_rules WHERE is_active = TRUE");
+        try {
+            List<Map<String, Object>> activeRules = jdbcTemplate.queryForList(
+                "SELECT * FROM monitoring_alert_rules WHERE is_active = TRUE");
 
-        for (Map<String, Object> rule : activeRules) {
-            evaluateRule(rule);
+            for (Map<String, Object> rule : activeRules) {
+                evaluateRule(rule);
+            }
+        } catch (org.springframework.jdbc.BadSqlGrammarException e) {
+            log.error("Failed to query alert rules. Database schema might be missing: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error during alert evaluation: {}", e.getMessage(), e);
         }
     }
 

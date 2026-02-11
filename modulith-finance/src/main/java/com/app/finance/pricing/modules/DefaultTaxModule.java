@@ -29,15 +29,21 @@ public class DefaultTaxModule implements OrderTotalModule {
     }
 
     @Override
+    public boolean isCritical() {
+        return true;
+    }
+
+    @Override
     public OrderTotal calculate(OrderSummary summary, OrderTotalInput input) {
         BigDecimal currentTotal = summary.getFinalTotal();
 
-        var result = taxService.calculateGST(currentTotal.doubleValue(), "Default");
+        String state = input.getShippingState() != null ? input.getShippingState() : "Maharashtra";
+        var result = taxService.calculateGST(currentTotal, state);
 
         return OrderTotal.builder()
                 .code("tax")
                 .title("Taxes")
-                .value(BigDecimal.valueOf(result.totalAmount()))
+                .value(result.totalAmount())
                 .sortOrder(50)
                 .build();
     }

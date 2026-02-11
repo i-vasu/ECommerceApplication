@@ -1,6 +1,6 @@
 package com.app.checkout.pipeline;
 
-import com.app.cart.entities.Cart;
+import com.app.core.contracts.CartContract;
 import com.app.logistics.shipping.ShippingCalculationService;
 import com.app.logistics.shipping.ShippingCalculationService.ShippingCost;
 import com.app.security.entities.Address;
@@ -19,7 +19,7 @@ public class ShippingActivity implements CheckoutActivity<ShippingCost> {
     }
 
     @Override
-    public ShippingCost execute(Cart cart, Address address) {
+    public ShippingCost execute(CartContract cart, Address address) {
         String pincode = (address != null) ? address.getPincode() : "000000";
         return shippingCalculationService.calculateCost(pincode);
     }

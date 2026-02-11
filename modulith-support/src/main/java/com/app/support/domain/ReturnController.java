@@ -28,7 +28,7 @@ public class ReturnController {
                 email,
                 payload.getItems(),
                 payload.getReason(),
-                payload.getRefundType());
+                ReturnRequest.RefundType.valueOf(payload.getRefundType()));
 
         return ResponseEntity.ok(java.util.Map.of("message", "Return request submitted and is being processed"));
     }
@@ -39,10 +39,18 @@ public class ReturnController {
         return ResponseEntity.ok(returnService.getUserReturns(email));
     }
 
-    @Data
     public static class ReturnRequestPayload {
-        private Map<Long, Integer> items; // itemId -> quantity
+        private Map<Long, Integer> items;
         private String reason;
-        private ReturnRequest.RefundType refundType;
+        private String refundType;
+
+        public Map<Long, Integer> getItems() { return items; }
+        public void setItems(Map<Long, Integer> items) { this.items = items; }
+
+        public String getReason() { return reason; }
+        public void setReason(String reason) { this.reason = reason; }
+
+        public String getRefundType() { return refundType; }
+        public void setRefundType(String refundType) { this.refundType = refundType; }
     }
 }

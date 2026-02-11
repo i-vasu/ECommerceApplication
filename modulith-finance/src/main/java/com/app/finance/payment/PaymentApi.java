@@ -1,7 +1,7 @@
 package com.app.finance.payment;
 
 import com.app.catalog.payloads.APIResponse;
-import com.app.finance.payloads.PaymentDTO;
+import com.app.core.payloads.PaymentDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;

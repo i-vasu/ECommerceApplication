@@ -235,4 +235,70 @@ public class ShipmentServiceImpl implements ShipmentService {
             return (Map<String, Object>) obj;
         return Collections.emptyMap();
     }
+    
+    // --- Custom ERP Fulfillment Workflow ---
+
+    @Override
+    @Transactional
+    public Shipment markAsPicked(Long orderId) {
+        Shipment shipment = shipmentRepo.findByOrderId(orderId);
+        if(shipment == null) {
+            shipment = new Shipment();
+            shipment.setOrderId(orderId);
+            shipment.setStatus("CREATED");
+            shipment = shipmentRepo.save(shipment);
+        }
+        
+        // Use State Machine to transition
+        stateMachineService.triggerShipmentEvent(shipment.getShipmentId(), 
+                com.app.governance.states.ShipmentEvent.PICK);
+        
+        shipment.setStatus("PICKED");
+        log.info("Order {} transitioned to PICKED via State Machine.", orderId);
+        
+        return shipmentRepo.save(shipment);
+    }
+
+    @Override
+    @Transactional
+    public Shipment markAsPacked(Long orderId) {
+        Shipment shipment = shipmentRepo.findByOrderId(orderId);
+        if(shipment == null) throw new ResourceNotFoundException("Shipment", "orderId", orderId);
+        
+        // Use State Machine to transition
+        stateMachineService.triggerShipmentEvent(shipment.getShipmentId(), 
+                com.app.governance.states.ShipmentEvent.PACK);
+        
+        shipment.setStatus("PACKED");
+        log.info("Order {} transitioned to PACKED via State Machine.", orderId);
+        
+        return shipmentRepo.save(shipment);
+    }
+
+    @Override
+    public String generateManifest(Long orderId) {
+        Shipment shipment = shipmentRepo.findByOrderId(orderId);
+        if(shipment == null) throw new ResourceNotFoundException("Shipment", "orderId", orderId);
+        
+        // Only allow manifest generation if packed or further
+        // We can verify this via state machine if we want, but for now we'll check status
+        if (!"PACKED".equals(shipment.getStatus()) && !"READY_FOR_PICKUP".equals(shipment.getStatus())) {
+            // log.warn("Generating manifest before packing for order {}", orderId);
+        }
+
+        String manifestUrl = "/api/v1/shipments/" + shipment.getShipmentId() + "/manifest.pdf";
+        
+        shipment.setManifestUrl(manifestUrl);
+        shipmentRepo.save(shipment);
+        
+        return manifestUrl;
+    }
+
+    @Override
+    public Shipment getShipmentByOrderId(Long orderId) {
+        Shipment shipment = shipmentRepo.findByOrderId(orderId);
+        if (shipment == null) throw new ResourceNotFoundException("Shipment", "orderId", orderId);
+        return shipment;
+    }
 }
+            

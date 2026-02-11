@@ -26,13 +26,13 @@ public class CouponServiceImpl implements CouponService, CouponValidationService
     private final CouponMapper couponMapper;
 
     @Override
-    public CouponDiscount validateAndCalculate(String couponCode, double subtotal) {
+    public CouponDiscount validateAndCalculate(String couponCode, java.math.BigDecimal subtotal) {
         try {
-            Double discount = calculateDiscount(couponCode, subtotal);
+            java.math.BigDecimal discount = calculateDiscount(couponCode, subtotal);
             return new CouponDiscount(discount, couponCode);
         } catch (Exception e) {
             // Return zero discount if validation fails, with the message
-            return new CouponDiscount(0.0, couponCode);
+            return new CouponDiscount(java.math.BigDecimal.ZERO, couponCode);
         }
     }
 
@@ -53,7 +53,7 @@ public class CouponServiceImpl implements CouponService, CouponValidationService
     }
 
     @Override
-    public CouponDTO validateCoupon(String code, Double orderAmount) {
+    public CouponDTO validateCoupon(String code, java.math.BigDecimal orderAmount) {
         LocalDateTime now = LocalDateTime.now();
         Coupon coupon = couponRepo.findActiveByCode(code, now)
                 .orElseThrow(() -> new APIException("Invalid or expired coupon code: " + code));
@@ -63,8 +63,28 @@ public class CouponServiceImpl implements CouponService, CouponValidationService
             throw new APIException("Coupon usage limit exceeded");
         }
 
+        // GAP-10: Check per-user usage limit
+        if (coupon.getMaxUsesPerUser() != null) {
+            // Fetch current user from SecurityContext
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            Long currentUserId = null;
+            if (auth instanceof org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken jwt) {
+                Object userIdClaim = jwt.getTokenAttributes().get("user_id");
+                if (userIdClaim instanceof Number n) {
+                    currentUserId = n.longValue();
+                }
+            }
+            
+            if (currentUserId != null) {
+                long userUsageCount = couponUsageRepo.countByCouponCodeAndUserId(code, currentUserId);
+                if (userUsageCount >= coupon.getMaxUsesPerUser()) {
+                    throw new APIException("You have reached the maximum usage limit for this coupon.");
+                }
+            }
+        }
+
         // Check minimum order amount
-        if (coupon.getMinOrderAmount() != null && orderAmount < coupon.getMinOrderAmount()) {
+        if (coupon.getMinOrderAmount() != null && orderAmount.compareTo(coupon.getMinOrderAmount()) < 0) {
             throw new APIException("Minimum order amount not met. Required: " + coupon.getMinOrderAmount());
         }
 
@@ -72,24 +92,24 @@ public class CouponServiceImpl implements CouponService, CouponValidationService
     }
 
     @Override
-    public Double calculateDiscount(String code, Double orderAmount) {
+    public java.math.BigDecimal calculateDiscount(String code, java.math.BigDecimal orderAmount) {
         CouponDTO coupon = validateCoupon(code, orderAmount);
 
-        double discount = 0.0;
+        java.math.BigDecimal discount = java.math.BigDecimal.ZERO;
 
         if (coupon.discountType() == Coupon.DiscountType.PERCENTAGE) {
-            discount = (orderAmount * coupon.discountValue()) / 100.0;
+            discount = orderAmount.multiply(coupon.discountValue()).divide(java.math.BigDecimal.valueOf(100), java.math.RoundingMode.HALF_UP);
         } else if (coupon.discountType() == Coupon.DiscountType.FIXED_AMOUNT) {
             discount = coupon.discountValue();
         }
 
         // Apply max discount cap if set
-        if (coupon.maxDiscountAmount() != null && discount > coupon.maxDiscountAmount()) {
+        if (coupon.maxDiscountAmount() != null && discount.compareTo(coupon.maxDiscountAmount()) > 0) {
             discount = coupon.maxDiscountAmount();
         }
 
         // Ensure discount doesn't exceed order amount
-        if (discount > orderAmount) {
+        if (discount.compareTo(orderAmount) > 0) {
             discount = orderAmount;
         }
 
@@ -98,7 +118,7 @@ public class CouponServiceImpl implements CouponService, CouponValidationService
 
     @Override
     @Transactional
-    public void applyCoupon(String code, Long userId, Long orderId, Double discountApplied) {
+    public void applyCoupon(String code, Long userId, Long orderId, java.math.BigDecimal discountApplied) {
         Coupon coupon = couponRepo.findByCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon", "code", code));
 
@@ -112,9 +132,11 @@ public class CouponServiceImpl implements CouponService, CouponValidationService
 
         couponUsageRepo.save(usage);
 
-        // Increment usage count
-        coupon.setUsedCount(coupon.getUsedCount() + 1);
-        couponRepo.save(coupon);
+        // GAP-11: Atomic usage count increment
+        int updated = couponRepo.incrementUsedCountAtomic(coupon.getCouponId());
+        if (updated == 0) {
+            throw new APIException("Coupon usage limit exceeded during allocation.");
+        }
     }
 
     @Override

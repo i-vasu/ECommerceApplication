@@ -63,8 +63,7 @@ public class CouponIntegrationTest extends AbstractIntegrationTest {
         product.setItemCode("LAP-001");
         product = productRepo.save(product);
 
-        // Pre-populate Redis with Stock to avoid ERPNext call (which fails without
-        // Docker)
+        // Pre-populate Redis with Stock directly for testing
         redisTemplate.opsForValue().set("inventory:stock:LAP-001", "10");
 
         // 2. Setup Cart via Repo
@@ -76,8 +75,8 @@ public class CouponIntegrationTest extends AbstractIntegrationTest {
         Coupon coupon = new Coupon();
         coupon.setCode("SAVE10");
         coupon.setDiscountType(Coupon.DiscountType.PERCENTAGE);
-        coupon.setDiscountValue(10.0);
-        coupon.setMinOrderAmount(500.0);
+        coupon.setDiscountValue(BigDecimal.valueOf(10.0));
+        coupon.setMinOrderAmount(BigDecimal.valueOf(500.0));
         coupon.setValidFrom(LocalDateTime.now().minusDays(1));
         coupon.setValidTo(LocalDateTime.now().plusDays(30));
         coupon.setActive(true);
@@ -101,7 +100,7 @@ public class CouponIntegrationTest extends AbstractIntegrationTest {
 
         // Verify Cart Total (1000 - 10% = 900)
         assertThat(updatedCartDTO).isNotNull();
-        assertThat(updatedCartDTO.totalPrice()).isEqualTo(900.0);
+        assertThat(updatedCartDTO.totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(900.0));
 
         // 6. Checkout via API
         restTestClient.post()
@@ -112,8 +111,8 @@ public class CouponIntegrationTest extends AbstractIntegrationTest {
 
         // 7. Verify Order via Repo (Final verification)
         Order order = orderRepo.findAllByEmail(user.getEmail()).get(0);
-        assertThat(order.getTotalAmount()).isEqualTo(900.0);
+        assertThat(order.getTotalAmount()).isEqualByComparingTo(BigDecimal.valueOf(900.0));
         assertThat(order.getCouponCode()).isEqualTo("SAVE10");
-        assertThat(order.getDiscountAmount()).isEqualTo(100.0);
+        assertThat(order.getDiscountAmount()).isEqualByComparingTo(BigDecimal.valueOf(100.0));
     }
 }

@@ -14,6 +14,6 @@ public record ReturnApprovedEvent(
         double refundAmount,
         String refundType,
         List<ApprovedReturnItem> items) implements Serializable {
-    public record ApprovedReturnItem(Long orderItemId, Integer quantity) {
+    public record ApprovedReturnItem(Long orderItemId, String itemCode, Integer quantity) {
     }
 }

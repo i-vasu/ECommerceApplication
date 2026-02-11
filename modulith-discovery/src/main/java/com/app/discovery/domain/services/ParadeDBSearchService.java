@@ -34,7 +34,7 @@ public class ParadeDBSearchService implements SearchService {
     }
 
     @Override
-    public List<ProductDTO> searchProducts(String query, Double minPrice, Double maxPrice) {
+    public List<ProductDTO> searchProducts(String query, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice) {
         log.info("Executing ParadeDB Hybrid Search (BM25 + Semantic) for: {} [Price: {} - {}]", query, minPrice,
                 maxPrice);
 
@@ -49,9 +49,9 @@ public class ParadeDBSearchService implements SearchService {
                         (String) row.get("image"),
                         (String) row.get("description"),
                         row.get("quantity") != null ? (Integer) row.get("quantity") : 0,
-                        row.get("price") != null ? ((Number) row.get("price")).doubleValue() : 0.0,
-                        row.get("discount") != null ? ((Number) row.get("discount")).doubleValue() : 0.0,
-                        row.get("special_price") != null ? ((Number) row.get("special_price")).doubleValue() : 0.0,
+                        row.get("price") != null ? new java.math.BigDecimal(row.get("price").toString()) : java.math.BigDecimal.ZERO,
+                        row.get("discount") != null ? new java.math.BigDecimal(row.get("discount").toString()) : java.math.BigDecimal.ZERO,
+                        row.get("special_price") != null ? new java.math.BigDecimal(row.get("special_price").toString()) : java.math.BigDecimal.ZERO,
                         new ArrayList<ProductVariantDTO>(),
                         new ArrayList<ProductMediaDTO>(),
                         new ArrayList<ProductReviewDTO>(),

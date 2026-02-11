@@ -22,13 +22,6 @@ public class Tenant {
     @Column(nullable = false)
     private String name;
 
-    private String erpNextUrl;
-    private String erpNextApiKey;
-    private String erpNextApiSecret;
-    private String erpNextCompanyName;
-    private String erpNextWarehouse;
-    private String erpNextWebhookSecret;
-
     private String razorpayKeyId;
     private String razorpayKeySecret;
     private String razorpayWebhookSecret;

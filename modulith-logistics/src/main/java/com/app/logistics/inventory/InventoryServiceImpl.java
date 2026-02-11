@@ -52,4 +52,9 @@ public class InventoryServiceImpl implements InventoryService {
     public boolean checkAvailability(String itemCode, int quantity) {
         return reservationService.checkStock(itemCode, quantity);
     }
+
+    @Override
+    public void releaseStock(String itemCode, int quantity) {
+        reservationService.releaseStock(itemCode, quantity);
+    }
 }

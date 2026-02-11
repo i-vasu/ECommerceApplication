@@ -37,7 +37,8 @@ public class SecurityConfig {
                 http
                                 .securityMatcher("/admin/**", "/VAADIN/**", "/sw.js", "/manifest.webmanifest")
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/VAADIN/**", "/sw.js", "/manifest.webmanifest").permitAll()
+                                                .requestMatchers("/VAADIN/**", "/sw.js", "/manifest.webmanifest")
+                                                .permitAll()
                                                 .requestMatchers("/admin/login", "/admin/css/**", "/admin/js/**",
                                                                 "/admin/images/**")
                                                 .permitAll()
@@ -70,11 +71,12 @@ public class SecurityConfig {
                                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**",
                                                                 "/api/v1/register/**", "/api/v1/login")
                                                 .permitAll()
-                                                .requestMatchers("/api/v1/public/**", "/api/v1/forgot-password",
+                                                .requestMatchers("/api/v1/public/**", "/api/public/**",
+                                                                "/api/v1/forgot-password",
                                                                 "/api/v1/reset-password",
                                                                 "/api/v1/verify-email",
-                                                                "/api/webhooks/erpnext/**",
-                                                                "/api/webhooks/razorpay")
+                                                                "/api/webhooks/razorpay",
+                                                                "/api/v1/logistics/track/**")
                                                 .permitAll()
                                                 .requestMatchers("/actuator/**").permitAll()
                                                 .requestMatchers("/api/v1/user/**").hasAnyAuthority("USER", "ADMIN")
@@ -112,19 +114,19 @@ public class SecurityConfig {
                 return configuration.getAuthenticationManager();
         }
 
-        @Bean
-        @Order(0)
-        public SecurityFilterChain adminServerFilterChain(HttpSecurity http) throws Exception {
-                // Spring Boot Admin Server requires some specific allowances
-                http
-                    .securityMatcher("/instances/**", "/assets/**", "/")
-                    .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/assets/**", "/login").permitAll()
-                        .anyRequest().hasAuthority("ADMIN"))
-                    .formLogin(form -> form.loginPage("/login").permitAll())
-                    .logout(logout -> logout.logoutUrl("/logout").permitAll())
-                    .csrf(csrf -> csrf.disable());
+	@Bean
+	@Order(0)
+	public SecurityFilterChain adminServerFilterChain(HttpSecurity http) throws Exception {
+		// Spring Boot Admin Server requires some specific allowances
+		http
+				.securityMatcher("/instances/**", "/assets/**", "/login", "/logout")
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/assets/**", "/login").permitAll()
+						.anyRequest().hasAuthority("ADMIN"))
+				.formLogin(form -> form.loginPage("/login").permitAll())
+				.logout(logout -> logout.logoutUrl("/logout").permitAll())
+				.csrf(csrf -> csrf.disable());
 
-                return http.build();
-        }
+		return http.build();
+	}
 }

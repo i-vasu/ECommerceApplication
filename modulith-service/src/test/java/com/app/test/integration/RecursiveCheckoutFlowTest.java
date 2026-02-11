@@ -36,7 +36,7 @@ public class RecursiveCheckoutFlowTest {
     private PromotionRuleRepo promotionRuleRepo;
 
     @Test
-    @DisplayName("🔍 Recursive Check: Cart -> SpEL Promo -> ERPNext Tax -> Detailed Snapshot")
+    @DisplayName("🔍 Recursive Check: Cart -> SpEL Promo -> Tax Engine -> Detailed Snapshot")
     void testDeepCheckoutFlow() {
         // 1. Setup Cart
         Cart cart = new Cart();
@@ -68,7 +68,19 @@ public class RecursiveCheckoutFlowTest {
         address.setPincode("400001");
 
         // 4. TRIGGER RECURSIVE FLOW
-        CheckoutResult result = checkoutService.processCheckout(cart, address);
+        com.app.core.contracts.CartContract cartContract = new com.app.core.contracts.CartContract(
+                cart.getCartId(),
+                cart.getUserId(),
+                cart.getTotalPrice(),
+                cart.getCouponCode(),
+                cart.getCartItems().stream().map(i -> new com.app.core.contracts.CartContract.CartItemContract(
+                        i.getProductId(),
+                        i.getItemCode(),
+                        i.getProductName(),
+                        i.getQuantity(),
+                        i.getProductPrice(),
+                        i.getDiscount())).toList());
+        CheckoutResult result = checkoutService.processCheckout(cartContract, address);
 
         // 5. VERIFY GRANULAR OUTPUTS
         assertNotNull(result);
@@ -85,8 +97,8 @@ public class RecursiveCheckoutFlowTest {
         // C. Verify Final Accounting Precision
         BigDecimal expected = BigDecimal.valueOf(10000.0)
             .subtract(BigDecimal.valueOf(1500.0))
-            .add(BigDecimal.valueOf(result.tax().totalAmount()))
-            .add(BigDecimal.valueOf(result.shipping().amount()));
+            .add(result.tax().totalAmount())
+            .add(result.shipping().amount());
         assertThat(result.finalAmount()).isEqualByComparingTo(expected);
 
         System.out.println("✅ Deep recursion test passed: Promotion, Tax, and Pricing are perfectly synced.");

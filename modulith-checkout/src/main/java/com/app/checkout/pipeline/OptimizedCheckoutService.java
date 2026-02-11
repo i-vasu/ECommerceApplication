@@ -1,12 +1,12 @@
 package com.app.checkout.pipeline;
 
-import com.app.cart.entities.Cart;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
 import com.app.checkout.domain.FlashSaleService;
 import com.app.checkout.domain.FraudDetectionService;
 import com.app.checkout.domain.PriceGuardService;
 import com.app.core.APIException;
+import com.app.core.contracts.CartContract;
 import com.app.governance.rules.RuleEngineService;
 import com.app.governance.states.OperationalStateMachineService;
 import com.app.governance.states.OrderEvent;
@@ -85,22 +85,16 @@ public class OptimizedCheckoutService {
                 Executors.newFixedThreadPool(10),
                 () -> ContextSnapshot.captureAll(observationRegistry));
 
-        this.checkoutAttempts = Counter.builder("checkout.attempts")
-                .description("Total number of checkout attempts")
-                .register(meterRegistry);
-
-        this.checkoutRevenue = DistributionSummary.builder("checkout.revenue")
-                .description("Total revenue from successful checkouts")
-                .baseUnit("currency")
-                .register(meterRegistry);
+        this.checkoutAttempts = meterRegistry.counter("checkout.attempts");
+        this.checkoutRevenue = meterRegistry.summary("checkout.revenue");
     }
 
     @Observed(name = "checkout.process", contextualName = "optimized-checkout-pipeline")
-    public CheckoutResult processCheckout(Cart cart, Address address) {
-        log.info("Starting optimized checkout for cart: {}", cart.getCartId());
+    public CheckoutResult processCheckout(CartContract cart, Address address) {
+        log.info("Starting optimized checkout for cart: {}", cart.cartId());
 
         // 1. Autonomous Fraud Check
-        var user = userRepo.findById(cart.getUserId()).orElse(null);
+        com.app.security.entities.User user = userRepo.findById(cart.userId()).orElse(null);
         if (fraudService.isFraudulent(cart, user)) {
             log.warn("Fraud detected for user {}! Blocking checkout.",
                     (user != null) ? user.getEmail() : "unknown");
@@ -114,7 +108,7 @@ public class OptimizedCheckoutService {
         context.put("user", user);
 
         // Rule: Unverified users cannot check out > 10,000 INR
-        String checkoutRule = "(!user.verified && cart.totalPrice < 10000) || user.verified";
+        String checkoutRule = "(!user.verified && cart.subTotal < 10000) || user.verified";
 
         if (!ruleEngine.evaluate(checkoutRule, context)) {
             log.warn("Checkout policy violation for user {}",
@@ -131,21 +125,22 @@ public class OptimizedCheckoutService {
         try {
             Map<String, CompletableFuture<?>> futures = activities.stream()
                     .collect(Collectors.toMap(
-                            CheckoutActivity::getName,
-                            a -> CompletableFuture.supplyAsync(() -> a.execute(cart, address), tracingExecutor)));
+                            activity -> activity.getName(),
+                            activity -> CompletableFuture.supplyAsync(() -> activity.execute(cart, address), (java.util.concurrent.Executor) tracingExecutor)));
 
             CompletableFuture<List<String>> priceCheckFuture = CompletableFuture.supplyAsync(() -> {
                 List<String> discrepancies = new ArrayList<>();
-                for (com.app.cart.entities.CartItem item : cart.getCartItems()) {
-                    Product p = productRepo.findById(item.getProductId()).orElse(null);
+                for (CartContract.CartItemContract item : cart.items()) {
+                    Product p = productRepo.findById(item.productId()).orElse(null);
                     if (p != null) {
-                        var flashProduct = flashSaleService.getActiveFlashProduct(item.getProductId());
-                        double currentTargetPrice = flashProduct.map(fp -> fp.getFlashPrice())
-                                .orElseGet(() -> p.getSpecialPrice() != null ? p.getSpecialPrice().doubleValue()
-                                        : p.getPrice().doubleValue());
+                        var flashProduct = flashSaleService.getActiveFlashProduct(item.productId());
+                        java.util.Optional<com.app.finance.promo.entities.FlashSaleProduct> fpOpt = flashProduct;
+                        java.math.BigDecimal currentTargetPrice = fpOpt.map(fp -> fp.getFlashPrice())
+                                .orElseGet(() -> p.getSpecialPrice() != null ? p.getSpecialPrice()
+                                        : p.getPrice());
 
-                        if (Math.abs(currentTargetPrice - item.getProductPrice().doubleValue()) > 0.01) {
-                            discrepancies.add("Price changed for " + item.getProductName());
+                        if (currentTargetPrice.subtract(item.price()).abs().compareTo(java.math.BigDecimal.valueOf(0.01)) > 0) {
+                            discrepancies.add("Price changed for " + item.productName());
                         }
                     }
                 }
@@ -168,7 +163,7 @@ public class OptimizedCheckoutService {
                     priceCheckFuture.get());
 
             // 3. Last-Mile Price Guard (Margin Protection)
-            if (!priceGuard.isPriceSafe(cart.getCartItems())) {
+            if (!priceGuard.isPriceSafe(cart.items())) {
                 throw new APIException(
                         "Financial Safeguard: An item in your cart has an invalid price configuration. Please try again later.");
             }
@@ -182,12 +177,12 @@ public class OptimizedCheckoutService {
         }
     }
 
-    private java.math.BigDecimal calculateFinalAmount(Cart cart, TaxCalculation tax,
+    private java.math.BigDecimal calculateFinalAmount(CartContract cart, TaxCalculation tax,
             ShippingCost shipping, java.math.BigDecimal discount) {
-        java.math.BigDecimal subtotal = cart.getTotalPrice();
-        java.math.BigDecimal taxAmount = tax != null ? java.math.BigDecimal.valueOf(tax.totalAmount())
+        java.math.BigDecimal subtotal = cart.subTotal();
+        java.math.BigDecimal taxAmount = tax != null ? tax.totalAmount()
                 : java.math.BigDecimal.ZERO;
-        java.math.BigDecimal shippingAmount = shipping != null ? java.math.BigDecimal.valueOf(shipping.amount())
+        java.math.BigDecimal shippingAmount = shipping != null ? shipping.amount()
                 : java.math.BigDecimal.ZERO;
         java.math.BigDecimal discountAmount = discount != null ? discount.abs() : java.math.BigDecimal.ZERO;
         return subtotal.add(taxAmount).add(shippingAmount).subtract(discountAmount);

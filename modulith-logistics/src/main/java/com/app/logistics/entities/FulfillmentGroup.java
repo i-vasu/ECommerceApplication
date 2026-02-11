@@ -1,12 +1,13 @@
 package com.app.logistics.entities;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
-@Table("fulfillment_groups")
+@Entity
+@Table(name = "fulfillment_groups")
 public class FulfillmentGroup {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long orderId;

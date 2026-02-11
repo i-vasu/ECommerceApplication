@@ -17,7 +17,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.format.DateTimeFormatter;
 
-@Route(value = "admin/operational-dashboard")
+@Route(value = "admin/operational-dashboard", layout = AdminMainLayout.class)
 @PageTitle("Operational Intelligence | Vasu Admin")
 @RolesAllowed("ADMIN")
 @Log4j2
@@ -50,9 +50,9 @@ public class AdminOperationalDashboardView extends VerticalLayout {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setWidthFull();
 
-        layout.add(createStatCard("Total Automations", "1,284", VaadinIcon.AUTOMATION, "text-blue-600"));
+        layout.add(createStatCard("Total Automations", "1,284", VaadinIcon.COG, "text-blue-600"));
         layout.add(createStatCard("Fraud Intercepts", "12", VaadinIcon.SHIELD, "text-red-600"));
-        layout.add(createStatCard("Revenue Recovered", "₹45,200", VaadinIcon.MONEY, "text-green-600"));
+        layout.add(createStatCard("Revenue Recovered", "₹45,200", VaadinIcon.MONEY_EXCHANGE, "text-green-600"));
         layout.add(createStatCard("Inventory Syncs", "892", VaadinIcon.PACKAGE, "text-purple-600"));
 
         return layout;

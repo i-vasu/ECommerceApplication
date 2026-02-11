@@ -48,15 +48,25 @@ public class SchemaMultiTenantConnectionProvider implements MultiTenantConnectio
     public Connection getConnection(String tenantIdentifier) throws SQLException {
         Connection connection = getAnyConnection();
         // Switch search_path to the tenant's schema
-        connection.createStatement().execute("SET search_path TO " + tenantIdentifier + ", public");
+        String sql = isH2(connection) ? "SET SCHEMA " + tenantIdentifier : "SET search_path TO " + tenantIdentifier + ", public";
+        connection.createStatement().execute(sql);
         return connection;
     }
 
     @Override
     public void releaseConnection(String tenantIdentifier, Connection connection) throws SQLException {
         // Reset search_path to public
-        connection.createStatement().execute("SET search_path TO public");
+        String sql = isH2(connection) ? "SET SCHEMA PUBLIC" : "SET search_path TO public";
+        connection.createStatement().execute(sql);
         releaseAnyConnection(connection);
+    }
+
+    private boolean isH2(Connection connection) {
+        try {
+            return connection.getMetaData().getDatabaseProductName().equals("H2");
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     @Override

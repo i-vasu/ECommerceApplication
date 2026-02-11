@@ -16,7 +16,7 @@ import jakarta.annotation.security.RolesAllowed;
 
 import java.util.List;
 
-@Route(value = "admin/rule-registry")
+@Route(value = "admin/rules", layout = AdminMainLayout.class)
 @PageTitle("Rule Registry | Vasu E-Commerce")
 @RolesAllowed("ADMIN")
 public class AdminRuleRegistryView extends VerticalLayout {

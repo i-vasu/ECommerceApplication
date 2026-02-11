@@ -79,6 +79,7 @@ public class AuthController implements AuthApi {
 		Map<String, Object> response = new HashMap<>();
 		response.put("jwt-token", token);
 		response.put("refresh-token", refreshToken.getToken());
+		response.put("user", user.toBuilder().password(null).build());
 		return response;
 	}
 

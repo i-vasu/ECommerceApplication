@@ -1,27 +1,36 @@
-package com.app.cart;
+package com.app.cart.services;
 
 import com.app.cart.domain.CartServiceImpl;
+import com.app.cart.domain.services.CartCouponService;
 import com.app.cart.entities.Cart;
 import com.app.cart.entities.CartItem;
 import com.app.cart.repositories.CartItemRepo;
 import com.app.cart.repositories.CartRepo;
-import com.app.catalog.entities.Product;
-import com.app.catalog.repositories.ProductRepo;
+import com.app.catalog.ProductService;
+import com.app.catalog.payloads.ProductDTO;
 import com.app.core.APIException;
+import com.app.core.services.RedisLockService;
+import com.app.finance.pricing.OrderTotalService;
+import com.app.finance.pricing.contracts.OrderSummary;
+import com.app.governance.rules.RuleEngineService;
+import com.app.intelligence.analysis.services.AnalyticsService;
+import com.app.logistics.inventory.InventoryReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,109 +42,165 @@ public class CartServiceTest {
     @Mock
     private CartItemRepo cartItemRepo;
     @Mock
-    private ProductRepo productRepo;
+    private ProductService productService;
     @Mock
-    private ModelMapper modelMapper;
+    private RedisLockService lockService;
+    @Mock
+    private OrderTotalService orderTotalService;
+    @Mock
+    private InventoryReservationService inventoryReservationService;
+    @Mock
+    private CartCouponService cartCouponService;
+    @Mock
+    private AnalyticsService analyticsService;
+    @Mock
+    private RuleEngineService ruleEngine;
 
     @InjectMocks
     private CartServiceImpl cartService;
 
     private Cart testCart;
-    private Product testProduct;
-    private String userEmail = "cart@example.com";
+    private ProductDTO testProduct;
+    private Long cartId = 1L;
+    private Long productId = 100L;
+    private String itemCode = "ITEM001";
 
     @BeforeEach
     void setUp() {
         testCart = new Cart();
-        testCart.setCartId(1L);
-        com.app.security.entities.User user = new com.app.security.entities.User();
-        user.setUserId(200L);
-        user.setEmail(userEmail);
-        testCart.setUserId(user.getUserId());
+        testCart.setCartId(cartId);
+        testCart.setUserId(200L);
         testCart.setCartItems(new ArrayList<>());
         testCart.setTotalPrice(BigDecimal.ZERO);
 
-        testProduct = new Product();
-        testProduct.setProductId(100L);
-        testProduct.setProductName("Test Item");
-        testProduct.setPrice(BigDecimal.valueOf(10.0));
-        testProduct.setQuantity(50);
-    }
-
-    @Test
-    void testAddProductToCart_NewItem() {
-        when(cartRepo.findById(1L)).thenReturn(Optional.of(testCart));
-        when(productRepo.findById(100L)).thenReturn(Optional.of(testProduct));
-        
-        cartService.addProductToCart(1L, 100L, "ITEM001", 2);
-        
-        assertEquals(1, testCart.getCartItems().size());
-        assertEquals(0, BigDecimal.valueOf(20.0).compareTo(testCart.getTotalPrice()));
-        verify(cartRepo).save(testCart);
-    }
-
-    @Test
-    void testAddProductToCart_ExistingItem() {
-        CartItem existing = new CartItem();
-        existing.setProductId(100L);
-        existing.setQuantity(1);
-        existing.setProductPrice(BigDecimal.valueOf(10.0));
-        testCart.getCartItems().add(existing);
-        testCart.setTotalPrice(BigDecimal.valueOf(10.0));
-
-        when(cartRepo.findById(1L)).thenReturn(Optional.of(testCart));
-        when(productRepo.findById(100L)).thenReturn(Optional.of(testProduct));
-        
-        cartService.addProductToCart(1L, 100L, "ITEM001", 2);
-        
-        assertEquals(1, testCart.getCartItems().size());
-        assertEquals(3, existing.getQuantity());
-        assertEquals(0, BigDecimal.valueOf(30.0).compareTo(testCart.getTotalPrice()));
-    }
-
-    @Test
-    void testAddProductToCart_InsufficientStock() {
-        testProduct.setQuantity(1);
-        when(cartRepo.findById(1L)).thenReturn(Optional.of(testCart));
-        when(productRepo.findById(100L)).thenReturn(Optional.of(testProduct));
-        
-        assertThrows(APIException.class, () -> 
-            cartService.addProductToCart(1L, 100L, "ITEM001", 5)
+        testProduct = new ProductDTO(
+            productId, 
+            "Test Product", 
+            itemCode, 
+            "img.png", 
+            "Test Description", 
+            50, 
+            BigDecimal.valueOf(100.0), 
+            BigDecimal.valueOf(10.0), 
+            BigDecimal.valueOf(90.0), 
+            List.of(), 
+            List.of(), 
+            List.of(), 
+            4.5
         );
     }
 
     @Test
-    void testUpdateProductQuantity() {
-        CartItem existing = new CartItem();
-        existing.setProductId(100L);
-        existing.setQuantity(1);
-        existing.setProductPrice(BigDecimal.valueOf(10.0));
-        testCart.getCartItems().add(existing);
-        testCart.setTotalPrice(BigDecimal.valueOf(10.0));
+    void testAddProductToCart_NewItem() {
+        // Arrange
+        when(lockService.tryLock(anyString(), any(Duration.class))).thenReturn(true);
+        when(cartRepo.findById(cartId)).thenReturn(Optional.of(testCart));
+        when(ruleEngine.evaluate(anyString(), anyMap())).thenReturn(true);
+        when(productService.getProductById(productId)).thenReturn(testProduct);
+        when(cartItemRepo.findCartItemByProductIdAndCartIdAndItemCode(eq(cartId), eq(productId), anyString())).thenReturn(null);
+        when(inventoryReservationService.checkStock(anyString(), anyInt())).thenReturn(true);
+        
+        OrderSummary orderSummary = new OrderSummary();
+        orderSummary.setFinalTotal(BigDecimal.valueOf(180.0));
+        when(orderTotalService.calculate(any())).thenReturn(orderSummary);
+        
+        // Act
+        cartService.addProductToCart(cartId, productId, itemCode, 2);
+        
+        // Assert
+        verify(cartItemRepo).save(any(CartItem.class));
+        verify(analyticsService).trackAddToCart(anyLong(), anyString(), any());
+        verify(lockService).unlock(anyString());
+    }
 
-        when(cartRepo.findById(1L)).thenReturn(Optional.of(testCart));
-        when(productRepo.findById(100L)).thenReturn(Optional.of(testProduct));
+    @Test
+    void testAddProductToCart_ExistingItem_ShouldThrowException() {
+        // Arrange
+        CartItem existingItem = new CartItem();
+        existingItem.setProductId(productId);
+        existingItem.setItemCode(itemCode);
+        existingItem.setQuantity(1);
+        existingItem.setProductPrice(BigDecimal.valueOf(90.0));
         
-        cartService.updateProductQuantityInCart(1L, 100L, "ITEM001", 5);
+        when(lockService.tryLock(anyString(), any(Duration.class))).thenReturn(true);
+        when(cartRepo.findById(cartId)).thenReturn(Optional.of(testCart));
+        when(ruleEngine.evaluate(anyString(), anyMap())).thenReturn(true);
+        when(productService.getProductById(productId)).thenReturn(testProduct);
+        when(cartItemRepo.findCartItemByProductIdAndCartIdAndItemCode(eq(cartId), eq(productId), anyString())).thenReturn(existingItem);
         
-        assertEquals(5, existing.getQuantity());
-        assertEquals(0, BigDecimal.valueOf(50.0).compareTo(testCart.getTotalPrice()));
+        // Act & Assert - Should throw exception because item already exists
+        assertThrows(APIException.class, () -> 
+            cartService.addProductToCart(cartId, productId, itemCode, 2)
+        );
+        
+        verify(lockService).unlock(anyString());
+    }
+
+    @Test
+    void testAddProductToCart_InsufficientStock() {
+        // Arrange
+        when(lockService.tryLock(anyString(), any(Duration.class))).thenReturn(true);
+        when(cartRepo.findById(cartId)).thenReturn(Optional.of(testCart));
+        when(ruleEngine.evaluate(anyString(), anyMap())).thenReturn(true);
+        when(productService.getProductById(productId)).thenReturn(testProduct);
+        when(cartItemRepo.findCartItemByProductIdAndCartIdAndItemCode(eq(cartId), eq(productId), anyString())).thenReturn(null);
+        when(inventoryReservationService.checkStock(anyString(), anyInt())).thenReturn(false);
+        
+        // Act & Assert
+        assertThrows(APIException.class, () -> 
+            cartService.addProductToCart(cartId, productId, itemCode, 100)
+        );
+        
+        verify(lockService).unlock(anyString());
+    }
+
+    @Test
+    void testUpdateProductQuantity() {
+        // Arrange
+        CartItem existingItem = new CartItem();
+        existingItem.setProductId(productId);
+        existingItem.setItemCode(itemCode);
+        existingItem.setQuantity(1);
+        existingItem.setProductPrice(BigDecimal.valueOf(90.0));
+        testCart.getCartItems().add(existingItem);
+        
+        when(cartRepo.findById(cartId)).thenReturn(Optional.of(testCart));
+        when(cartItemRepo.findCartItemByProductIdAndCartId(cartId, productId)).thenReturn(existingItem);
+        when(inventoryReservationService.checkStock(anyString(), anyInt())).thenReturn(true);
+        
+        OrderSummary orderSummary = new OrderSummary();
+        orderSummary.setFinalTotal(BigDecimal.valueOf(450.0));
+        when(orderTotalService.calculate(any())).thenReturn(orderSummary);
+        
+        // Act
+        cartService.updateProductQuantityInCart(cartId, productId, itemCode, 5);
+        
+        // Assert
+        assertEquals(5, existingItem.getQuantity());
     }
 
     @Test
     void testDeleteProductFromCart() {
-        CartItem existing = new CartItem();
-        existing.setProductId(100L);
-        existing.setQuantity(1);
-        existing.setProductPrice(BigDecimal.valueOf(10.0));
-        testCart.getCartItems().add(existing);
-        testCart.setTotalPrice(BigDecimal.valueOf(10.0));
-
-        when(cartRepo.findById(1L)).thenReturn(Optional.of(testCart));
+        // Arrange
+        CartItem existingItem = new CartItem();
+        existingItem.setProductId(productId);
+        existingItem.setItemCode(itemCode);
+        existingItem.setQuantity(1);
+        existingItem.setProductPrice(BigDecimal.valueOf(90.0));
+        testCart.getCartItems().add(existingItem);
         
-        cartService.deleteProductFromCart(1L, 100L);
+        when(cartRepo.findById(cartId)).thenReturn(Optional.of(testCart));
+        when(cartItemRepo.findCartItemByProductIdAndCartId(cartId, productId)).thenReturn(existingItem);
         
+        OrderSummary orderSummary = new OrderSummary();
+        orderSummary.setFinalTotal(BigDecimal.ZERO);
+        when(orderTotalService.calculate(any())).thenReturn(orderSummary);
+        
+        // Act
+        cartService.deleteProductFromCart(cartId, productId);
+        
+        // Assert
+        verify(cartItemRepo).delete(existingItem);
         assertEquals(0, testCart.getCartItems().size());
-        assertEquals(0, BigDecimal.ZERO.compareTo(testCart.getTotalPrice()));
     }
 }

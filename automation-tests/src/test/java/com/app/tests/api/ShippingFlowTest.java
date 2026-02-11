@@ -3,8 +3,10 @@ package com.app.tests.api;
 import com.app.tests.e2e.BaseE2ETest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.is;
 
 public class ShippingFlowTest extends BaseE2ETest {
 

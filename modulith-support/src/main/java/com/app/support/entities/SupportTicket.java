@@ -24,6 +24,12 @@ public class SupportTicket {
     // LOGISTICS, REFUND, QUALITY, GENERAL
     private String category = "GENERAL";
 
+    // LOW, MEDIUM, HIGH, URGENT
+    private String priority = "LOW";
+
+    // regular, concierge
+    private String assignedQueue = "regular";
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // Optional: Link to an Order
@@ -108,5 +114,21 @@ public class SupportTicket {
 
     public void setMessages(List<TicketMessage> messages) {
         this.messages = messages;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
+    }
+
+    public String getAssignedQueue() {
+        return assignedQueue;
+    }
+
+    public void setAssignedQueue(String assignedQueue) {
+        this.assignedQueue = assignedQueue;
     }
 }

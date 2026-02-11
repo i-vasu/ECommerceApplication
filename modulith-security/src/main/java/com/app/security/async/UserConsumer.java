@@ -1,7 +1,7 @@
 package com.app.security.async;
 
 import com.app.core.async.EventProducer;
-import com.app.core.events.ERPNextSyncRequestEvent;
+
 import com.app.security.repositories.UserRepo;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.stream.StreamListener;
@@ -79,14 +79,7 @@ public class UserConsumer implements StreamListener<String, ObjectRecord<String,
         if ("USER_REGISTERED".equals(eventType) || eventType == null) {
             userRepo.findById(userId).ifPresent(user -> {
                 log.info("User registered: {}", user.getEmail());
-
-                // Publish ERPNext sync request event (decoupled approach)
-                ERPNextSyncRequestEvent syncEvent = new ERPNextSyncRequestEvent(
-                        "USER",
-                        user.getUserId(),
-                        "CREATE");
-                eventProducer.publishEvent(syncEvent);
-                log.info("Published ERPNext sync request for user: {}", user.getEmail());
+                // ERPNext Sync removed
             });
         }
     }

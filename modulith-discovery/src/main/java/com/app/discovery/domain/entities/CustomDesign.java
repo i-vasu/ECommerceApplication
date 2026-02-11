@@ -30,7 +30,27 @@ public class CustomDesign {
     // Optional: If user can upload a reference image or sketch
     private String referenceImageUrl;
 
+    private String prompt;
+
+    private String imageUrl;
+
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public String getPrompt() {
+        return prompt;
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 
     public CustomDesign() {
     }

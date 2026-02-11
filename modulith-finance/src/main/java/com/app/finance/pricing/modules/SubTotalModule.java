@@ -22,6 +22,11 @@ public class SubTotalModule implements OrderTotalModule {
     }
 
     @Override
+    public boolean isCritical() {
+        return true; // GAP-06: Subtotal is critical for pricing
+    }
+
+    @Override
     public OrderTotal calculate(OrderSummary summary, OrderTotalInput input) {
         if (input.getItems() == null || input.getItems().isEmpty()) {
             return null;
@@ -29,7 +34,7 @@ public class SubTotalModule implements OrderTotalModule {
 
         BigDecimal subTotal = BigDecimal.ZERO;
         for (OrderTotalInput.ItemInput item : input.getItems()) {
-            BigDecimal price = BigDecimal.valueOf(item.getPrice() != null ? item.getPrice() : 0.0);
+            BigDecimal price = item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO;
             BigDecimal qty = BigDecimal.valueOf(item.getQuantity() != null ? item.getQuantity() : 0);
             subTotal = subTotal.add(price.multiply(qty));
         }

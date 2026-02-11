@@ -21,11 +21,11 @@ public class Coupon {
     @Enumerated(EnumType.STRING)
     private DiscountType discountType;
 
-    private Double discountValue;
+    private java.math.BigDecimal discountValue;
 
-    private Double minOrderAmount;
+    private java.math.BigDecimal minOrderAmount;
 
-    private Double maxDiscountAmount;
+    private java.math.BigDecimal maxDiscountAmount;
 
     private LocalDateTime validFrom;
 
@@ -34,6 +34,8 @@ public class Coupon {
     private Integer usageLimit;
 
     private Integer usedCount = 0;
+
+    private Integer maxUsesPerUser;
 
     @ElementCollection
     @CollectionTable(name = "coupon_categories", joinColumns = @JoinColumn(name = "coupon_id"))
@@ -53,8 +55,8 @@ public class Coupon {
     public Coupon() {
     }
 
-    public Coupon(Long couponId, String code, String description, DiscountType discountType, Double discountValue,
-            Double minOrderAmount, Double maxDiscountAmount, LocalDateTime validFrom, LocalDateTime validTo,
+    public Coupon(Long couponId, String code, String description, DiscountType discountType, java.math.BigDecimal discountValue,
+            java.math.BigDecimal minOrderAmount, java.math.BigDecimal maxDiscountAmount, LocalDateTime validFrom, LocalDateTime validTo,
             Integer usageLimit, Integer usedCount, Set<String> applicableCategories, boolean active,
             LocalDateTime createdAt) {
         this.couponId = couponId;
@@ -105,27 +107,27 @@ public class Coupon {
         this.discountType = discountType;
     }
 
-    public Double getDiscountValue() {
+    public java.math.BigDecimal getDiscountValue() {
         return discountValue;
     }
 
-    public void setDiscountValue(Double discountValue) {
+    public void setDiscountValue(java.math.BigDecimal discountValue) {
         this.discountValue = discountValue;
     }
 
-    public Double getMinOrderAmount() {
+    public java.math.BigDecimal getMinOrderAmount() {
         return minOrderAmount;
     }
 
-    public void setMinOrderAmount(Double minOrderAmount) {
+    public void setMinOrderAmount(java.math.BigDecimal minOrderAmount) {
         this.minOrderAmount = minOrderAmount;
     }
 
-    public Double getMaxDiscountAmount() {
+    public java.math.BigDecimal getMaxDiscountAmount() {
         return maxDiscountAmount;
     }
 
-    public void setMaxDiscountAmount(Double maxDiscountAmount) {
+    public void setMaxDiscountAmount(java.math.BigDecimal maxDiscountAmount) {
         this.maxDiscountAmount = maxDiscountAmount;
     }
 
@@ -183,5 +185,13 @@ public class Coupon {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getMaxUsesPerUser() {
+        return maxUsesPerUser;
+    }
+
+    public void setMaxUsesPerUser(Integer maxUsesPerUser) {
+        this.maxUsesPerUser = maxUsesPerUser;
     }
 }

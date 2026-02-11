@@ -11,8 +11,6 @@ import java.util.List;
 
 @Entity
 @Table(name = "return_requests")
-@Data
-@NoArgsConstructor
 public class ReturnRequest {
 
     @Id
@@ -41,6 +39,38 @@ public class ReturnRequest {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    public ReturnRequest() {}
+
+    public Long getReturnRequestId() { return returnRequestId; }
+    public void setReturnRequestId(Long returnRequestId) { this.returnRequestId = returnRequestId; }
+
+    public Long getOrderId() { return orderId; }
+    public void setOrderId(Long orderId) { this.orderId = orderId; }
+
+    public String getUserEmail() { return userEmail; }
+    public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
+
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
+
+    public ReturnStatus getStatus() { return status; }
+    public void setStatus(ReturnStatus status) { this.status = status; }
+
+    public List<ReturnItem> getItems() { return items; }
+    public void setItems(List<ReturnItem> items) { this.items = items; }
+
+    public Double getRefundAmount() { return refundAmount; }
+    public void setRefundAmount(Double refundAmount) { this.refundAmount = refundAmount; }
+
+    public String getAdminComments() { return adminComments; }
+    public void setAdminComments(String adminComments) { this.adminComments = adminComments; }
+
+    public RefundType getRefundType() { return refundType; }
+    public void setRefundType(RefundType refundType) { this.refundType = refundType; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public enum ReturnStatus {
         REQUESTED, APPROVED, REJECTED, PICKED_UP, INSPECTED, COMPLETED

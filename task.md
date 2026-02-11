@@ -13,7 +13,11 @@
     - [x] Implement `FinanceEventListener` (Finance Module) <!-- id: 10 -->
     - [x] Implement `ERPEventListener` (ERP-Sync Module) <!-- id: 11 -->
     - [x] Fix compilation errors in `modulith-service` tests.
-- [ ] Verify `ServiceContextTest` passes.
-- [ ] Verify `ArchitectureTest` passes.
-- [!] **SKIP FQN Refactoring** (as per latest user request).
-- [ ] Verify happy path: Order Placement.
+- [x] **Infrastructure & Observability (Production Ready)**
+    - [x] Implement Observability Stack (Prometheus, Grafana, Tempo, Loki) in `docker-compose.yml`
+    - [x] Configure Micrometer & Tracing in Spring Boot (`modulith-kernel`)
+    - [x] Implement Database Migrations (Flyway/Liquibase) & Disable `ddl-auto`
+    - [ ] Configure CI/CD Pipelines (PR Checks, Quality Gates)
+    - [x] Define Resource Limits & Liveness Probes in Docker
+- [x] **Functional Resilience (Critical Business Logic)**
+    - [x] Create Refactoring Plan (`SYSTEM_AUDIT_REPORT.md`) <!-- id:

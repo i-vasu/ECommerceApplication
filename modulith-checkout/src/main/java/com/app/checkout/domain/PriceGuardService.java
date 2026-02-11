@@ -1,8 +1,8 @@
 package com.app.checkout.domain;
 
-import com.app.cart.entities.CartItem;
 import com.app.catalog.entities.Product;
 import com.app.catalog.repositories.ProductRepo;
+import com.app.core.contracts.CartContract.CartItemContract;
 import com.app.governance.rules.RuleEngineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -29,16 +29,16 @@ public class PriceGuardService {
      * 
      * @return true if price is safe, false if it's a potential anomaly.
      */
-    public boolean isPriceSafe(List<CartItem> items) {
+    public boolean isPriceSafe(List<CartItemContract> items) {
         log.info("PriceGuard: Analyzing margin for {} items", items.size());
 
-        for (CartItem item : items) {
-            Product p = productRepo.findById(item.getProductId()).orElse(null);
+        for (CartItemContract item : items) {
+            Product p = productRepo.findById(item.productId()).orElse(null);
             if (p == null)
                 continue;
 
             Map<String, Object> context = new HashMap<>();
-            context.put("soldPrice", item.getProductPrice());
+            context.put("soldPrice", item.price());
             context.put("baseCost", p.getPrice()); // Assuming base price is cost
 
             // Rule: Margin must be at least 70% of base price (allowing for 30% discount max)
@@ -48,7 +48,7 @@ public class PriceGuardService {
             if (!ruleEngine.evaluate(marginRule, context)) {
                 log.error(
                         "CRITICAL: Price Guard Violation! Item {} sold at {}, but cost is {}. Difference exceeds safety threshold.",
-                        item.getProductName(), item.getProductPrice(), p.getPrice());
+                        item.productName(), item.price(), p.getPrice());
                 return false;
             }
         }

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Route("admin/trace-viewer")
+@Route(value = "admin/tracing", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminTraceView extends VerticalLayout implements HasUrlParameter<String> {
 

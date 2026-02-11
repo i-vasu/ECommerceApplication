@@ -10,6 +10,7 @@ import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
 import com.app.core.async.EventProducer;
 import com.app.core.audit.AuditTrail;
+import com.app.core.contracts.CartContract;
 import com.app.finance.payment.PaymentService;
 import com.app.governance.states.OrderStatus;
 import com.app.logistics.inventory.InventoryReservationService;
@@ -19,6 +20,7 @@ import com.app.order.entities.OrderHistory;
 import com.app.order.entities.OrderItem;
 import com.app.order.mappers.OrderMapper;
 import com.app.order.payloads.OrderDTO;
+import com.app.order.payloads.OrderRequest;
 import com.app.order.payloads.OrderResponse;
 import com.app.order.repositories.OrderHistoryRepo;
 import com.app.order.repositories.OrderItemRepo;
@@ -115,32 +117,143 @@ public class OrderServiceImpl implements OrderService {
 
 	@jakarta.annotation.PostConstruct
 	public void initMetrics() {
-		this.checkoutSuccessCounter = Counter.builder("ecommerce.checkout.success")
-				.description("Number of successful checkouts")
-				.register(meterRegistry);
-		this.checkoutFailureCounter = Counter.builder("ecommerce.checkout.failure")
-				.description("Number of failed checkouts")
-				.register(meterRegistry);
-		this.checkoutTimer = Timer.builder("ecommerce.checkout.duration")
-				.description("Time taken for checkout process")
-				.register(meterRegistry);
+		this.checkoutSuccessCounter = meterRegistry.counter("ecommerce.checkout.success");
+		this.checkoutFailureCounter = meterRegistry.counter("ecommerce.checkout.failure");
+		this.checkoutTimer = meterRegistry.timer("ecommerce.checkout.duration");
 	}
-
+ 
 	@Override
 	@Transactional
 	@AuditTrail(action = "PLACE_ORDER")
-	public OrderDTO placeOrder(String emailId, Long cartId, String paymentMethod) {
+	public OrderDTO placeOrder(String emailId, Long cartId, String paymentMethod, OrderRequest request) {
 		return checkoutTimer.record(() -> {
 			var span = tracer.nextSpan().name("placeOrder").start();
 			try (var scope = tracer.withSpan(span)) {
-				return executePlaceOrder(emailId, cartId, paymentMethod);
+				return executePlaceOrder(emailId, cartId, paymentMethod, request);
 			} finally {
 				span.end();
 			}
 		});
 	}
 
-	private OrderDTO executePlaceOrder(String emailId, Long cartId, String paymentMethod) {
+	private com.app.cart.entities.Cart fetchAndValidateCart(com.app.security.entities.User user, Long cartId, OrderRequest request) {
+		var cart = cartRepo.findCartByUserIdAndCartId(user.getUserId(), cartId);
+		if (cart == null) {
+			throw new ResourceNotFoundException("Cart", "cartId", cartId);
+		}
+
+		var cartItems = cart.getCartItems();
+		if (cartItems.isEmpty()) {
+			throw new APIException("Cart is empty");
+		}
+
+		// Apply coupon from request if provided
+		if (request != null && request.getCouponCode() != null && !request.getCouponCode().isEmpty()) {
+			cart.setCouponCode(request.getCouponCode());
+			cartRepo.save(cart);
+		}
+		return cart;
+	}
+
+	private Address resolveAddress(com.app.cart.entities.Cart cart, OrderRequest request) {
+		Address address = null;
+		if (request != null) {
+			if (request.getAddressId() != null) {
+				address = addressRepo.findById(request.getAddressId()).orElse(null);
+			} else if (request.getStreet() != null && !request.getStreet().isEmpty()) {
+				address = new Address();
+				address.setStreet(request.getStreet());
+				address.setCity(request.getCity());
+				address.setState(request.getState());
+				address.setPincode(request.getPincode());
+				address.setCountry(request.getCountry() != null ? request.getCountry() : "India");
+				address.setReceiverPhoneNumber(request.getReceiverPhoneNumber());
+				address.setBuildingName(request.getStreet()); // Default
+			}
+		}
+
+		if (address == null && cart.getAddressId() != null) {
+			address = addressRepo.findById(cart.getAddressId()).orElse(null);
+		}
+		return address;
+	}
+
+	private Order prepareOrderEntity(String emailId, com.app.security.entities.User user, com.app.cart.entities.Cart cart, 
+			Address address, com.app.checkout.pipeline.OptimizedCheckoutService.CheckoutResult checkoutResult) {
+		var order = new Order();
+		order.setEmail(emailId);
+		order.setUserId(user.getUserId());
+		order.setOrderDate(LocalDate.now());
+
+		if (address != null) {
+			order.setShippingDestination(
+					address.getStreet(),
+					address.getCity(),
+					address.getState(),
+					address.getPincode(),
+					address.getCountry(),
+					address.getReceiverPhoneNumber());
+		}
+
+		// SET FINANCIAL SNAPSHOTS (Domain Correctness with BigDecimal)
+		order.setSubTotal(cart.getTotalPrice());
+		order.setTotalTax(checkoutResult.tax().totalAmount());
+		order.setShippingCost(checkoutResult.shipping().amount());
+		order.setTotalAmount(checkoutResult.finalAmount());
+
+		// DOMAIN ACTION: Formally transition to PENDING via State Machine
+		order.setOrderStatus(OrderStatus.PENDING);
+		order.setCouponCode(cart.getCouponCode());
+		return order;
+	}
+
+	private List<OrderItem> createOrderItems(com.app.cart.entities.Cart cart, Order savedOrder, 
+			com.app.checkout.pipeline.OptimizedCheckoutService.CheckoutResult checkoutResult) {
+		List<OrderItem> orderItemsList = new ArrayList<>();
+
+		for (var cartItem : cart.getCartItems()) {
+			var orderItem = new OrderItem();
+
+			var product = productRepo.findById(cartItem.getProductId())
+					.orElseThrow(
+							() -> new ResourceNotFoundException("Product", "productId",
+									cartItem.getProductId()));
+
+			orderItem.setProductId(product.getProductId());
+			orderItem.setItemCode(cartItem.getItemCode());
+			orderItem.setProductName(cartItem.getProductName());
+			orderItem.setQuantity(cartItem.getQuantity());
+			orderItem.setDiscount(cartItem.getDiscount());
+			orderItem.setOrderedPrice(cartItem.getProductPrice());
+			orderItem.setOrder(savedOrder);
+
+			// CALCULATE & PERSIST LINE-ITEM TAXES
+			List<com.app.order.entities.OrderItemTaxDetail> itemTaxes = new ArrayList<>();
+			for (var taxComp : checkoutResult.tax().components()) {
+				// Distribute total tax components proportionally across items
+				java.math.BigDecimal cartTotal = cart.getTotalPrice();
+				java.math.BigDecimal itemTotal = cartItem.getProductPrice()
+						.multiply(java.math.BigDecimal.valueOf(cartItem.getQuantity()));
+				java.math.BigDecimal itemRatio = cartTotal.compareTo(java.math.BigDecimal.ZERO) > 0
+						? itemTotal.divide(cartTotal, 4, java.math.RoundingMode.HALF_UP)
+						: java.math.BigDecimal.ZERO;
+
+				var detail = new com.app.order.entities.OrderItemTaxDetail();
+				detail.setOrderItem(orderItem);
+				detail.setTaxName(taxComp.name());
+				detail.setTaxRate(taxComp.rate());
+				detail.setTaxAmount(taxComp.amount().multiply(itemRatio));
+				itemTaxes.add(detail);
+			}
+			orderItem.setTaxDetails(itemTaxes);
+
+			orderItemsList.add(orderItem);
+		}
+
+		return orderItemRepo.saveAll(orderItemsList);
+	}
+
+	private OrderDTO executePlaceOrder(String emailId, Long cartId, String paymentMethod, OrderRequest request) {
 		String lockKey = "placeOrder:" + cartId;
 		boolean locked = lockService.tryLock(lockKey, java.time.Duration.ofMinutes(1));
 		if (!locked) {
@@ -151,24 +264,12 @@ public class OrderServiceImpl implements OrderService {
 			var user = userRepo.findByEmail(emailId)
 					.orElseThrow(() -> new ResourceNotFoundException("User", "email", emailId));
 
-			var cart = cartRepo.findCartByUserIdAndCartId(user.getUserId(), cartId);
-			if (cart == null) {
-				throw new ResourceNotFoundException("Cart", "cartId", cartId);
-			}
-
-			var cartItems = cart.getCartItems();
-			if (cartItems.isEmpty()) {
-				throw new APIException("Cart is empty");
-			}
-
-			// fetch address if available
-			Address address = null;
-			if (cart.getAddressId() != null) {
-				address = addressRepo.findById(cart.getAddressId()).orElse(null);
-			}
+			var cart = fetchAndValidateCart(user, cartId, request);
+			var address = resolveAddress(cart, request);
 
 			// Use Optimized Checkout for parallel validations
-			var checkoutResult = optimizedCheckoutService.processCheckout(cart, address);
+			CartContract cartContract = toContract(cart);
+			var checkoutResult = optimizedCheckoutService.processCheckout(cartContract, address);
 
 			if (!checkoutResult.inventory().locked()) {
 				throw new APIException("Out of Stock (or Reservation Failed)");
@@ -187,36 +288,8 @@ public class OrderServiceImpl implements OrderService {
 						+ String.join(", ", checkoutResult.priceDiscrepancies()));
 			}
 
-			var order = new Order();
+			var order = prepareOrderEntity(emailId, user, cart, address, checkoutResult);
 			try {
-				order.setEmail(emailId);
-				order.setUserId(user.getUserId());
-				order.setOrderDate(LocalDate.now());
-
-				/**
-				 * UBIQUITOUS LANGUAGE: Address Snapshot.
-				 * Prevents loss of delivery information if the user changes their profile
-				 * address later.
-				 */
-				if (address != null) {
-					order.setShippingDestination(
-							address.getStreet(),
-							address.getCity(),
-							address.getState(),
-							address.getPincode(),
-							address.getCountry());
-				}
-
-				// SET FINANCIAL SNAPSHOTS (Domain Correctness with BigDecimal)
-				order.setSubTotal(cart.getTotalPrice());
-				order.setTotalTax(java.math.BigDecimal.valueOf(checkoutResult.tax().totalAmount()));
-				order.setShippingCost(java.math.BigDecimal.valueOf(checkoutResult.shipping().amount()));
-				order.setTotalAmount(checkoutResult.finalAmount());
-
-				// DOMAIN ACTION: Formally transition to PENDING via State Machine
-				order.setOrderStatus(OrderStatus.PENDING);
-				order.setCouponCode(cart.getCouponCode());
-
 				var savedOrder = orderRepo.save(order);
 				operationalStateMachine.triggerOrderEvent(savedOrder.getOrderId(),
 						com.app.governance.states.OrderEvent.PLACE);
@@ -225,50 +298,8 @@ public class OrderServiceImpl implements OrderService {
 				savedOrder.setPaymentId(paymentResponse.paymentId());
 				savedOrder = orderRepo.save(savedOrder);
 
-				List<OrderItem> orderItemsList = new ArrayList<>();
-
-				for (var cartItem : cartItems) {
-					var orderItem = new OrderItem();
-
-					var product = productRepo.findById(cartItem.getProductId())
-							.orElseThrow(
-									() -> new ResourceNotFoundException("Product", "productId",
-											cartItem.getProductId()));
-
-					orderItem.setProductId(product.getProductId());
-					orderItem.setItemCode(cartItem.getItemCode());
-					orderItem.setProductName(cartItem.getProductName());
-					orderItem.setQuantity(cartItem.getQuantity());
-					orderItem.setDiscount(cartItem.getDiscount());
-					orderItem.setOrderedPrice(cartItem.getProductPrice());
-					orderItem.setOrder(savedOrder);
-
-					// CALCULATE & PERSIST LINE-ITEM TAXES
-					List<com.app.order.entities.OrderItemTaxDetail> itemTaxes = new ArrayList<>();
-					for (var taxComp : checkoutResult.tax().components()) {
-						// Distribute total tax components proportionally across items
-						java.math.BigDecimal cartTotal = cart.getTotalPrice();
-						java.math.BigDecimal itemTotal = cartItem.getProductPrice()
-								.multiply(java.math.BigDecimal.valueOf(cartItem.getQuantity()));
-						java.math.BigDecimal itemRatio = cartTotal.compareTo(java.math.BigDecimal.ZERO) > 0
-								? itemTotal.divide(cartTotal, 4, java.math.RoundingMode.HALF_UP)
-								: java.math.BigDecimal.ZERO;
-
-						var detail = new com.app.order.entities.OrderItemTaxDetail();
-						detail.setOrderItem(orderItem);
-						detail.setTaxName(taxComp.name());
-						detail.setTaxRate(taxComp.rate());
-						detail.setTaxAmount(java.math.BigDecimal.valueOf(taxComp.amount()).multiply(itemRatio));
-						itemTaxes.add(detail);
-					}
-					orderItem.setTaxDetails(itemTaxes);
-
-					orderItemsList.add(orderItem);
-				}
-
-				var savedOrderItems = orderItemRepo.saveAll(orderItemsList);
-				savedOrder.setOrderItems(savedOrderItems);
-
+				savedOrder.setOrderItems(createOrderItems(cart, savedOrder, checkoutResult));
+				
 				if (!"RAZORPAY".equalsIgnoreCase(paymentMethod)) {
 					orderProducer.sendOrder(savedOrder.getOrderId());
 				}
@@ -306,7 +337,7 @@ public class OrderServiceImpl implements OrderService {
 
 			} catch (Exception e) {
 				checkoutFailureCounter.increment();
-				for (var item : cartItems) {
+				for (var item : cart.getCartItems()) {
 					inventoryReservationService.releaseStock(item.getItemCode(), item.getQuantity());
 				}
 				log.error("Order placement failed: {}", e.getMessage());
@@ -319,6 +350,12 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public List<OrderDTO> getOrdersByUser(String emailId) {
+		// GAP-08: IDOR Protection
+		var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null || (!auth.getName().equals(emailId) && !auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")))) {
+			throw new APIException("Unauthorized access to order history of another user.");
+		}
+
 		var orders = orderRepo.findAllByEmail(emailId);
 
 		var orderDTOs = orders.stream()
@@ -334,6 +371,11 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrderDTO getOrder(String emailId, Long orderId) {
+		// GAP-08: IDOR Protection
+		var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null || (!auth.getName().equals(emailId) && !auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")))) {
+			throw new APIException("Unauthorized access to order data.");
+		}
 
 		var order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
 
@@ -399,7 +441,8 @@ public class OrderServiceImpl implements OrderService {
 					"PAYMENT_CAPTURED", com.app.governance.states.OrderEvent.PAY,
 					"PROCESSING", com.app.governance.states.OrderEvent.APPROVE,
 					"SHIPPED", com.app.governance.states.OrderEvent.SHIP,
-					"DELIVERED", com.app.governance.states.OrderEvent.DELIVER);
+					"DELIVERED", com.app.governance.states.OrderEvent.DELIVER,
+					"CANCELLED", com.app.governance.states.OrderEvent.CANCEL);
 
 			com.app.governance.states.OrderEvent event = eventMap.get(orderStatusStr);
 			if (event != null) {
@@ -410,6 +453,18 @@ public class OrderServiceImpl implements OrderService {
 
 			if (next == OrderStatus.DELIVERED) {
 				order.setDeliveredDate(java.time.LocalDateTime.now());
+
+				// PUBLISH OrderCompletedEvent for Verified Review Tracking & Marketing
+				List<Long> productIds = order.getOrderItems().stream()
+						.map(OrderItem::getProductId)
+						.toList();
+
+				eventPublisher.publishEvent(new com.app.core.events.OrderCompletedEvent(
+						orderId,
+						order.getUserId(),
+						order.getEmail(),
+						productIds,
+						order.getTotalAmount().doubleValue()));
 			}
 
 			// LOG HISTORY
@@ -421,6 +476,17 @@ public class OrderServiceImpl implements OrderService {
 			history.setUpdatedBy("SYSTEM"); // Ideally fetch from SecurityContext
 			history.setComments("Status updated via API");
 			orderHistoryRepo.save(history);
+
+			if (next == OrderStatus.CANCELLED) {
+				List<com.app.core.events.OrderCancelledEvent.CancelledItem> cancelledItems = order.getOrderItems().stream()
+						.map(item -> new com.app.core.events.OrderCancelledEvent.CancelledItem(item.getItemCode(),
+								item.getQuantity()))
+						.toList();
+
+				eventPublisher.publishEvent(new com.app.core.events.OrderCancelledEvent(
+						orderId, order.getUserId(), order.getTotalAmount().doubleValue(),
+						"Cancelled via API", cancelledItems));
+			}
 
 		} catch (IllegalArgumentException e) {
 			log.error("Invalid Status for Order ID {}: {}", orderId, orderStatusStr);
@@ -530,19 +596,8 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	@Transactional
 	public OrderDTO retryOrderSync(Long orderId) {
-		Order order = orderRepo.findById(orderId)
-				.orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
-
-		if (order.getOrderStatus() != OrderStatus.PAYMENT_CAPTURED
-				&& order.getOrderStatus() != OrderStatus.PROCESSING) {
-			throw new APIException("Retry sync is only allowed for paid or processing orders.");
-		}
-
-		log.info("Manually retrying ERPNext sync for order: {}", orderId);
-		eventPublisher
-				.publishEvent(new com.app.core.events.ERPNextSyncRequestEvent("ORDER", orderId, "SALES_ORDER_SYNC"));
-
-		return orderMapper.orderToOrderDTO(order);
+		log.info("Manual sync retry disabled as ERPNext is removed.");
+		return getOrderById(orderId);
 	}
 
 	@Override
@@ -558,9 +613,18 @@ public class OrderServiceImpl implements OrderService {
 	public void confirmPayment(Long orderId, String transactionId) {
 		var order = orderRepo.findById(orderId)
 				.orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
+		
+		// GAP-12: Re-verify stock before capturing payment (Overselling prevention)
+		for (var item : order.getOrderItems()) {
+			boolean stockAvailable = inventoryReservationService.checkStock(item.getItemCode(), item.getQuantity());
+			if (!stockAvailable) {
+				log.warn("Stock no longer available for order {} during payment confirmation. Item: {}", orderId, item.getItemCode());
+				// Ideally, trigger auto-refund logic here
+				throw new APIException("Stock no longer available for item: " + item.getItemCode());
+			}
+		}
+
 		order.setOrderStatus(OrderStatus.PAYMENT_CAPTURED);
-		// order.setPaymentId(Long.valueOf(transactionId)); // Assuming transactionId is
-		// numeric if needed, or ignored/logged.
 		orderRepo.save(order);
 	}
 
@@ -568,9 +632,25 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional
 	public void markPaymentFailed(Long orderId, String reason) {
 		orderRepo.findById(orderId).ifPresent(order -> {
+			// 1. Transition State
+			operationalStateMachine.triggerOrderEvent(orderId, com.app.governance.states.OrderEvent.CANCEL);
 			order.setOrderStatus(OrderStatus.CANCELLED);
+			var savedOrder = orderRepo.save(order);
+			
 			log.warn("Order {} payment failed. Reason: {}", orderId, reason);
-			orderRepo.save(order);
+
+			// 2. Publish Event to release stock (Inventory Module) and notify others
+			var items = order.getOrderItems().stream()
+				.map(item -> new com.app.core.events.OrderCancelledEvent.CancelledItem(item.getItemCode(),
+						item.getQuantity()))
+				.toList();
+
+			eventPublisher.publishEvent(new com.app.core.events.OrderCancelledEvent(
+				order.getOrderId(),
+				order.getUserId(),
+				order.getTotalAmount().doubleValue(),
+				"Payment Failed: " + reason,
+				items));
 		});
 	}
 
@@ -585,5 +665,24 @@ public class OrderServiceImpl implements OrderService {
 		return orderRepo.findPendingOrdersByItemCode(itemCode).stream()
 				.map(orderMapper::orderToOrderDTO)
 				.toList();
+	}
+
+	private CartContract toContract(com.app.cart.entities.Cart cart) {
+		List<CartContract.CartItemContract> items = cart.getCartItems().stream()
+				.map(item -> new CartContract.CartItemContract(
+						item.getProductId(),
+						item.getItemCode(),
+						item.getProductName(),
+						item.getQuantity(),
+						item.getProductPrice(),
+						item.getDiscount()))
+				.toList();
+
+		return new CartContract(
+				cart.getCartId(),
+				cart.getUserId(),
+				cart.getTotalPrice(),
+				cart.getCouponCode(),
+				items);
 	}
 }

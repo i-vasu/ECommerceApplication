@@ -51,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
 	private final ContentSanitizer sanitizer;
 	private final SocialProofService socialProofService;
 	private final ReviewService reviewService;
+	private final com.app.core.services.PurchaseVerificationService purchaseVerificationService;
 	private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
 	@Override
@@ -142,9 +143,9 @@ public class ProductServiceImpl implements ProductService {
 
 		var sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
 				: Sort.by(sortBy).descending();
-
+		
 		var pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-		var pageProducts = productRepo.findAll(pageDetails);
+		var pageProducts = productRepo.findByCategory(category, pageDetails);
 		var products = pageProducts.getContent();
 
 		if (products.isEmpty()) {
@@ -246,50 +247,68 @@ public class ProductServiceImpl implements ProductService {
 		var oldPrice = productFromDB.getSpecialPrice();
 		var oldQty = productFromDB.getQuantity();
 
-		product.setImage(productFromDB.getImage());
-		product.setProductId(productId);
-		product.setCategory(productFromDB.getCategory());
+        // Update fields
+        productFromDB.setProductName(product.getProductName());
+        productFromDB.setDescription(product.getDescription());
+        productFromDB.setPrice(product.getPrice());
+        productFromDB.setDiscount(product.getDiscount());
+        productFromDB.setQuantity(product.getQuantity());
+        productFromDB.setBrand(product.getBrand());
+        productFromDB.setTags(product.getTags());
+        // Image and Category are usually preserved or handled separately, but let's assume input 'product' might NOT have them set correctly if it's a partial DTO, 
+        // OR if it IS a full update, we take them. 
+        // The original code did: product.setImage(productFromDB.getImage()); product.setCategory(productFromDB.getCategory());
+        // So it INTENTIONALLY kept DB image and category. We do the same by NOT overwriting them in productFromDB.
+        
+        if (product.getItemCode() != null) {
+            productFromDB.setItemCode(product.getItemCode());
+        }
 
+		// Recalculate Special Price
 		java.math.BigDecimal discountFactor = java.math.BigDecimal.ONE.subtract(
-				product.getDiscount().multiply(java.math.BigDecimal.valueOf(0.01)));
-		java.math.BigDecimal specialPrice = product.getPrice().multiply(discountFactor)
+				productFromDB.getDiscount().multiply(java.math.BigDecimal.valueOf(0.01)));
+		java.math.BigDecimal specialPrice = productFromDB.getPrice().multiply(discountFactor)
 				.setScale(2, java.math.RoundingMode.HALF_UP);
 
-		product.setSpecialPrice(specialPrice);
+		productFromDB.setSpecialPrice(specialPrice);
 
-		var savedProduct = productRepo.save(product);
+        try {
+		    var savedProduct = productRepo.save(productFromDB);
 
-		// DECOUPLED: Domain Event
-		eventPublisher.publishEvent(new com.app.core.events.ProductUpdatedEvent(
-				productId,
-				savedProduct.getItemCode(),
-				savedProduct.getProductName(),
-				oldPrice,
-				savedProduct.getSpecialPrice(),
-				oldQty,
-				savedProduct.getQuantity(),
-				savedProduct.getImage(),
-				savedProduct.getTags()));
+            // DECOUPLED: Domain Event
+            eventPublisher.publishEvent(new com.app.core.events.ProductUpdatedEvent(
+                    productId,
+                    savedProduct.getItemCode(),
+                    savedProduct.getProductName(),
+                    oldPrice,
+                    savedProduct.getSpecialPrice(),
+                    oldQty,
+                    savedProduct.getQuantity(),
+                    savedProduct.getImage(),
+                    savedProduct.getTags()));
 
-		try {
-			var tenantId = com.app.core.multitenancy.TenantContext.getTenantId();
-			var event = new ProductSyncEvent(productId, "UPDATED", tenantId);
-			eventProducer.publish("product_events", event);
-		} catch (Exception e) {
-			log.error("Failed to publish product update event to Redis: {}", e.getMessage());
-		}
+            try {
+                var tenantId = com.app.core.multitenancy.TenantContext.getTenantId();
+                var event = new ProductSyncEvent(productId, "UPDATED", tenantId);
+                eventProducer.publish("product_events", event);
+            } catch (Exception e) {
+                log.error("Failed to publish product update event to Redis: {}", e.getMessage());
+            }
 
-		return productMapper.productToProductDTO(savedProduct);
+            return productMapper.productToProductDTO(savedProduct);
+        } catch (org.springframework.dao.OptimisticLockingFailureException e) {
+            throw new APIException("Product was updated by another user. Please refresh and try again.");
+        }
 	}
 
 	@Override
 	public ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException {
-		throw new APIException("Direct image upload is disabled. Please manage media via ERPNext.");
+		throw new APIException("Direct image upload is disabled. Please manage media via the Admin Console.");
 	}
 
 	@Override
 	public ProductDTO addMedia(Long productId, MultipartFile file, String type) throws IOException {
-		throw new APIException("Direct media upload is disabled. Please manage media via ERPNext.");
+		throw new APIException("Direct media upload is disabled. Please manage media via the Admin Console.");
 	}
 
 	@Caching(evict = {
@@ -326,6 +345,13 @@ public class ProductServiceImpl implements ProductService {
 			throw new FileNotFoundException("Image not found: " + fileName);
 		}
 		return path;
+	}
+
+	@Override
+	public List<com.app.catalog.payloads.CategoryDTO> getAllCategoryDetails() {
+		return categoryRepo.findAll().stream()
+				.map(cat -> new com.app.catalog.payloads.CategoryDTO(cat.getCategoryId(), cat.getCategoryName()))
+				.toList();
 	}
 
 	@Override
@@ -385,6 +411,34 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	@Cacheable(value = "product", key = "#itemCode")
+	public ProductDTO getProductByCode(String itemCode) {
+		var product = productRepo.findByItemCode(itemCode);
+		if (product == null) {
+			throw new ResourceNotFoundException("Product", "itemCode", itemCode);
+		}
+
+		eventPublisher.publishEvent(new com.app.core.events.ProductViewedEvent(product.getProductId(), itemCode, product.getSpecialPrice()));
+		socialProofService.incrementViewCount(product.getProductId());
+
+		ProductDTO dto = productMapper.productToProductDTO(product);
+		dto.socialPulse().putAll(socialProofService.getSocialPulse(product.getProductId()));
+
+		String scarcity = null;
+		if (product.getQuantity() > 0 && product.getQuantity() <= 5) {
+			scarcity = "Hurry! Only " + product.getQuantity() + " left in stock.";
+		} else if (product.getQuantity() == 0) {
+			scarcity = "Currently Out of Stock";
+		}
+
+		return new ProductDTO(
+				dto.productId(), dto.productName(), dto.itemCode(), dto.image(), dto.description(),
+				dto.quantity(), dto.price(), dto.discount(), dto.specialPrice(),
+				dto.variants(), dto.media(), dto.reviews(), dto.averageRating(),
+				dto.socialPulse(), scarcity, null);
+	}
+
+	@Override
 	public List<ProductDTO> getProductsByIds(List<Long> productIds) {
 		var products = productRepo.findAllById(productIds);
 		return products.stream()
@@ -402,9 +456,14 @@ public class ProductServiceImpl implements ProductService {
 			Boolean isMember = redisTemplate.opsForSet().isMember(userKey, productId.toString());
 			return Boolean.TRUE.equals(isMember);
 		} catch (Exception e) {
-			log.warn("Failed to check purchase history for user: {}, product: {}", email, productId, e);
-			// On Redis failure, return false (conservative)
-			return false;
+			log.warn("Failed to check purchase history for user: {}, product: {} via Redis. Falling back to DB.", email, productId);
+			try {
+				// GAP-15: DB Fallback for purchase verification. Verified correct Repo method via interface.
+				return purchaseVerificationService.hasPurchasedProduct(email, productId);
+			} catch (Exception dbEx) {
+				log.error("DB Fallback failed for purchase history: {}", dbEx.getMessage());
+				return false;
+			}
 		}
 	}
 }

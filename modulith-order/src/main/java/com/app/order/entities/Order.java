@@ -60,7 +60,7 @@ public class Order {
 
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
-    private String erpNextOrderName;
+
 
     // Address Snapshot (Ubiquitous Language: Shipping Destination)
     // Ensures persistent records even if the user updates their profile address
@@ -70,18 +70,20 @@ public class Order {
     private String shippingState;
     private String shippingPincode;
     private String shippingCountry;
+    private String shippingReceiverPhone;
 
     // ==================== Domain Business Methods ====================
 
     /**
      * Initializes the order with a shipping destination snapshot.
      */
-    public void setShippingDestination(String street, String city, String state, String pincode, String country) {
+    public void setShippingDestination(String street, String city, String state, String pincode, String country, String phone) {
         this.shippingStreet = street;
         this.shippingCity = city;
         this.shippingState = state;
         this.shippingPincode = pincode;
         this.shippingCountry = country;
+        this.shippingReceiverPhone = phone;
     }
 
     public void markAsPaid(String pgPaymentId) {
@@ -163,9 +165,7 @@ public class Order {
         this.shipmentId = shipmentId;
     }
 
-    public void setErpNextOrderName(String name) {
-        this.erpNextOrderName = name;
-    }
+
 
     public void setOrderStatus(OrderStatus status) {
         this.orderStatus = status;

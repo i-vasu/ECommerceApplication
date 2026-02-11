@@ -1,6 +1,7 @@
 package com.app.core.events;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**

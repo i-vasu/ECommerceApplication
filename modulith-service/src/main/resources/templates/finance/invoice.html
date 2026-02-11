@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice - [[${invoice.invoiceNumber}]]</title>
+    <style>
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Times New Roman', Times, serif; color: #1a1a1a; line-height: 1.5; margin: 0; padding: 40px; background: #fff; }
+        .invoice-container { max-width: 800px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+        .brand { font-size: 32px; font-weight: bold; text-transform: uppercase; letter-spacing: 4px; }
+        .invoice-meta { text-align: right; }
+        .invoice-title { font-size: 24px; font-weight: 300; color: #666; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+        .section-title { font-size: 12px; font-weight: bold; text-transform: uppercase; color: #999; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th { text-align: left; padding: 12px 8px; border-bottom: 1px solid #000; font-size: 13px; text-transform: uppercase; }
+        td { padding: 12px 8px; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: top; }
+        .text-right { text-align: right; }
+        .totals { margin-left: auto; width: 300px; margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+        .total-row.grand-total { border-top: 2px solid #000; margin-top: 10px; padding-top: 15px; font-weight: bold; font-size: 18px; }
+        .footer { margin-top: 60px; font-size: 11px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+        .gst-stamp { border: 1px solid #ccc; padding: 10px; display: inline-block; margin-top: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header" style="overflow: hidden;">
+            <div style="float: left;">
+                <div class="brand">VAABHI</div>
+                <p style="font-size: 12px; margin-top: 5px;">House of Handcrafted Luxury<br/>New Delhi, India</p>
+            </div>
+            <div class="invoice-meta" style="float: right;">
+                <div class="invoice-title">Tax Invoice</div>
+                <p style="font-size: 14px;">
+                    <strong>Invoice ID:</strong> [[${invoice.invoiceNumber}]]<br/>
+                    <strong>Order ID:</strong> #[[${invoice.orderId}]]<br/>
+                    <strong>Date:</strong> [[${#temporals.format(invoice.generatedAt, 'dd MMM yyyy')}]]
+                </p>
+            </div>
+        </div>
+
+        <div style="clear: both; margin-bottom: 40px;"></div>
+
+        <div class="grid" style="overflow: hidden;">
+            <div style="float: left; width: 45%;">
+                <div class="section-title">Billed To</div>
+                <p style="font-size: 14px;">
+                    <strong th:text="${invoice.customerEmail}">Customer Name</strong><br/>
+                    Registered Customer<br/>
+                    Email: [[${invoice.customerEmail}]]
+                </p>
+            </div>
+            <div style="float: right; width: 45%;">
+                <div class="section-title">Ship From</div>
+                <p style="font-size: 14px;">
+                    Vaabhi Central Warehouse<br/>
+                    Okhla Phase III<br/>
+                    New Delhi - 110020<br/>
+                    GSTIN: 07AALCV3232B1Z1
+                </p>
+            </div>
+        </div>
+
+        <div style="clear: both;"></div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Description</th>
+                    <th class="text-right">Qty</th>
+                    <th class="text-right">Price</th>
+                    <th class="text-right">Tax (GST)</th>
+                    <th class="text-right">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${invoice.items}">
+                    <td>
+                        <strong th:text="${item.name}">Product Name</strong><br/>
+                        <span style="font-size: 11px; color: #666;" th:text="'SKU: ' + ${item.itemCode}">SKU-123</span>
+                    </td>
+                    <td class="text-right" th:text="${item.quantity}">1</td>
+                    <td class="text-right" th:text="'₹' + ${item.price}">₹ 1000</td>
+                    <td class="text-right" th:text="'₹' + ${item.tax}">₹ 180</td>
+                    <td class="text-right" th:text="'₹' + (${item.price} * ${item.quantity})">₹ 1000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div class="total-row">
+                <span>Subtotal</span>
+                <span th:text="'₹' + (${invoice.totalAmount} - ${invoice.taxAmount})">₹ 4000</span>
+            </div>
+            <div class="total-row" th:each="tax : ${invoice.taxBreakdown}">
+                <span th:text="${tax.key}">GST</span>
+                <span th:text="'₹' + ${tax.value}">₹ 200</span>
+            </div>
+            <div class="total-row grand-total">
+                <span>Total Amount</span>
+                <span th:text="'₹' + ${invoice.totalAmount}">₹ 4200</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <p style="font-size: 12px; font-style: italic;">Amount in words: <span style="text-transform: capitalize;">(Rupees Equivalent)</span></p>
+        </div>
+
+        <div class="footer">
+            <p>This is a computer-generated document and does not require a physical signature.<br/>
+            Thank you for choosing Vaabhi. For any queries, please reach out to concierge@vaabhi.com</p>
+            <div class="gst-stamp">
+                E-Commerce fulfillment managed by: <strong>Vasu Digital Commerce Pvt Ltd</strong>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

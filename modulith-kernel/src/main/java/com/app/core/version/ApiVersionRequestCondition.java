@@ -33,10 +33,11 @@ public class ApiVersionRequestCondition implements RequestCondition<ApiVersionRe
             if (version == apiVersion) {
                 return this;
             }
+            return null; // Version specified but doesn't match
         }
 
-        // Default to v1 if no version found and this is v1
-        if (!matcher.find() && apiVersion == 1) {
+        // No version specified in Accept header, default to v1
+        if (apiVersion == 1) {
             return this;
         }
 

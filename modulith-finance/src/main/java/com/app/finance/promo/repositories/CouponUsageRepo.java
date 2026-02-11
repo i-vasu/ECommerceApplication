@@ -14,4 +14,7 @@ public interface CouponUsageRepo extends JpaRepository<CouponUsage, Long> {
     List<CouponUsage> findByCouponCouponId(Long couponId);
 
     boolean existsByCouponCouponIdAndUserId(Long couponId, Long userId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM CouponUsage u WHERE u.coupon.code = :code AND u.userId = :userId")
+    long countByCouponCodeAndUserId(@org.springframework.data.repository.query.Param("code") String code, @org.springframework.data.repository.query.Param("userId") Long userId);
 }

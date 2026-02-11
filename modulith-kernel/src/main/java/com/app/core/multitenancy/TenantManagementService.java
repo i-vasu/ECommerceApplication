@@ -43,8 +43,7 @@ public class TenantManagementService {
                 tenant.setEnvironment(env);
                 // Use site-specific URL mapping
                 // Requires 127.0.0.1 tenant1-test.localhost in /etc/hosts
-                String siteUrl = "http://" + tenantId.replace("_", "-") + ".localhost:8000";
-                tenant.setErpNextUrl(siteUrl);
+                // String siteUrl = "http://" + tenantId.replace("_", "-") + ".localhost:8000";
                 tenantRepository.save(tenant);
 
                 // Ensure schema exists in Postgres

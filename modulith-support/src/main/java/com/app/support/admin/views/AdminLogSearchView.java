@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 import java.util.Map;
 
-@Route("admin/log-search")
+@Route(value = "admin/logs", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminLogSearchView extends VerticalLayout {
 

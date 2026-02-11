@@ -39,6 +39,9 @@ public class Product extends ExtensibleEntity {
 	private BigDecimal specialPrice;
 	private String brand;
 
+	@jakarta.persistence.Column(name = "hsn_code")
+	private String hsnCode;
+
 	    @jakarta.persistence.ElementCollection
     @jakarta.persistence.CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
     @jakarta.persistence.Column(name = "tag")
@@ -158,6 +161,14 @@ public class Product extends ExtensibleEntity {
 
 	public void setBrand(String brand) {
 		this.brand = brand;
+	}
+
+	public String getHsnCode() {
+		return hsnCode;
+	}
+
+	public void setHsnCode(String hsnCode) {
+		this.hsnCode = hsnCode;
 	}
 
 	public Category getCategory() {

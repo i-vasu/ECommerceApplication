@@ -1,5 +1,6 @@
 package com.app.order.payloads;
 
+import com.app.core.payloads.PaymentDTO;
 import lombok.Builder;
 
 import java.time.LocalDate;

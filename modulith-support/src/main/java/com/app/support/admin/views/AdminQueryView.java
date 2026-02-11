@@ -15,10 +15,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 import java.util.Map;
 
-@Log4j2
-@Route("admin/query-scratchpad")
+@Route(value = "admin/query", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminQueryView extends VerticalLayout {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AdminQueryView.class);
 
     private final JdbcTemplate jdbcTemplate;
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;

@@ -190,13 +190,13 @@ public class OrderTotalInput {
     public static class ItemInput {
         private Long productId;
         private String itemCode;
-        private Double price;
+        private java.math.BigDecimal price;
         private Integer quantity;
 
         public ItemInput() {
         }
 
-        public ItemInput(Long productId, String itemCode, Double price, Integer quantity) {
+        public ItemInput(Long productId, String itemCode, java.math.BigDecimal price, Integer quantity) {
             this.productId = productId;
             this.itemCode = itemCode;
             this.price = price;
@@ -219,11 +219,11 @@ public class OrderTotalInput {
             this.itemCode = itemCode;
         }
 
-        public Double getPrice() {
+        public java.math.BigDecimal getPrice() {
             return price;
         }
 
-        public void setPrice(Double price) {
+        public void setPrice(java.math.BigDecimal price) {
             this.price = price;
         }
 

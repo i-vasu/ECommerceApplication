@@ -1,11 +1,10 @@
 package com.app.catalog.review.entities;
 
 import com.app.catalog.entities.Product;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-// Correct for BOTH Jackson 2 and Jackson 3
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 

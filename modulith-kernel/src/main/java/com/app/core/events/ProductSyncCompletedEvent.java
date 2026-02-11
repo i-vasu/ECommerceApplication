@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Published when product data sync is completed from ERP system.
  * 
- * Publishers: modulith-erp-sync (ERPNextProductSyncService)
+ * Publishers: Internal ERP service
  * Listeners: modulith-discovery (indexes products for search)
  * 
  * @param tenantId    Tenant for which sync was performed

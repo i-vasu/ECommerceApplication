@@ -29,6 +29,8 @@ public class AddressServiceImpl implements AddressService {
 	@Override
 	public AddressDTO createAddress(AddressDTO addressDTO) {
 
+		validateAddress(addressDTO.pincode(), addressDTO.receiverPhoneNumber());
+
 		var country = addressDTO.country();
 		var state = addressDTO.state();
 		var city = addressDTO.city();
@@ -69,6 +71,8 @@ public class AddressServiceImpl implements AddressService {
 	@Transactional
 	@Override
 	public AddressDTO updateAddress(Long addressId, Address address) {
+		validateAddress(address.getPincode(), address.getReceiverPhoneNumber());
+
 		var addressFromDB = addressRepo.findByCountryAndStateAndCityAndPincodeAndStreetAndBuildingName(
 				address.getCountry(), address.getState(), address.getCity(), address.getPincode(), address.getStreet(),
 				address.getBuildingName());
@@ -124,4 +128,15 @@ public class AddressServiceImpl implements AddressService {
 		return "Address deleted succesfully with addressId: " + addressId;
 	}
 
+	private void validateAddress(String pincode, String phone) {
+		if (pincode == null || !pincode.matches("^[1-9][0-9]{5}$")) {
+			throw new APIException("Invalid Pincode format. Must be 6 digits.");
+		}
+		
+		if (phone != null && !phone.isEmpty()) {
+		    if (!phone.matches("^[6-9]\\d{9}$")) {
+		        throw new APIException("Invalid Phone Number. Must be a valid 10-digit mobile number.");
+		    }
+		}
+	}
 }

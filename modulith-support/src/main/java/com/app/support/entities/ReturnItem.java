@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "return_items")
-@Data
-@NoArgsConstructor
 public class ReturnItem {
 
     @Id
@@ -23,5 +21,27 @@ public class ReturnItem {
 
     private Integer quantity;
 
+    private String itemCode;
+
     private Double unitRefundAmount; // Pro-rata amount after discounts
+
+    public ReturnItem() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public ReturnRequest getReturnRequest() { return returnRequest; }
+    public void setReturnRequest(ReturnRequest returnRequest) { this.returnRequest = returnRequest; }
+
+    public Long getOrderItemId() { return orderItemId; }
+    public void setOrderItemId(Long orderItemId) { this.orderItemId = orderItemId; }
+
+    public String getItemCode() { return itemCode; }
+    public void setItemCode(String itemCode) { this.itemCode = itemCode; }
+
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
+    public Double getUnitRefundAmount() { return unitRefundAmount; }
+    public void setUnitRefundAmount(Double unitRefundAmount) { this.unitRefundAmount = unitRefundAmount; }
 }
