@@ -129,6 +129,9 @@ jobs:
           java-version: '25-ea'
           distribution: 'zulu'
           cache: maven
+
+      - name: Build Modules
+        run: mvn install -DskipTests -am -pl modulith-kernel,modulith-identity,modulith-product,modulith-order,modulith-service,automation-tests
       
       - name: Run Dependency Check
         run: mvn org.owasp:dependency-check-maven:check
