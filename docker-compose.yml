@@ -27,27 +27,25 @@ services:
     networks:
       - ecommerce-net
 
-  dragonfly:
-    image: 'ghcr.io/dragonflydb/dragonfly:latest'
-    container_name: dragonfly
+  redis:
+    image: redis:alpine
+    container_name: redis
     restart: always
     ulimits:
       memlock: -1
     ports:
       - "6379:6379"
     volumes:
-      - ${DATA_ROOT:-../ecommerce-data}/dragonfly:/data
-    command: >
-      dragonfly --proactor_threads=1 --maxmemory 850mb
+      - ${DATA_ROOT:-../ecommerce-data}/redis:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
     deploy:
       resources:
         limits:
-          memory: 1G # Increased from 768M for better cache performance
+          memory: 512M # Redis usually needs less than Dragonfly for this scale
     networks:
       - ecommerce-net
 
@@ -88,7 +86,7 @@ services:
       POSTGRES_USER: ${JAVA_DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
       POSTGRES_DB: dittofeed
-      REDIS_URL: redis://dragonfly:6379
+      REDIS_URL: redis://redis:6379
       ADMIN_API_KEY: "password"
       NODE_OPTIONS: "--max-old-space-size=192"
     networks:
@@ -169,7 +167,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      dragonfly:
+      redis:
         condition: service_healthy
     ports:
       - "8080:8080"
@@ -179,7 +177,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${postgres_db:-dev}
       JAVA_DB_USERNAME: ${JAVA_DB_USERNAME:-postgres}
       JAVA_DB_PASSWORD: ${JAVA_DB_PASSWORD:-123Vasu456}
-      REDIS_HOST: dragonfly
+      REDIS_HOST: redis
       REDIS_PORT: 6379
       JAVA_OPTS: "-Xmx1g -Xms512m -XX:+UseZGC -XX:+ZGenerational"
 

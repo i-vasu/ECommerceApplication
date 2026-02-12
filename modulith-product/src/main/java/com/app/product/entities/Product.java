@@ -5,6 +5,7 @@ import java.util.List;
 import com.app.review.entities.ProductReview;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.BatchSize;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -16,6 +17,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -55,12 +57,15 @@ public class Product extends ExtensibleEntity {
 	private Category category;
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 20)
 	private List<ProductVariant> variants = new ArrayList<>();
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 20)
 	private List<ProductMedia> media = new ArrayList<>();
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 20)
 	private List<ProductReview> reviews = new ArrayList<>();
 
 	private boolean isCustomizable = false;
@@ -75,9 +80,11 @@ public class Product extends ExtensibleEntity {
 	private boolean isBundle = false;
 
 	@OneToMany(mappedBy = "bundleProduct", cascade = CascadeType.ALL)
+	@BatchSize(size = 20)
 	private List<BundleItem> bundleItems = new ArrayList<>();
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+	@BatchSize(size = 20)
 	private List<ProductPriceList> priceLists = new ArrayList<>();
 
 	public Product() {
