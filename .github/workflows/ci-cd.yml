@@ -30,6 +30,9 @@ jobs:
           distribution: 'zulu'
           cache: maven
       
+      - name: Build Reactor
+        run: mvn install -DskipTests
+
       - name: Install Playwright dependencies
         if: matrix.test-suite == 'e2e'
         run: |
@@ -127,6 +130,9 @@ jobs:
           distribution: 'zulu'
           cache: maven
       
+      - name: Build Reactor
+        run: mvn install -DskipTests
+
       - name: Run Dependency Check
         run: mvn org.owasp:dependency-check-maven:check
       
