@@ -19,8 +19,8 @@ import org.springframework.data.domain.Sort;
  * Vaadin View for Support Ticket Management
  */
 @Route(value = "admin/support-native", layout = AdminMainLayout.class)
-@PageTitle("Support Management | Vasu Admin")
-@RolesAllowed("ADMIN")
+@PageTitle("Customer Support | Vasu Admin")
+@RolesAllowed({"ADMIN", "SUPPORT"})
 public class AdminSupportView extends VerticalLayout {
 
     private final SupportService supportService;

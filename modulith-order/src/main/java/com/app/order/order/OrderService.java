@@ -34,7 +34,6 @@ public interface OrderService {
 	 */
 	OrderDTO cancelOrder(String emailId, Long orderId);
 
-	OrderDTO retryOrderSync(Long orderId);
 
 	void confirmPayment(Long orderId, String transactionId);
 
@@ -43,4 +42,8 @@ public interface OrderService {
 	void updateOrderStatus(Long orderId, String status);
 
 	List<OrderDTO> findPendingOrdersByItemCode(String itemCode);
+
+	void shipOrder(Long orderId);
+
+	com.app.cart.payloads.CartDTO reorder(String emailId, Long orderId);
 }

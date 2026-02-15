@@ -12,7 +12,8 @@ import com.app.order.entities.OrderItem;
 import com.app.order.repositories.OrderItemRepo;
 import com.app.order.repositories.OrderRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -24,9 +25,10 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Log4j2
 @RequiredArgsConstructor
 public class OrderReturnListener {
+
+    private static final Logger log = LogManager.getLogger(OrderReturnListener.class);
 
     private final OrderRepo orderRepo;
     private final OrderItemRepo orderItemRepo;

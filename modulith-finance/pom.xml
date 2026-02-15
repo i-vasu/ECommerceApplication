@@ -25,11 +25,6 @@
             </dependency>
 		<dependency>
 			<groupId>com.app</groupId>
-			<artifactId>modulith-logistics</artifactId>
-            <version>${project.version}</version>
-            </dependency>
-		<dependency>
-			<groupId>com.app</groupId>
 			<artifactId>modulith-governance</artifactId>
             <version>${project.version}</version>
             </dependency>
@@ -58,9 +53,39 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
+		<!-- Reporting & Jasper Integration -->
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>jasperreports</artifactId>
+			<version>6.21.0</version>
+		</dependency>
+		<!-- NIC API Integration dependencies -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.retry</groupId>
+			<artifactId>spring-retry</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate.orm</groupId>
+			<artifactId>hibernate-envers</artifactId>
+		</dependency>
+		<!-- HTML to PDF conversion for invoice generation -->
+		<dependency>
+			<groupId>org.xhtmlrenderer</groupId>
+			<artifactId>flying-saucer-pdf</artifactId>
+			<version>9.1.22</version>
 		</dependency>
 	</dependencies>
 	

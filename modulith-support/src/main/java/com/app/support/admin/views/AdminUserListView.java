@@ -20,7 +20,7 @@ import jakarta.annotation.security.RolesAllowed;
  */
 @Route(value = "admin/users-native", layout = AdminMainLayout.class)
 @PageTitle("User Management | Vasu Admin")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "SUPPORT"})
 public class AdminUserListView extends VerticalLayout {
 
     private final UserService userService;

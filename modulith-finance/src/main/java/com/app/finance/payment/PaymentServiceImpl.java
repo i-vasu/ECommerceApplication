@@ -328,36 +328,58 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public void processRefundForOrder(Long orderId, String reason) {
         log.info("Processing refund logic for Order ID: {}", orderId);
+        
         // Find successful payment for the order
+        // We might have multiple payment entries if split payment, but current logic assumes one primary
+        // Simplification: Find the first captured payment.
+        
         Payment payment = paymentRepo.findByOrderId(orderId).stream()
                 .filter(p -> "captured".equalsIgnoreCase(p.getPgStatus()))
                 .findFirst()
                 .orElse(null);
 
-        if (payment != null && payment.getPgPaymentId() != null) {
-            log.info("Found captured payment {} for Order {}. Initiating refund...", payment.getPgPaymentId(), orderId);
-            try {
-                // Determine if it was wallet or PG
-                if ("WALLET_ONLY".equals(payment.getPgOrderId())) {
-                    // Full wallet refund
-                    // Assuming amount is in Payment
-                    if (payment.getWalletAmount() != null) { // or total amount
-                        walletService.credit(getPaymentDetails(payment.getPgPaymentId()).get("email").toString(),
-                                payment.getAmount().doubleValue(), // or walletAmount
-                                "Refund for Order #" + orderId, String.valueOf(orderId));
-                        // We need better handling for WALLET_ONLY refund, but initiateRefund is mainly
-                        // for Razorpay
-                        log.info("Wallet refund completed for Order {}", orderId);
-                    }
-                } else {
-                    // Razorpay refund
-                    initiateRefund(payment.getPgPaymentId(), null, reason);
+        if (payment == null) {
+            log.warn("No captured payment found for Order {}. Refund skipped.", orderId);
+            return;
+        }
+
+        try {
+            if ("WALLET_ONLY".equals(payment.getPgOrderId())) {
+                // Full wallet refund
+                // recover email from order since payment details might not have it if not from PG
+                OrderSummary order = orderProvider.getOrderSummary(orderId).orElse(null);
+                String email = (order != null) ? order.email() : "unknown@user.com"; // Fallback
+                
+                if (payment.getAmount() != null) {
+                    walletService.credit(email,
+                            payment.getAmount().doubleValue(),
+                            "Refund for Order #" + orderId + " - " + reason,
+                            String.valueOf(orderId));
+                    
+                    log.info("Wallet refund completed for Order {} (Amount: {})", orderId, payment.getAmount());
+                    
+                    // Update payment status or create refund record
+                     com.app.finance.entities.Refund refund = new com.app.finance.entities.Refund();
+                    refund.setOrderId(orderId);
+                    refund.setPgRefundId("WALLET_REFUND_" + System.currentTimeMillis());
+                    refund.setPgPaymentId(payment.getPgPaymentId());
+                    refund.setAmount(payment.getAmount().doubleValue());
+                    refund.setStatus("processed");
+                    refund.setReason(reason);
+                    refundRepo.save(refund);
+                    
+                    eventPublisher.publishEvent(new OrderStatusEvent(orderId, "REFUNDED"));
                 }
-            } catch (Exception e) {
-                log.error("Failed to process refund for Order {}: {}", orderId, e.getMessage());
+            } else {
+                // Razorpay refund
+                // initiateRefund handles 3rd party call + DB record + Event
+                initiateRefund(payment.getPgPaymentId(), null, reason);
+                // initiateRefund publishes REFUND_INITIATED. We might want to auto-transition order to REFUNDED if full refund.
+                // For now, let listeners handle it.
             }
-        } else {
-            log.warn("No capture payment found for Order {}. Refund skipped.", orderId);
+        } catch (Exception e) {
+            log.error("Failed to process refund for Order {}: {}", orderId, e.getMessage(), e);
+            throw new RuntimeException("Refund processing failed: " + e.getMessage());
         }
     }
 

@@ -23,6 +23,12 @@ public class InventoryTransaction {
     @Column(name = "quantity_change", nullable = false)
     private Integer quantityChange;
 
+    @Column(name = "warehouse_id")
+    private Long warehouseId;
+
+    @Column(name = "bin_id")
+    private Long binId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private TransactionType type;
@@ -32,6 +38,12 @@ public class InventoryTransaction {
 
     @Column(name = "reason")
     private String reason;
+    
+    @Column(name = "batch_number")
+    private String batchNumber;
+    
+    @Column(name = "expiry_date")
+    private java.time.LocalDate expiryDate;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

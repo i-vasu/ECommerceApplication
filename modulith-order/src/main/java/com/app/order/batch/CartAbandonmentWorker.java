@@ -2,18 +2,27 @@ package com.app.order.batch;
 
 import com.app.cart.repositories.CartRepo;
 import com.app.core.async.EventProducer;
+import com.app.order.services.AbandonedCartRecoveryService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-@Log4j2
+/**
+ * Background Worker for checking abandoned carts.
+ * Runs on startup/schedule if enabled.
+ */
 @Component
+@Profile("worker")
 @RequiredArgsConstructor
 public class CartAbandonmentWorker {
 
+    private static final Logger log = LogManager.getLogger(CartAbandonmentWorker.class);
     private final CartRepo cartRepo;
     private final com.app.security.repositories.UserRepo userRepo;
     private final EventProducer eventProducer;

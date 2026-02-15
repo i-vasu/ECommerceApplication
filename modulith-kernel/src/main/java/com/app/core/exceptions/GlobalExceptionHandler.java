@@ -54,7 +54,12 @@ public class GlobalExceptionHandler {
             fieldErrors.put(fieldName, errorMessage);
         });
         log.warn("Validation failed: {}", fieldErrors);
-        return new ResponseEntity<>(ApiResponse.success(fieldErrors, "Validation failed"), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(ApiResponse.<Map<String, String>>builder()
+                .success(false)
+                .message("Validation failed")
+                .data(fieldErrors)
+                .timestamp(LocalDateTime.now())
+                .build(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -65,7 +70,12 @@ public class GlobalExceptionHandler {
             String message = violation.getMessage();
             res.put(fieldName, message);
         });
-        return new ResponseEntity<>(ApiResponse.success(res, "Constraint violation"), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(ApiResponse.<Map<String, String>>builder()
+                .success(false)
+                .message("Constraint violation")
+                .data(res)
+                .timestamp(LocalDateTime.now())
+                .build(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MissingPathVariableException.class)
@@ -87,25 +97,22 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
+    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex, WebRequest request) {
         log.error("Unexpected error occurred", ex);
         String message = "An unexpected error occurred. Please contact support.";
         if (log.isDebugEnabled()) {
             message = ex.getMessage();
         }
 
-        ErrorResponse error = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Internal Server Error")
+        ApiResponse<Void> errorResponse = ApiResponse.<Void>builder()
+                .success(false)
                 .message(message)
-                .path(request.getDescription(false).replace("uri=", ""))
-                .traceId(getTraceId())
+                .timestamp(LocalDateTime.now())
                 .build();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(error);
+                .body(errorResponse);
     }
 
     private String getTraceId() {

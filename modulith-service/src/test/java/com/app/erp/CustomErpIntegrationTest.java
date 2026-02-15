@@ -93,20 +93,21 @@ public class CustomErpIntegrationTest extends com.app.test.AbstractIntegrationTe
         inv.setItemCode(itemCode);
         inv.setQuantity(100);
         inv.setReservedQuantity(0);
-        inv.setWarehouseId("MAIN");
+        inv.setWarehouseId(1L);
+        inv.setBinId(1L);
         inventoryRepository.save(inv);
         
         // Ensure Redis cache is clean/updated
-        inventoryService.loadStockFromDB(itemCode); 
+        inventoryService.loadStockFromDB(1L, 1L, itemCode); 
 
         // 2. Reserve & Confirm
-        boolean reserved = inventoryService.reserveStock(itemCode, 2, "LOCK-123");
+        boolean reserved = inventoryService.reserveStock(1L, 1L, itemCode, 2, "LOCK-123");
         assertTrue(reserved, "Stock should be reserved");
 
-        inventoryService.confirmStock(itemCode, 2, "LOCK-123");
+        inventoryService.confirmStock(1L, 1L, itemCode, 2, "LOCK-123");
 
         // 3. Verify DB Deduction
-        var updatedInv = inventoryRepository.findByItemCode(itemCode).orElseThrow();
+        var updatedInv = inventoryRepository.findByItemCode(itemCode).stream().findFirst().orElseThrow();
         assertEquals(98, updatedInv.getQuantity());
 
         // 4. Verify Audit Trail
@@ -153,7 +154,7 @@ public class CustomErpIntegrationTest extends com.app.test.AbstractIntegrationTe
         inventoryService.updateInventoryStock(itemCode, 75);
         
         // 3. Verify DB
-        var inv = inventoryRepository.findByItemCode(itemCode).orElseThrow();
+        var inv = inventoryRepository.findByItemCode(itemCode).stream().findFirst().orElseThrow();
         assertEquals(75, inv.getQuantity());
         
         // 4. Verify Redis (via loadStockFromDB or internal check)

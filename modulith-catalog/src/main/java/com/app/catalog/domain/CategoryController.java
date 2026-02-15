@@ -24,8 +24,8 @@ public class CategoryController implements CategoryApi {
 
 	@PostMapping("/admin/category")
 	@Override
-	public ResponseEntity<ApiResponse<CategoryDTO>> createCategory(@Valid @RequestBody Category category) {
-		CategoryDTO savedCategoryDTO = categoryService.createCategory(category);
+	public ResponseEntity<ApiResponse<CategoryDTO>> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
+		CategoryDTO savedCategoryDTO = categoryService.createCategory(categoryDTO);
 
 		return new ResponseEntity<>(ApiResponse.success(savedCategoryDTO, "Category created successfully"),
 				HttpStatus.CREATED);
@@ -46,11 +46,11 @@ public class CategoryController implements CategoryApi {
 
 	@PutMapping("/admin/categories/{categoryId}")
 	@Override
-	public ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(@RequestBody Category category,
+	public ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(@RequestBody CategoryDTO categoryDTO,
 			@PathVariable Long categoryId) {
-		CategoryDTO categoryDTO = categoryService.updateCategory(category, categoryId);
+		CategoryDTO updatedCategoryDTO = categoryService.updateCategory(categoryDTO, categoryId);
 
-		return ResponseEntity.ok(ApiResponse.success(categoryDTO, "Category updated successfully"));
+		return ResponseEntity.ok(ApiResponse.success(updatedCategoryDTO, "Category updated successfully"));
 	}
 
 	@DeleteMapping("/admin/categories/{categoryId}")

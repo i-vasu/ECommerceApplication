@@ -26,7 +26,7 @@ public class InventoryActivity implements CheckoutActivity<InventoryLock> {
     public InventoryLock execute(CartContract cart, Address address) {
         java.util.List<InventoryRequest> requests = cart.items().stream()
                 .map(item -> new InventoryRequest(item.itemCode(),
-                        item.quantity()))
+                        item.quantity(), 1L, 1L)) // Default to Warehouse: 1, Bin: 1 for checkout reservations
                 .toList();
         InventoryLock lock = inventoryService.lockStock(requests);
         if (lock.locked()) {

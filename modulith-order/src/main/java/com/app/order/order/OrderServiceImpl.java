@@ -8,6 +8,7 @@ import com.app.catalog.repositories.ProductRepo;
 import com.app.checkout.pipeline.OptimizedCheckoutService;
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
+import com.app.core.multitenancy.UserContext;
 import com.app.core.async.EventProducer;
 import com.app.core.audit.AuditTrail;
 import com.app.core.contracts.CartContract;
@@ -32,7 +33,9 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.tracing.Tracer;
-import lombok.extern.log4j.Log4j2;
+import io.micrometer.tracing.Tracer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -45,10 +48,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Log4j2
 @Transactional(readOnly = true)
 @Service
 public class OrderServiceImpl implements OrderService {
+
+	private static final Logger log = LogManager.getLogger(OrderServiceImpl.class);
 
 	private final ApplicationEventPublisher eventPublisher;
 	private final CartRepo cartRepo;
@@ -63,6 +67,7 @@ public class OrderServiceImpl implements OrderService {
 	private final PaymentService paymentService;
 
 	private final InventoryReservationService inventoryReservationService;
+	private final com.app.logistics.inventory.InventoryService inventoryService;
 	private final OptimizedCheckoutService optimizedCheckoutService;
 	private final AddressRepo addressRepo;
 	private final OrderHistoryRepo orderHistoryRepo;
@@ -79,8 +84,11 @@ public class OrderServiceImpl implements OrderService {
 			OrderRepo orderRepo, UserRepo userRepo, OrderItemRepo orderItemRepo, CartItemRepo cartItemRepo,
 			com.app.core.contracts.UserServiceContract userService, CartService cartService, OrderMapper orderMapper,
 			PaymentService paymentService,
-			InventoryReservationService inventoryReservationService, OptimizedCheckoutService optimizedCheckoutService,
-			AddressRepo addressRepo, OrderHistoryRepo orderHistoryRepo, MeterRegistry meterRegistry, Tracer tracer,
+			InventoryReservationService inventoryReservationService,
+			com.app.logistics.inventory.InventoryService inventoryService,
+			OptimizedCheckoutService optimizedCheckoutService,
+			AddressRepo addressRepo, OrderHistoryRepo orderHistoryRepo, MeterRegistry meterRegistry,
+			org.springframework.beans.factory.ObjectProvider<Tracer> tracerProvider,
 			ProductRepo productRepo, OrderProducer orderProducer,
 			EventProducer eventProducer,
 			com.app.governance.states.OperationalStateMachineService operationalStateMachine,
@@ -98,11 +106,12 @@ public class OrderServiceImpl implements OrderService {
 		this.paymentService = paymentService;
 
 		this.inventoryReservationService = inventoryReservationService;
+		this.inventoryService = inventoryService;
 		this.optimizedCheckoutService = optimizedCheckoutService;
 		this.addressRepo = addressRepo;
 		this.orderHistoryRepo = orderHistoryRepo;
 		this.meterRegistry = meterRegistry;
-		this.tracer = tracer;
+		this.tracer = tracerProvider.getIfAvailable();
 		this.productRepo = productRepo;
 		this.orderProducer = orderProducer;
 		this.eventProducer = eventProducer;
@@ -121,17 +130,31 @@ public class OrderServiceImpl implements OrderService {
 		this.checkoutFailureCounter = meterRegistry.counter("ecommerce.checkout.failure");
 		this.checkoutTimer = meterRegistry.timer("ecommerce.checkout.duration");
 	}
+
+	private void validateUserOwnership(String emailId) {
+		String currentUserEmail = UserContext.getCurrentUserEmail();
+		if (currentUserEmail != null && !currentUserEmail.equals(emailId)) {
+			// Check if admin? For now simplify to strict ownership
+			// If we had roles we'd check: if (!isAdmin && !emailMatch) throw...
+			throw new APIException("Unauthorized access to order data");
+		}
+	}
  
 	@Override
 	@Transactional
 	@AuditTrail(action = "PLACE_ORDER")
 	public OrderDTO placeOrder(String emailId, Long cartId, String paymentMethod, OrderRequest request) {
+		validateUserOwnership(emailId);
 		return checkoutTimer.record(() -> {
-			var span = tracer.nextSpan().name("placeOrder").start();
-			try (var scope = tracer.withSpan(span)) {
+			if (tracer != null) {
+				var span = tracer.nextSpan().name("placeOrder").start();
+				try (var scope = tracer.withSpan(span)) {
+					return executePlaceOrder(emailId, cartId, paymentMethod, request);
+				} finally {
+					span.end();
+				}
+			} else {
 				return executePlaceOrder(emailId, cartId, paymentMethod, request);
-			} finally {
-				span.end();
 			}
 		});
 	}
@@ -211,7 +234,16 @@ public class OrderServiceImpl implements OrderService {
 			com.app.checkout.pipeline.OptimizedCheckoutService.CheckoutResult checkoutResult) {
 		List<OrderItem> orderItemsList = new ArrayList<>();
 
+		// Track distributed totals per tax component to handle rounding residuals
+		Map<String, java.math.BigDecimal> distributedTaxPerComp = new java.util.HashMap<>();
+		checkoutResult.tax().components().forEach(c -> distributedTaxPerComp.put(c.name(), java.math.BigDecimal.ZERO));
+
+		int totalItems = cart.getCartItems().size();
+		int currentIndex = 0;
+
 		for (var cartItem : cart.getCartItems()) {
+			currentIndex++;
+			boolean isLastItem = (currentIndex == totalItems);
 			var orderItem = new OrderItem();
 
 			var product = productRepo.findById(cartItem.getProductId())
@@ -230,19 +262,29 @@ public class OrderServiceImpl implements OrderService {
 			// CALCULATE & PERSIST LINE-ITEM TAXES
 			List<com.app.order.entities.OrderItemTaxDetail> itemTaxes = new ArrayList<>();
 			for (var taxComp : checkoutResult.tax().components()) {
-				// Distribute total tax components proportionally across items
-				java.math.BigDecimal cartTotal = cart.getTotalPrice();
-				java.math.BigDecimal itemTotal = cartItem.getProductPrice()
-						.multiply(java.math.BigDecimal.valueOf(cartItem.getQuantity()));
-				java.math.BigDecimal itemRatio = cartTotal.compareTo(java.math.BigDecimal.ZERO) > 0
-						? itemTotal.divide(cartTotal, 4, java.math.RoundingMode.HALF_UP)
-						: java.math.BigDecimal.ZERO;
+				java.math.BigDecimal itemTaxAmount;
+				
+				if (isLastItem) {
+					// Residual: Exact Total minus what we already distributed
+					itemTaxAmount = taxComp.amount().subtract(distributedTaxPerComp.get(taxComp.name()));
+				} else {
+					// Pro-rata distribution
+					java.math.BigDecimal cartTotal = cart.getTotalPrice();
+					java.math.BigDecimal itemTotal = cartItem.getProductPrice()
+							.multiply(java.math.BigDecimal.valueOf(cartItem.getQuantity()));
+					java.math.BigDecimal itemRatio = cartTotal.compareTo(java.math.BigDecimal.ZERO) > 0
+							? itemTotal.divide(cartTotal, 8, java.math.RoundingMode.HALF_UP)
+							: java.math.BigDecimal.ZERO;
+					
+					itemTaxAmount = taxComp.amount().multiply(itemRatio).setScale(2, java.math.RoundingMode.HALF_UP);
+					distributedTaxPerComp.put(taxComp.name(), distributedTaxPerComp.get(taxComp.name()).add(itemTaxAmount));
+				}
 
 				var detail = new com.app.order.entities.OrderItemTaxDetail();
 				detail.setOrderItem(orderItem);
 				detail.setTaxName(taxComp.name());
 				detail.setTaxRate(taxComp.rate());
-				detail.setTaxAmount(taxComp.amount().multiply(itemRatio));
+				detail.setTaxAmount(itemTaxAmount);
 				itemTaxes.add(detail);
 			}
 			orderItem.setTaxDetails(itemTaxes);
@@ -289,6 +331,7 @@ public class OrderServiceImpl implements OrderService {
 			}
 
 			var order = prepareOrderEntity(emailId, user, cart, address, checkoutResult);
+			order.setInventoryLockId(checkoutResult.inventory().lockId());
 			try {
 				var savedOrder = orderRepo.save(order);
 				operationalStateMachine.triggerOrderEvent(savedOrder.getOrderId(),
@@ -321,6 +364,7 @@ public class OrderServiceImpl implements OrderService {
 				var eventItems = savedOrder.getOrderItems().stream()
 						.map(item -> new com.app.core.events.OrderCreatedEvent.OrderItemData(
 								item.getItemCode(),
+								item.getProductName(), // Added usage
 								item.getQuantity(),
 								item.getOrderedPrice()))
 						.toList();
@@ -329,6 +373,7 @@ public class OrderServiceImpl implements OrderService {
 						savedOrder.getOrderId(),
 						savedOrder.getUserId(),
 						savedOrder.getEmail(),
+						savedOrder.getShippingReceiverPhone(), // Added phone
 						savedOrder.getTotalAmount(),
 						eventItems));
 
@@ -350,12 +395,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public List<OrderDTO> getOrdersByUser(String emailId) {
-		// GAP-08: IDOR Protection
-		var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		if (auth == null || (!auth.getName().equals(emailId) && !auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")))) {
-			throw new APIException("Unauthorized access to order history of another user.");
-		}
-
+		validateUserOwnership(emailId);
 		var orders = orderRepo.findAllByEmail(emailId);
 
 		var orderDTOs = orders.stream()
@@ -371,12 +411,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrderDTO getOrder(String emailId, Long orderId) {
-		// GAP-08: IDOR Protection
-		var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		if (auth == null || (!auth.getName().equals(emailId) && !auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")))) {
-			throw new APIException("Unauthorized access to order data.");
-		}
-
+		validateUserOwnership(emailId);
 		var order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
 
 		if (order == null) {
@@ -564,6 +599,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	@Transactional
 	public OrderDTO cancelOrder(String emailId, Long orderId) {
+		validateUserOwnership(emailId);
 		var order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
 
 		if (order == null) {
@@ -581,7 +617,7 @@ public class OrderServiceImpl implements OrderService {
 						item.getQuantity()))
 				.toList();
 
-		// Publish Event for Decoupled cleanup (Logistics, Payment, Inventory, ERPNext)
+		// Publish Event for Decoupled cleanup (Logistics, Payment, Inventory, Custom ERP)
 		eventPublisher.publishEvent(new com.app.core.events.OrderCancelledEvent(
 				order.getOrderId(),
 				order.getUserId(),
@@ -595,9 +631,24 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public OrderDTO retryOrderSync(Long orderId) {
-		log.info("Manual sync retry disabled as ERPNext is removed.");
-		return getOrderById(orderId);
+	public com.app.cart.payloads.CartDTO reorder(String emailId, Long orderId) {
+		validateUserOwnership(emailId);
+		var order = orderRepo.findOrderByEmailAndOrderId(emailId, orderId);
+		if (order == null) {
+			throw new ResourceNotFoundException("Order", "orderId", orderId);
+		}
+
+		// Create a fresh cart
+		var cartDTO = cartService.createCart();
+		Long newCartId = cartDTO.cartId();
+
+		// Populate it with items from the old order
+		for (var item : order.getOrderItems()) {
+			cartService.addProductToCart(newCartId, item.getProductId(), item.getItemCode(), item.getQuantity());
+		}
+
+		// Fetch the final state of the cart
+		return cartService.getCartById(newCartId);
 	}
 
 	@Override
@@ -616,11 +667,18 @@ public class OrderServiceImpl implements OrderService {
 		
 		// GAP-12: Re-verify stock before capturing payment (Overselling prevention)
 		for (var item : order.getOrderItems()) {
-			boolean stockAvailable = inventoryReservationService.checkStock(item.getItemCode(), item.getQuantity());
+			boolean stockAvailable = inventoryReservationService.checkAggregateStock(item.getItemCode(), item.getQuantity());
 			if (!stockAvailable) {
 				log.warn("Stock no longer available for order {} during payment confirmation. Item: {}", orderId, item.getItemCode());
-				// Ideally, trigger auto-refund logic here
 				throw new APIException("Stock no longer available for item: " + item.getItemCode());
+			}
+		}
+
+		// Permanent Deduction
+		if (order.getInventoryLockId() != null) {
+			for (var item : order.getOrderItems()) {
+				// We assume warehouse 1 for now as per current checkout logic
+				inventoryService.confirmStock(1L, 1L, item.getItemCode(), item.getQuantity(), order.getInventoryLockId());
 			}
 		}
 
@@ -665,6 +723,63 @@ public class OrderServiceImpl implements OrderService {
 		return orderRepo.findPendingOrdersByItemCode(itemCode).stream()
 				.map(orderMapper::orderToOrderDTO)
 				.toList();
+	}
+
+	@Override
+	@Transactional
+	public void shipOrder(Long orderId) {
+		Order order = orderRepo.findById(orderId)
+				.orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
+
+		if (order.getOrderStatus() == OrderStatus.CANCELLED || order.getOrderStatus() == OrderStatus.SHIPPED || order.getOrderStatus() == OrderStatus.DELIVERED) {
+			throw new APIException("Order cannot be shipped in current status: " + order.getOrderStatus());
+		}
+
+		var shippingAddress = new com.app.core.events.ShipmentRequestedEvent.ShippingAddress(
+				"Valued Customer",
+				order.getShippingReceiverPhone(),
+				order.getShippingStreet(),
+				order.getShippingCity(),
+				order.getShippingState(),
+				order.getShippingCountry(),
+				order.getShippingPincode());
+
+		List<Long> productIds = order.getOrderItems().stream().map(OrderItem::getProductId).toList();
+		Map<Long, Product> productMap = productRepo.findAllById(productIds).stream()
+				.collect(java.util.stream.Collectors.toMap(Product::getProductId, p -> p));
+
+		var items = order.getOrderItems().stream()
+				.map(item -> {
+					var p = productMap.get(item.getProductId());
+					double w = (p != null) ? p.getKgWeight() : 0.5;
+					double l = (p != null) ? p.getLengthCm() : 10.0;
+					double wd = (p != null) ? p.getWidthCm() : 10.0;
+					double h = (p != null) ? p.getHeightCm() : 10.0;
+
+					return new com.app.core.events.ShipmentRequestedEvent.ShipmentItem(
+							item.getProductName(),
+							item.getItemCode(),
+							item.getQuantity(),
+							item.getOrderedPrice(),
+							w, l, wd, h);
+				})
+				.toList();
+
+		var shipmentEvent = new com.app.core.events.ShipmentRequestedEvent(
+				order.getOrderId(),
+				order.getEmail(),
+				shippingAddress,
+				items,
+				order.getTotalAmount(),
+				false
+		);
+
+		eventPublisher.publishEvent(shipmentEvent);
+        
+        // Trigger state machine
+        operationalStateMachine.triggerOrderEvent(orderId, com.app.governance.states.OrderEvent.SHIP);
+        order.setOrderStatus(OrderStatus.SHIPPED);
+        orderRepo.save(order);
 	}
 
 	private CartContract toContract(com.app.cart.entities.Cart cart) {

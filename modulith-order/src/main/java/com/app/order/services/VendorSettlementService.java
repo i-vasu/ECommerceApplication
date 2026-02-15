@@ -1,11 +1,12 @@
 package com.app.order.services;
 
 import com.app.governance.rules.RuleEngineService;
-import com.app.order.entities.Vendor;
+import com.app.order.entities.OrderVendor;
 import com.app.order.repositories.OrderRepo;
 import com.app.order.repositories.VendorRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +22,10 @@ import java.util.Map;
  * rules.
  */
 @Service
-@Log4j2
 @RequiredArgsConstructor
 public class VendorSettlementService {
+
+    private static final Logger log = LogManager.getLogger(VendorSettlementService.class);
 
     private final OrderRepo orderRepo;
     private final VendorRepo vendorRepo;
@@ -34,15 +36,15 @@ public class VendorSettlementService {
     @Transactional
     public void processSettlements() {
         log.info("Starting Autonomous Monthly Vendor settlements...");
-        List<Vendor> vendors = vendorRepo.findAll();
+        List<OrderVendor> vendors = vendorRepo.findAll();
 
-        for (Vendor vendor : vendors) {
+        for (OrderVendor vendor : vendors) {
             calculateSettlement(vendor);
             monitorVendorHealth(vendor);
         }
     }
 
-    private void monitorVendorHealth(Vendor vendor) {
+    private void monitorVendorHealth(OrderVendor vendor) {
         // Logic: Return Rate analysis
         // Mocking return rate check
         double returnRate = 0.25; // 25% returns (High)
@@ -59,7 +61,7 @@ public class VendorSettlementService {
         }
     }
 
-    private void calculateSettlement(Vendor vendor) {
+    private void calculateSettlement(OrderVendor vendor) {
         // Logic: Calculate sum of all orders for this vendor in PAID state
         // (Mocking the vendor-order relationship for now)
         BigDecimal totalSales = BigDecimal.valueOf(50000);

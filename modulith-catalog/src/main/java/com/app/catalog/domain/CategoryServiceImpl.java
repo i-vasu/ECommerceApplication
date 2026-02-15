@@ -34,7 +34,8 @@ public class CategoryServiceImpl implements CategoryService {
 	private CategoryMapper categoryMapper;
 
 	@Override
-	public CategoryDTO createCategory(Category category) {
+	public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+		Category category = categoryMapper.categoryDTOToCategory(categoryDTO);
 		Category savedCategory = categoryRepo.findByCategoryName(category.getCategoryName());
 
 		if (savedCategory != null) {
@@ -76,10 +77,11 @@ public class CategoryServiceImpl implements CategoryService {
 	}
 
 	@Override
-	public CategoryDTO updateCategory(Category category, Long categoryId) {
+	public CategoryDTO updateCategory(CategoryDTO categoryDTO, Long categoryId) {
 		Category savedCategory = categoryRepo.findById(categoryId)
 				.orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
 
+		Category category = categoryMapper.categoryDTOToCategory(categoryDTO);
 		category.setCategoryId(categoryId);
 
 		savedCategory = categoryRepo.save(category);

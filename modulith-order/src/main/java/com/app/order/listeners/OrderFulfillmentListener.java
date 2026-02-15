@@ -4,23 +4,31 @@ import com.app.core.events.OrderPaidEvent;
 import com.app.core.events.ShipmentRequestedEvent;
 import com.app.order.repositories.OrderRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
+import com.app.catalog.repositories.ProductRepo;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.List;
+import com.app.catalog.entities.Product;
+import com.app.order.entities.OrderItem;
 
 /**
  * Orchestrates integration events for Order Fulfillment.
  * Converts local domain events to cross-module integration events.
  */
 @Component
-@Slf4j
 @RequiredArgsConstructor
 public class OrderFulfillmentListener {
 
+    private static final Logger log = LogManager.getLogger(OrderFulfillmentListener.class);
+
         private final OrderRepo orderRepo;
+        private final ProductRepo productRepo;
         private final ApplicationEventPublisher eventPublisher;
 
         @ApplicationModuleListener
@@ -39,14 +47,26 @@ public class OrderFulfillmentListener {
                                         order.getShippingCountry(),
                                         order.getShippingPincode());
 
+                        List<Long> productIds = order.getOrderItems().stream().map(OrderItem::getProductId).toList();
+                        Map<Long, Product> productMap = productRepo.findAllById(productIds).stream()
+                                        .collect(Collectors.toMap(Product::getProductId, p -> p));
+
                         var items = order.getOrderItems().stream()
-                                        .map(item -> new ShipmentRequestedEvent.ShipmentItem(
-                                                        item.getProductName(),
-                                                        item.getItemCode(),
-                                                        item.getQuantity(),
-                                                        item.getOrderedPrice(),
-                                                        0.5 // Default weight
-                        ))
+                                        .map(item -> {
+                                            var p = productMap.get(item.getProductId());
+                                            double w = (p != null) ? p.getKgWeight() : 0.5;
+                                            double l = (p != null) ? p.getLengthCm() : 10.0;
+                                            double wd = (p != null) ? p.getWidthCm() : 10.0;
+                                            double h = (p != null) ? p.getHeightCm() : 10.0;
+
+                                            return new ShipmentRequestedEvent.ShipmentItem(
+                                                            item.getProductName(),
+                                                            item.getItemCode(),
+                                                            item.getQuantity(),
+                                                            item.getOrderedPrice(),
+                                                            w, l, wd, h
+                                            );
+                                        })
                                         .collect(Collectors.toList());
 
                         var shipmentEvent = new ShipmentRequestedEvent(

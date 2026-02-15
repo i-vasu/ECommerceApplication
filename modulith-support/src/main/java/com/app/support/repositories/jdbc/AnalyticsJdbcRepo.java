@@ -6,7 +6,8 @@ import org.springframework.data.repository.Repository;
 import java.util.List;
 import java.util.Map;
 
-public interface AnalyticsJdbcRepo extends Repository<Object, Long> {
+@org.springframework.stereotype.Repository
+public interface AnalyticsJdbcRepo extends Repository<com.app.core.domain.JdbcPlaceholder, Long> {
 
     @Query("SELECT order_date, gross_revenue FROM view_daily_revenue ORDER BY order_date ASC LIMIT 7")
     List<Map<String, Object>> getDailyRevenue();

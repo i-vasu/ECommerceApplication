@@ -85,25 +85,56 @@ public class ReturnService {
     }
 
     /**
-     * Admin approves a return after inspection.
-     * Decoupled: Emits event for financial and ERP sync.
+     * Admin approves a return request. 
+     * Status moves from REQUESTED to APPROVED.
+     * This signals logistics to schedule a reverse pickup.
      */
     @Transactional
     public void approveReturn(Long requestId) {
         ReturnRequest request = returnRequestRepo.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("ReturnRequest", "id", requestId));
 
-        if (request.getStatus() != ReturnRequest.ReturnStatus.REQUESTED
-                && request.getStatus() != ReturnRequest.ReturnStatus.APPROVED) {
-            throw new APIException("Return request in invalid state for approval");
+        if (request.getStatus() != ReturnRequest.ReturnStatus.REQUESTED) {
+            throw new APIException("Return request must be in REQUESTED state to approve");
+        }
+
+        request.setStatus(ReturnRequest.ReturnStatus.APPROVED);
+        returnRequestRepo.save(request);
+
+        log.info("Support: Return #{} approved. Ready for reverse pickup.", requestId);
+        
+        // Publish event to trigger Reverse Logistics (Shiprocket)
+        eventPublisher.publishEvent(new com.app.core.events.ReturnPickupInitiatedEvent(
+                requestId,
+                request.getOrderId(),
+                request.getUserEmail(),
+                request.getReason(),
+                request.getItems().stream()
+                        .map(i -> new com.app.core.events.ReturnPickupInitiatedEvent.ApprovedReturnItem(i.getOrderItemId(), i.getItemCode(), i.getQuantity()))
+                        .toList()));
+    }
+
+    /**
+     * Admin/Operator marks return as received and inspected.
+     * Status moves from APPROVED to COMPLETED.
+     * Triggers the ReturnApprovedEvent which handles Refund and Restocking.
+     */
+    @Transactional
+    public void markAsReceived(Long requestId, String adminComments) {
+        ReturnRequest request = returnRequestRepo.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("ReturnRequest", "id", requestId));
+
+        if (request.getStatus() != ReturnRequest.ReturnStatus.APPROVED) {
+            throw new APIException("Return request must be APPROVED before it can be marked as RECEIVED");
         }
 
         request.setStatus(ReturnRequest.ReturnStatus.COMPLETED);
+        request.setAdminComments(adminComments);
         returnRequestRepo.save(request);
 
-        log.info("Support: Return {} approved. Publishing event for fulfillment.", requestId);
+        log.info("Support: Return #{} received and completed. Triggering refund/restock.", requestId);
 
-        // Publish event for Order/Finance/ERP modules
+        // Publish event for Order/Finance/ERP modules to execute the refund and restock logic
         eventPublisher.publishEvent(new ReturnApprovedEvent(
                 requestId,
                 request.getOrderId(),
@@ -113,6 +144,22 @@ public class ReturnService {
                 request.getItems().stream()
                         .map(i -> new ReturnApprovedEvent.ApprovedReturnItem(i.getOrderItemId(), i.getItemCode(), i.getQuantity()))
                         .toList()));
+    }
+
+    @Transactional
+    public void rejectReturn(Long requestId, String reason) {
+        ReturnRequest request = returnRequestRepo.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("ReturnRequest", "id", requestId));
+
+        request.setStatus(ReturnRequest.ReturnStatus.REJECTED);
+        request.setAdminComments(reason);
+        returnRequestRepo.save(request);
+        log.info("Support: Return #{} rejected with reason: {}", requestId, reason);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ReturnRequest> getAllReturns(int page, int size) {
+        return returnRequestRepo.findAll(org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending()));
     }
 
     @Transactional(readOnly = true)

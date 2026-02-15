@@ -4,7 +4,7 @@ import com.app.finance.pricing.OrderTotalModule;
 import com.app.finance.pricing.contracts.OrderSummary;
 import com.app.finance.pricing.contracts.OrderTotal;
 import com.app.finance.pricing.contracts.OrderTotalInput;
-import com.app.logistics.shipping.TaxCalculationService;
+import com.app.finance.tax.TaxCalculationService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -38,7 +38,11 @@ public class DefaultTaxModule implements OrderTotalModule {
         BigDecimal currentTotal = summary.getFinalTotal();
 
         String state = input.getShippingState() != null ? input.getShippingState() : "Maharashtra";
-        var result = taxService.calculateGST(currentTotal, state);
+        
+        // Use item-level tax calculation if items are present
+        var result = (input.getItems() != null && !input.getItems().isEmpty()) 
+                ? taxService.calculateTax(input.getItems(), state)
+                : taxService.calculateGST(currentTotal, state);
 
         return OrderTotal.builder()
                 .code("tax")

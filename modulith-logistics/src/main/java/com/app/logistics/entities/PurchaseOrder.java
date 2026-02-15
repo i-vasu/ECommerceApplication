@@ -19,6 +19,9 @@ public class PurchaseOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "vendor_id")
+    private Long vendorId;
+
     private String supplierName;
 
     private String supplierEmail;

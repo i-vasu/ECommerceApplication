@@ -89,4 +89,10 @@ public class CartController implements CartApi {
 		var cartDTO = cartService.mergeCarts(guestCartId, userId);
 		return ResponseEntity.ok(ApiResponse.success(cartDTO, "Guest cart merged successfully"));
 	}
+
+	@DeleteMapping("/public/carts/{cartId}/clear")
+	public ResponseEntity<ApiResponse<String>> clearCart(@PathVariable Long cartId) {
+		cartService.clearCart(cartId);
+		return ResponseEntity.ok(ApiResponse.success("Cart cleared", "All items removed from cart"));
+	}
 }

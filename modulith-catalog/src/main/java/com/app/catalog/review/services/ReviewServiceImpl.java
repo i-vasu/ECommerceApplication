@@ -104,4 +104,29 @@ public class ReviewServiceImpl implements ReviewService {
     public Double getAverageRating(Long productId) {
         return reviewRepo.getAverageRatingByProductId(productId);
     }
+
+    @Override
+    @Transactional
+    public ProductReviewDTO updateReview(Long reviewId, ProductReviewDTO reviewDTO) {
+        var review = reviewRepo.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", "reviewId", reviewId));
+
+        if (reviewDTO.rating() != 0) {
+            if (reviewDTO.rating() < 1 || reviewDTO.rating() > 5) {
+                throw new APIException("Rating must be between 1 and 5");
+            }
+            review.setRating(reviewDTO.rating());
+        }
+
+        if (reviewDTO.comment() != null) {
+            review.setComment(reviewDTO.comment());
+            // Re-run profanity filter
+            if (containsBannedWords(reviewDTO.comment())) {
+                review.setApproved(false);
+            }
+        }
+
+        var savedReview = reviewRepo.save(review);
+        return reviewMapper.toDTO(savedReview);
+    }
 }

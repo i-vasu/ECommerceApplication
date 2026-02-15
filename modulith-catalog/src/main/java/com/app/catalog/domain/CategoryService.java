@@ -6,11 +6,11 @@ import com.app.catalog.payloads.CategoryResponse;
 
 public interface CategoryService {
 
-	CategoryDTO createCategory(Category category);
+	CategoryDTO createCategory(CategoryDTO categoryDTO);
 
 	CategoryResponse getCategories(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
 
-	CategoryDTO updateCategory(Category category, Long categoryId);
+	CategoryDTO updateCategory(CategoryDTO categoryDTO, Long categoryId);
 
 	String deleteCategory(Long categoryId);
 }

@@ -4,7 +4,8 @@ import com.app.core.events.OrderStatusEvent;
 import com.app.governance.states.OperationalStateMachineService;
 import com.app.governance.states.OrderEvent;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +14,10 @@ import org.springframework.stereotype.Service;
  * Synchronizes Order lifecycle with Shipment, Payment, and Identity events.
  */
 @Service
-@Log4j2
 @RequiredArgsConstructor
 public class CrossModuleOrchestrationService {
+
+    private static final Logger log = LogManager.getLogger(CrossModuleOrchestrationService.class);
 
     private final OperationalStateMachineService stateMachineService;
 

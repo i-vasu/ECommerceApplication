@@ -29,13 +29,19 @@ public class RazorpayWebhookController {
             @RequestHeader("X-Razorpay-Signature") String signature) {
 
         try {
-            // Verify signature
+            // Verify signature — reject if invalid
             boolean isValid = Utils.verifyWebhookSignature(payload, signature, webhookSecret);
             if (!isValid) {
                 log.warn("Invalid Razorpay webhook signature");
                 return new ResponseEntity<>("Invalid signature", HttpStatus.BAD_REQUEST);
             }
+        } catch (Exception e) {
+            log.error("Error verifying Razorpay webhook signature: {}", e.getMessage());
+            return new ResponseEntity<>("Signature verification failed", HttpStatus.BAD_REQUEST);
+        }
 
+        // Signature is valid — always return 200 from here to prevent Razorpay retries
+        try {
             JSONObject json = new JSONObject(payload);
             String event = json.optString("event");
 
@@ -50,12 +56,11 @@ public class RazorpayWebhookController {
                 log.info("Payment captured webhook received for order: {}", pgOrderId);
                 paymentService.processPaymentCapture(pgOrderId, pgPaymentId);
             }
-
-            return new ResponseEntity<>("OK", HttpStatus.OK);
-
         } catch (Exception e) {
-            log.error("Error processing Razorpay webhook: {}", e.getMessage());
-            return new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);
+            // Log but don't return error — webhook was authentic, we must not trigger retries
+            log.error("Error processing Razorpay webhook payload (will not retry): {}", e.getMessage(), e);
         }
+
+        return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 }

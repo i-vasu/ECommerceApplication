@@ -2,6 +2,7 @@ package com.app.security.services;
 
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
+import com.app.core.multitenancy.UserContext;
 import com.app.core.async.EventProducer;
 import com.app.security.UserService;
 import com.app.security.async.UserEvent;
@@ -15,6 +16,8 @@ import com.app.security.payloads.UserDTO;
 import com.app.security.payloads.UserResponse;
 import com.app.security.repositories.AddressRepo;
 import com.app.security.repositories.UserRepo;
+import com.app.security.repositories.UserFriendRepo;
+import com.app.security.entities.UserFriend;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,6 +46,9 @@ public class UserServiceImpl implements UserService, com.app.core.contracts.User
 
 	@Autowired
 	private AddressRepo addressRepo;
+
+	@Autowired
+	private UserFriendRepo userFriendRepo;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -200,6 +206,7 @@ public class UserServiceImpl implements UserService, com.app.core.contracts.User
 
 	@Override
 	public UserDTO getUserById(Long userId) {
+		validateUserIdOwnership(userId);
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
@@ -229,6 +236,7 @@ public class UserServiceImpl implements UserService, com.app.core.contracts.User
 
 	@Override
 	public UserDTO updateUser(Long userId, UserDTO userDTO) {
+		validateUserIdOwnership(userId);
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
@@ -343,6 +351,7 @@ public class UserServiceImpl implements UserService, com.app.core.contracts.User
 
 	@Override
 	public void transferRewardPoints(Long senderId, String recipient, int points) {
+		validateUserIdOwnership(senderId);
 		if (points <= 0) {
 			throw new APIException("Points to transfer must be positive");
 		}
@@ -380,17 +389,60 @@ public class UserServiceImpl implements UserService, com.app.core.contracts.User
 
 	@Override
 	public List<UserDTO> getFriends(Long userId) {
-		// Basic stub for now to resolve compilation
-		return new ArrayList<>();
+		validateUserIdOwnership(userId);
+		
+		var friendships = userFriendRepo.findAcceptedFriendsByUserId(userId);
+		
+		return friendships.stream()
+				.map(uf -> {
+					User friend = uf.getFriend();
+					return mapUserToDTO(friend);
+				})
+				.toList();
 	}
 
 	@Override
 	public void addFriend(Long userId, String friendEmail) {
-		// Basic stub for now to resolve compilation
+		validateUserIdOwnership(userId);
+		
+		User user = userRepo.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+		
+		User friend = userRepo.findByEmail(friendEmail)
+				.orElseThrow(() -> new ResourceNotFoundException("User", "email", friendEmail));
+		
+		if (user.getUserId().equals(friend.getUserId())) {
+			throw new APIException("Cannot add yourself as a friend");
+		}
+		
+		// Check if friendship already exists
+		var existing = userFriendRepo.findByUserIdAndFriendId(userId, friend.getUserId());
+		if (existing.isPresent()) {
+			throw new APIException("Friend request already exists");
+		}
+		
+		// Create bidirectional friendship (auto-accept for now, can be changed to pending)
+		UserFriend friendship = new UserFriend();
+		friendship.setUser(user);
+		friendship.setFriend(friend);
+		friendship.setStatus(UserFriend.FriendshipStatus.ACCEPTED);
+		friendship.setAcceptedAt(LocalDateTime.now());
+		userFriendRepo.save(friendship);
+		
+		// Create reverse friendship for bidirectional lookup
+		UserFriend reverseFriendship = new UserFriend();
+		reverseFriendship.setUser(friend);
+		reverseFriendship.setFriend(user);
+		reverseFriendship.setStatus(UserFriend.FriendshipStatus.ACCEPTED);
+		reverseFriendship.setAcceptedAt(LocalDateTime.now());
+		userFriendRepo.save(reverseFriendship);
+		
+		log.info("Friendship created between User {} and User {}", userId, friend.getUserId());
 	}
 
 	@Override
 	public void deactivateAccount(Long userId) {
+		validateUserIdOwnership(userId);
 		User user = userRepo.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 		user.setAccountStatus("CLOSED");
@@ -424,5 +476,13 @@ public class UserServiceImpl implements UserService, com.app.core.contracts.User
 		return userRepo.findById(userId)
 				.map(u -> u.getProfile().getFirstName() + " " + u.getProfile().getLastName())
 				.orElse(null);
+	}
+
+	private void validateUserIdOwnership(Long userId) {
+		Long currentUserId = UserContext.getCurrentUserId();
+		if (currentUserId != null && !currentUserId.equals(userId)) {
+			log.warn("IDOR attempt detected! Authenticated User {} tried to access/modify User {}", currentUserId, userId);
+			throw new APIException("Unauthorized: You cannot access or modify another user's profile.");
+		}
 	}
 }

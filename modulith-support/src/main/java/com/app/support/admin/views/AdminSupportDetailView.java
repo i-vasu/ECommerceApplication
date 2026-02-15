@@ -22,9 +22,9 @@ import jakarta.annotation.security.RolesAllowed;
 
 import java.time.format.DateTimeFormatter;
 
-@Route(value = "admin/support/detail", layout = AdminMainLayout.class)
+@Route(value = "admin/support-detail", layout = AdminMainLayout.class)
 @PageTitle("Ticket Details | Vasu Admin")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "SUPPORT"})
 public class AdminSupportDetailView extends VerticalLayout implements HasUrlParameter<Long> {
 
     private final SupportService supportService;

@@ -5,18 +5,26 @@ import com.app.governance.states.OrderStatus;
 import com.app.order.entities.Order;
 import com.app.order.repositories.OrderRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Log4j2
+/**
+ * Batch Worker: Reconciles Pending Payments older than 15 minutes.
+ */
 @Component
+@Profile("worker")
 @RequiredArgsConstructor
 public class PaymentReconciliationWorker {
 
+    private static final Logger log = LogManager.getLogger(PaymentReconciliationWorker.class);
     private final OrderRepo orderRepo;
     private final PaymentService paymentService;
     private final com.app.governance.states.OperationalStateMachineService operationalStateMachine;

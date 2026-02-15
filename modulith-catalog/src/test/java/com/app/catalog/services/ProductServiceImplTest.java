@@ -87,7 +87,8 @@ class ProductServiceImplTest {
         when(productMapper.productToProductDTO(any())).thenReturn(new ProductDTO(1L, "Test Product", "TEST001", "image.png", "Desc", 10, BigDecimal.valueOf(100.0), BigDecimal.ZERO, BigDecimal.valueOf(100.0), null, null, null, 5.0));
 
         // Act
-        productService.updateProduct(1L, product);
+        ProductDTO productDTO = new ProductDTO(1L, "Test Product", "TEST001", "image.png", "Desc", 10, BigDecimal.valueOf(100.0), BigDecimal.ZERO, BigDecimal.valueOf(100.0), null, null, null, 0.0);
+        productService.updateProduct(1L, productDTO);
 
         // Assert
         verify(productRepo).save(productFromDb);
@@ -105,7 +106,8 @@ class ProductServiceImplTest {
 
         // Act & Assert
         Exception exception = assertThrows(APIException.class, () -> {
-            productService.updateProduct(1L, product);
+            ProductDTO productDTO = new ProductDTO(1L, "Test Product", "TEST001", "image.png", "Desc", 10, BigDecimal.valueOf(100.0), BigDecimal.ZERO, BigDecimal.valueOf(100.0), null, null, null, 0.0);
+        productService.updateProduct(1L, productDTO);
         });
 
         assertTrue(exception.getMessage().contains("updated by another user"));
@@ -124,7 +126,8 @@ class ProductServiceImplTest {
         when(productMapper.productToProductDTO(product)).thenReturn(new ProductDTO(1L, "Test Product", "TEST001", "image.png", "Desc", 10, BigDecimal.valueOf(100.0), BigDecimal.ZERO, BigDecimal.valueOf(100.0), null, null, null, 0.0));
 
         // Act
-        ProductDTO saved = productService.addProduct(1L, product);
+        ProductDTO productDTO = new ProductDTO(1L, "Test Product", "TEST001", "image.png", "Desc", 10, BigDecimal.valueOf(100.0), BigDecimal.ZERO, BigDecimal.valueOf(100.0), null, null, null, 0.0);
+        ProductDTO saved = productService.addProduct(1L, productDTO);
 
         // Assert
         assertNotNull(saved);

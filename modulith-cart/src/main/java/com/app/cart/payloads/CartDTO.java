@@ -1,17 +1,28 @@
 package com.app.cart.payloads;
 
-import com.app.catalog.payloads.ProductDTO;
-
+import java.math.BigDecimal;
 import java.util.List;
 
 public record CartDTO(
         Long cartId,
-        java.math.BigDecimal totalPrice,
-        List<ProductDTO> products) {
+        Long userId,
+        BigDecimal totalPrice,
+        String couponCode,
+        List<CartItemDTO> items) {
+    
+    public record CartItemDTO(
+            Long cartItemId,
+            Long productId,
+            String productName,
+            String itemCode,
+            Integer quantity,
+            BigDecimal productPrice,
+            BigDecimal discount) {}
+
     public CartDTO {
         if (totalPrice == null)
-            totalPrice = java.math.BigDecimal.ZERO;
-        if (products == null)
-            products = List.of();
+            totalPrice = BigDecimal.ZERO;
+        if (items == null)
+            items = List.of();
     }
 }

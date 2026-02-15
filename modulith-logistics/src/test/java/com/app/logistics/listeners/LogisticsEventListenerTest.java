@@ -19,16 +19,16 @@ public class LogisticsEventListenerTest {
     @Mock
     private ShipmentService shipmentService;
 
-    @Mock
-    private InventoryService inventoryService;
-
     @InjectMocks
     private LogisticsEventListener logisticsEventListener;
 
     @Test
-    void testOnOrderCancelledRestoresStock() {
+    void testOnOrderCancelled_ShouldCancelShipment() {
         // Arrange
         Long orderId = 1L;
+        // Using correct constructor or mock event if possible, but existing code used concrete event
+        // The event constructor signature in test: (Long, Long, Double, String, List)
+        // Which matches OrderCancelledEvent(orderId, customerId, amount, reason, items)
         OrderCancelledEvent.CancelledItem item = new OrderCancelledEvent.CancelledItem("ITEM001", 2);
         OrderCancelledEvent event = new OrderCancelledEvent(orderId, 1L, 100.0, "Customer Cancelled", List.of(item));
 
@@ -36,7 +36,6 @@ public class LogisticsEventListenerTest {
         logisticsEventListener.onOrderCancelled(event);
 
         // Assert
-        verify(inventoryService).releaseStock("ITEM001", 2);
         verify(shipmentService).cancelShipmentByOrderId(orderId);
     }
 }

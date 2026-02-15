@@ -77,12 +77,12 @@ class ProductServiceTest {
         when(productMapper.productToProductDTO(savedProduct)).thenReturn(expectedDTO);
 
         // Act
-        ProductDTO result = productService.addProduct(categoryId, product);
+        ProductDTO result = productService.addProduct(categoryId, expectedDTO);
 
         // Assert
         assertNotNull(result);
         assertEquals(1L, result.productId());
-        verify(productRepo).save(product);
+        verify(productRepo).save(any(Product.class));
     }
 
     @Test

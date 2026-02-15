@@ -17,6 +17,7 @@ public interface ProductMapper {
     @Mapping(target = "materialStory", expression = "java((String) product.getExtensionAttributes().get(\"materialStory\"))")
     @Mapping(target = "stylistNotes", expression = "java((String) product.getExtensionAttributes().get(\"stylistNotes\"))")
     @Mapping(target = "modelMeasurements", expression = "java((String) product.getExtensionAttributes().get(\"modelMeasurements\"))")
+    @Mapping(target = "taxRateId", source = "taxRateId")
     ProductDTO productToProductDTO(Product product);
 
     Product productDTOToProduct(ProductDTO productDTO);

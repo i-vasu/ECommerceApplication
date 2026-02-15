@@ -59,7 +59,7 @@ public class CustomDesignServiceTest {
 
         when(designRepo.findById(designId)).thenReturn(Optional.of(design));
         when(categoryRepo.findByCategoryName("Custom Designs")).thenReturn(category);
-        when(productService.addProduct(eq(10L), any(Product.class))).thenReturn(new com.app.catalog.payloads.ProductDTO(
+        when(productService.addProduct(eq(10L), any(com.app.catalog.payloads.ProductDTO.class))).thenReturn(new com.app.catalog.payloads.ProductDTO(
                 1L, "Test Product", "CODE", "img.png", "Desc", 10, java.math.BigDecimal.valueOf(100.0), java.math.BigDecimal.ZERO, java.math.BigDecimal.valueOf(100.0),
                 java.util.Collections.emptyList(), java.util.Collections.emptyList(), java.util.Collections.emptyList(), 5.0
         ));
@@ -69,6 +69,6 @@ public class CustomDesignServiceTest {
 
         // Assert
         assertNotNull(result);
-        verify(productService).addProduct(eq(10L), any(Product.class));
+        verify(productService).addProduct(eq(10L), any(com.app.catalog.payloads.ProductDTO.class));
     }
 }

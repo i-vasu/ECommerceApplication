@@ -3,6 +3,7 @@ package com.app.cart.domain;
 import com.app.cart.domain.services.CartCouponService;
 import com.app.cart.entities.Cart;
 import com.app.cart.entities.CartItem;
+import com.app.cart.mappers.CartMapper;
 import com.app.cart.payloads.CartDTO;
 import com.app.cart.repositories.CartItemRepo;
 import com.app.cart.repositories.CartRepo;
@@ -25,14 +26,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import com.app.core.multitenancy.UserContext;
 import java.util.List;
 import java.util.Map;
 
-@Log4j2
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Service
 public class CartServiceImpl implements CartService {
+
+	private static final Logger log = LogManager.getLogger(CartServiceImpl.class);
 
 	private final CartRepo cartRepo;
 	private final ProductService productService;
@@ -45,6 +50,7 @@ public class CartServiceImpl implements CartService {
 	private final OperationalStateMachineService stateMachineService;
 	private final RedisLockService lockService;
 	private final AddressService addressService;
+	private final CartMapper cartMapper;
 
 	@Override
 	@Transactional
@@ -52,7 +58,14 @@ public class CartServiceImpl implements CartService {
 		var cart = new Cart();
 		cart.setTotalPrice(java.math.BigDecimal.ZERO);
 		var savedCart = cartRepo.save(cart);
-		return new CartDTO(savedCart.getCartId(), savedCart.getTotalPrice(), List.of());
+		return cartMapper.cartToCartDTO(savedCart);
+	}
+
+	@Override
+	public CartDTO getCartById(Long cartId) {
+		var cart = cartRepo.findById(cartId)
+				.orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
+		return cartMapper.cartToCartDTO(cart);
 	}
 
 	@Override
@@ -67,6 +80,8 @@ public class CartServiceImpl implements CartService {
 		try {
 			var cart = cartRepo.findById(cartId)
 					.orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
+
+			validateCartOwnership(cart);
 
 			// Dynamic Capacity Check via SpEL
 			Map<String, Object> context = new java.util.HashMap<>();
@@ -90,7 +105,7 @@ public class CartServiceImpl implements CartService {
 			}
 
 			// Use Redis Check (Async Write-Behind compatible)
-			if (!inventoryReservationService.checkStock(effectiveItemCode, quantity)) {
+			if (!inventoryReservationService.checkAggregateStock(effectiveItemCode, quantity)) {
 				throw new APIException("Insufficient stock for " + effectiveItemCode);
 			}
 
@@ -113,10 +128,9 @@ public class CartServiceImpl implements CartService {
 			cart = cartRepo.findById(cartId).orElse(cart);
 
 			recalculateCartTotals(cart);
-			cartRepo.save(cart);
+			var savedCart = cartRepo.save(cart);
 
-			var products = getCartProducts(cart);
-			return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
+			return cartMapper.cartToCartDTO(savedCart);
 		} finally {
 			lockService.unlock(lockKey);
 		}
@@ -125,10 +139,7 @@ public class CartServiceImpl implements CartService {
 	@Override
 	public Page<CartDTO> getAllCarts(Pageable pageable) {
 		var carts = cartRepo.findAll(pageable);
-		return carts.map(cart -> {
-			var products = getCartProducts(cart);
-			return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
-		});
+		return carts.map(cartMapper::cartToCartDTO);
 	}
 
 	@Override
@@ -138,9 +149,9 @@ public class CartServiceImpl implements CartService {
 			throw new ResourceNotFoundException("Cart", "cartId", cartId);
 
 		recalculateCartTotals(cart);
+		validateCartOwnership(cart);
 
-		var products = getCartProducts(cart);
-		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
+		return cartMapper.cartToCartDTO(cart);
 	}
 
 	@Override
@@ -156,19 +167,7 @@ public class CartServiceImpl implements CartService {
 
 				// Recalculate Cart Total
 				var cart = cartItem.getCart();
-				var input = OrderTotalInput.builder()
-						.id(cart.getCartId())
-						.userId(cart.getUserId())
-						.couponCode(cart.getCouponCode())
-						.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
-								item.getProductId(),
-								item.getItemCode(),
-								item.getProductPrice(),
-								item.getQuantity())).toList())
-						.build();
-
-				var summary = orderTotalService.calculate(input);
-				cart.setTotalPrice(summary.getFinalTotal());
+				recalculateCartTotals(cart);
 				cartRepo.save(cart);
 			}
 		}
@@ -180,13 +179,15 @@ public class CartServiceImpl implements CartService {
 		var cart = cartRepo.findById(cartId)
 				.orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
 
+		validateCartOwnership(cart);
+
 		var cartItem = cartItemRepo.findCartItemByProductIdAndCartId(cartId, productId);
 		if (cartItem == null)
 			throw new ResourceNotFoundException("CartItem", "productId", productId);
 
 		var effectiveItemCode = (itemCode != null && !itemCode.isEmpty()) ? itemCode : cartItem.getItemCode();
 
-		if (!inventoryReservationService.checkStock(effectiveItemCode, quantity)) {
+		if (!inventoryReservationService.checkAggregateStock(effectiveItemCode, quantity)) {
 			throw new APIException("Insufficient stock for " + effectiveItemCode);
 		}
 
@@ -195,10 +196,9 @@ public class CartServiceImpl implements CartService {
 		cartItemRepo.save(cartItem);
 
 		recalculateCartTotals(cart);
-		cartRepo.save(cart);
+		var savedCart = cartRepo.save(cart);
 
-		var products = getCartProducts(cart);
-		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
+		return cartMapper.cartToCartDTO(savedCart);
 	}
 
 	@Override
@@ -212,23 +212,10 @@ public class CartServiceImpl implements CartService {
 
 		cartItemRepo.delete(cartItem);
 
-		// Remove from list for calculation accuracy if not automatically synched
+		// Remove from list for calculation accuracy
 		cart.getCartItems().remove(cartItem);
 
-		// Recalculate Pipeline
-		var input = OrderTotalInput.builder()
-						.id(cart.getCartId())
-						.userId(cart.getUserId())
-						.couponCode(cart.getCouponCode())
-				.items(cart.getCartItems().stream().map(item -> new OrderTotalInput.ItemInput(
-						item.getProductId(),
-						item.getItemCode(),
-						item.getProductPrice(),
-						item.getQuantity())).toList())
-				.build();
-
-		var summary = orderTotalService.calculate(input);
-		cart.setTotalPrice(summary.getFinalTotal());
+		recalculateCartTotals(cart);
 		cartRepo.save(cart);
 
 		return "Product removed from the cart";
@@ -250,10 +237,9 @@ public class CartServiceImpl implements CartService {
 		cart.setCouponCode(couponCode);
 
 		recalculateCartTotals(cart);
-		cartRepo.save(cart);
+		var savedCart = cartRepo.save(cart);
 
-		var products = getCartProducts(cart);
-		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
+		return cartMapper.cartToCartDTO(savedCart);
 	}
 
 	@Override
@@ -265,10 +251,9 @@ public class CartServiceImpl implements CartService {
 		cart.setCouponCode(null);
 
 		recalculateCartTotals(cart);
-		cartRepo.save(cart);
+		var savedCart = cartRepo.save(cart);
 
-		var products = getCartProducts(cart);
-		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
+		return cartMapper.cartToCartDTO(savedCart);
 	}
 
 	@Override
@@ -307,7 +292,6 @@ public class CartServiceImpl implements CartService {
 				cartItemRepo.save(existingItem);
 			} else {
 				// Item doesn't exist, move it to user cart
-				// We need to create a new item copy because re-parenting managed entities can be tricky with cascade
 				var newItem = new CartItem();
 				newItem.setCart(userCart);
 				newItem.setProductId(guestItem.getProductId());
@@ -327,12 +311,6 @@ public class CartServiceImpl implements CartService {
 		return getCart(userId, userCart.getCartId());
 	}
 
-	private List<ProductDTO> getCartProducts(Cart cart) {
-		return cart.getCartItems().stream()
-				.map(p -> productService.getProductById(p.getProductId()))
-				.toList();
-	}
-
 	@Override
 	@Transactional
 	public CartDTO updateCartAddress(Long cartId, Long addressId) {
@@ -342,10 +320,9 @@ public class CartServiceImpl implements CartService {
 		cart.setAddressId(addressId);
 
 		recalculateCartTotals(cart);
-		cartRepo.save(cart);
+		var savedCart = cartRepo.save(cart);
 
-		var products = getCartProducts(cart);
-		return new CartDTO(cart.getCartId(), cart.getTotalPrice(), products);
+		return cartMapper.cartToCartDTO(savedCart);
 	}
 
 	private void recalculateCartTotals(Cart cart) {
@@ -374,5 +351,31 @@ public class CartServiceImpl implements CartService {
 
 		var summary = orderTotalService.calculate(inputBuilder.build());
 		cart.setTotalPrice(summary.getFinalTotal());
+	}
+
+	private void validateCartOwnership(Cart cart) {
+		Long currentUserId = UserContext.getCurrentUserId();
+		// If cart is already linked to a user, and it's not the current user, block it.
+		// (Administrators would bypass this in a real system, but for public APIs this is essential).
+		if (cart.getUserId() != null && !cart.getUserId().equals(currentUserId)) {
+			log.warn("IDOR attempt detected! User {} tried to access Cart {} owned by User {}", 
+					currentUserId, cart.getCartId(), cart.getUserId());
+			throw new APIException("Unauthorized: You do not own this cart.");
+		}
+	}
+
+	@Override
+	@Transactional
+	public void clearCart(Long cartId) {
+		var cart = cartRepo.findById(cartId)
+				.orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
+
+		validateCartOwnership(cart);
+
+		cartItemRepo.deleteAll(cart.getCartItems());
+		cart.getCartItems().clear();
+		cart.setCouponCode(null);
+		cart.setTotalPrice(java.math.BigDecimal.ZERO);
+		cartRepo.save(cart);
 	}
 }

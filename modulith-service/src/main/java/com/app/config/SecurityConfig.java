@@ -35,9 +35,9 @@ public class SecurityConfig {
         @Order(1)
         public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
                 http
-                                .securityMatcher("/admin/**", "/VAADIN/**", "/sw.js", "/manifest.webmanifest")
+                                .securityMatcher("/admin/**", "/VAADIN/**", "/sw.js", "/manifest.webmanifest", "/images/**", "/icons/**")
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/VAADIN/**", "/sw.js", "/manifest.webmanifest")
+                                                .requestMatchers("/VAADIN/**", "/sw.js", "/manifest.webmanifest", "/images/**", "/icons/**")
                                                 .permitAll()
                                                 .requestMatchers("/admin/login", "/admin/css/**", "/admin/js/**",
                                                                 "/admin/images/**")
@@ -46,7 +46,7 @@ public class SecurityConfig {
                                 .formLogin(form -> form
                                                 .loginPage("/admin/login")
                                                 .loginProcessingUrl("/admin/login")
-                                                .defaultSuccessUrl("/admin/dashboard", true)
+                                                .defaultSuccessUrl("/admin/analytics-native", true)
                                                 .permitAll())
                                 .logout(logout -> logout
                                                 .logoutUrl("/admin/logout")
@@ -65,10 +65,10 @@ public class SecurityConfig {
         @Order(2)
         public SecurityFilterChain apiFilterChain(HttpSecurity http, JWTFilter jwtFilter) throws Exception {
                 http
-                                .securityMatcher("/api/**", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/**")
+                                .securityMatcher("/api/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**")
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**",
+                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                                                                 "/api/v1/register/**", "/api/v1/login")
                                                 .permitAll()
                                                 .requestMatchers("/api/v1/public/**", "/api/public/**",

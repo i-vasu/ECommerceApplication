@@ -16,7 +16,7 @@ import com.app.governance.states.OperationalStateMachineService;
 import com.app.logistics.inventory.InventoryReservationService;
 import com.app.logistics.inventory.InventoryService.InventoryLock;
 import com.app.logistics.shipping.ShippingCalculationService.ShippingCost;
-import com.app.logistics.shipping.TaxCalculationService.TaxCalculation;
+import com.app.finance.tax.TaxCalculationService.TaxCalculation;
 import com.app.order.async.OrderProducer;
 import com.app.order.entities.Order;
 import com.app.order.mappers.OrderMapper;

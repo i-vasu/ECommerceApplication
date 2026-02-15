@@ -11,7 +11,7 @@ import jakarta.annotation.security.RolesAllowed;
 
 @Route(value = "admin/inventory/transactions", layout = AdminMainLayout.class)
 @PageTitle("Inventory Audit Log | Vasu Admin")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "OPERATOR", "SUPPORT"})
 public class AdminInventoryTransactionView extends VerticalLayout {
 
     private final InventoryTransactionRepository transactionRepository;

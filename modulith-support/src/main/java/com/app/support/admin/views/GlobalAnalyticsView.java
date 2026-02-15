@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Route(value = "admin/global-analytics", layout = AdminMainLayout.class)
+@Route(value = "admin/analytics-native", layout = AdminMainLayout.class)
 @PageTitle("Global Intelligence & Analytics | Vaabhi Admin")
 @RolesAllowed("ADMIN")
 public class GlobalAnalyticsView extends VerticalLayout {

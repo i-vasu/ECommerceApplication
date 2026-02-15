@@ -92,6 +92,33 @@ public class DataInitializer implements CommandLineRunner {
             t.setName("VAABHI | Heritage Luxury");
             t.setEnvironment("PRODUCTION");
             t.setActive(true);
+            
+            // UI Config
+            t.setLogoUrl("/logo.png");
+            t.setAccentColor("#2563eb");
+            t.setSupportEmail("support@vaabhi.com");
+            t.setHeroVideoUrl("https://videos.pexels.com/video-files/5753063/5753063-uhd_2560_1440_25fps.mp4");
+            t.setHeroPosterUrl("https://images.pexels.com/photos/7190333/pexels-photo-7190333.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2");
+            
+            t.setSocialLinks(java.util.Map.of(
+                    "instagram", "https://instagram.com/vaabhi",
+                    "facebook", "https://facebook.com/vaabhi"
+            ));
+            
+            t.setStaticPages(java.util.Map.of(
+                    "privacy-policy", "<h1>Privacy Policy</h1><p>Your privacy is important to us...</p>",
+                    "terms-of-service", "<h1>Terms of Service</h1><p>By using our service, you agree to...</p>"
+            ));
+            
+            t.setFooterMenu(java.util.Map.of(
+                    "Shop", java.util.List.of(
+                            java.util.Map.of("title", "All Products", "url", "/search"),
+                            java.util.Map.of("title", "Collections", "url", "/search")),
+                    "Company", java.util.List.of(
+                            java.util.Map.of("title", "Privacy Policy", "url", "/privacy-policy"),
+                            java.util.Map.of("title", "Terms of Service", "url", "/terms-of-service"))
+            ));
+
             return tenantRepository.save(t);
         });
 

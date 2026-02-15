@@ -19,4 +19,8 @@ public interface CouponService {
     CouponDTO getCouponByCode(String code);
 
     void incrementUsageCount(Long couponId);
+
+    CouponDTO updateCoupon(String code, CouponDTO couponDTO);
+
+    void deleteCoupon(String code);
 }

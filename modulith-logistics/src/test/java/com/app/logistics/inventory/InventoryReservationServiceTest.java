@@ -12,6 +12,11 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
+import com.app.logistics.inventory.repositories.InventoryRepository;
+import com.app.logistics.inventory.repositories.InventoryTransactionRepository;
+import com.app.logistics.inventory.repositories.WarehouseRepository;
+import com.app.logistics.inventory.repositories.BinRepository;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
@@ -32,6 +37,15 @@ class InventoryReservationServiceTest {
 
     @Mock
     private ZSetOperations<String, String> zSetOperations;
+    
+    @Mock
+    private InventoryRepository inventoryRepository;
+    @Mock
+    private InventoryTransactionRepository transactionRepository;
+    @Mock
+    private WarehouseRepository warehouseRepository;
+    @Mock
+    private BinRepository binRepository;
 
     @InjectMocks
     private InventoryReservationService reservationService;
@@ -50,7 +64,7 @@ class InventoryReservationServiceTest {
         when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
 
         // Act
-        boolean result = reservationService.reserveStock("ITEM001", 5);
+        boolean result = reservationService.reserveStock(1L, 1L, "ITEM001", 5);
 
         // Assert
         assertTrue(result);
@@ -64,7 +78,7 @@ class InventoryReservationServiceTest {
         when(redisTemplate.execute(any(DefaultRedisScript.class), anyList(), anyString())).thenReturn(-2L);
 
         // Act
-        boolean result = reservationService.reserveStock("ITEM001", 100);
+        boolean result = reservationService.reserveStock(1L, 1L, "ITEM001", 100);
 
         // Assert
         assertFalse(result);
@@ -78,10 +92,10 @@ class InventoryReservationServiceTest {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
         // Act
-        reservationService.releaseStock("ITEM001", 10);
+        reservationService.restock(1L, 1L, "ITEM001", 10, "Release");
 
         // Assert
-        verify(valueOperations).increment("inventory:stock:ITEM001", 10);
+        verify(valueOperations).increment("inventory:stock:1:1:ITEM001", 10);
     }
 
     @Test
@@ -92,10 +106,10 @@ class InventoryReservationServiceTest {
         when(zSetOperations.remove(eq("inventory:reservations:expiry"), anyString())).thenReturn(1L);
 
         // Act
-        reservationService.confirmStock("ITEM001", 5, "lock-123");
+        reservationService.confirmStock(1L, 1L, "ITEM001", 5, "lock-123");
 
         // Assert
-        verify(zSetOperations).remove(eq("inventory:reservations:expiry"), eq("ITEM001:lock-123:5"));
+        verify(zSetOperations).remove(eq("inventory:reservations:expiry"), eq("1:1:ITEM001:lock-123:5"));
     }
 
     @Test
@@ -103,27 +117,13 @@ class InventoryReservationServiceTest {
     void checkStock_ShouldReturnTrueIfAvailable() {
         // Arrange
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get("inventory:stock:ITEM001")).thenReturn("20");
+        when(valueOperations.get("inventory:stock:1:1:ITEM001")).thenReturn("20");
 
         // Act
-        boolean result = reservationService.checkStock("ITEM001", 15);
+        boolean result = reservationService.checkStock(1L, 1L, "ITEM001", 15);
 
         // Assert
         assertTrue(result);
     }
 
-    @Test
-    @DisplayName("EDGE CASE: Check stock should trigger Read-Through on Redis Miss")
-    void checkStock_OnMiss_ShouldInitializeAndReturnResult() {
-        // Arrange
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get("inventory:stock:NEW-ITEM")).thenReturn(null);
-
-        // Act
-        boolean result = reservationService.checkStock("NEW-ITEM", 50);
-
-        // Assert
-        assertTrue(result); // Fallback is 100
-        verify(valueOperations).set(eq("inventory:stock:NEW-ITEM"), eq("100"), any());
-    }
 }

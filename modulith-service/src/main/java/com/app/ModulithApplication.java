@@ -19,9 +19,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Modulithic
 @EnableAsync
 @EnableAdminServer
-@EnableJpaRepositories(basePackages = {"com.app", "org.springframework.statemachine.data.jpa"}, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.REGEX, pattern = "(com\\.app\\.support\\.repositories\\.jdbc\\..*|com\\.app\\.discovery\\.domain\\.repositories\\.jdbc\\..*)"))
+@EnableJpaRepositories(basePackages = {"com.app", "org.springframework.statemachine.data.jpa", "org.springframework.modulith.events.jpa"}, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.REGEX, pattern = "(com\\.app\\.support\\.repositories\\.jdbc\\..*|com\\.app\\.discovery\\.domain\\.repositories\\.jdbc\\..*)"))
 @org.springframework.data.jdbc.repository.config.EnableJdbcRepositories(basePackages = {"com.app.support.repositories.jdbc", "com.app.discovery.domain.repositories.jdbc"})
-@EntityScan(basePackageClasses = {ModulithApplication.class, org.springframework.statemachine.data.jpa.JpaRepositoryStateMachine.class})
+@EntityScan(basePackages = {"com.app", "org.springframework.statemachine.data.jpa", "org.springframework.modulith.events.jpa"})
 public class ModulithApplication {
 
     public static void main(String[] args) {

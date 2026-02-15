@@ -45,10 +45,12 @@ public class OrderModuleEventListener {
                         event.orderId(),
                         event.userId(),
                         order.email(),
+                        order.shippingReceiverPhone(), // Added phone
                         order.totalAmount(),
                         order.orderItems().stream()
                                 .map(item -> new OrderCreatedEvent.OrderItemData(
                                         item.product() != null ? item.product().itemCode() : "UNKNOWN",
+                                        item.product() != null ? item.product().productName() : "UNKNOWN",
                                         item.quantity(),
                                         item.orderedProductPrice()))
                                 .toList(),

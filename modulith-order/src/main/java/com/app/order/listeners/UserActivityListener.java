@@ -5,16 +5,18 @@ import com.app.cart.repositories.CartRepo;
 import com.app.core.events.UserRegisteredEvent;
 import com.app.security.repositories.UserRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
 @Component
-@Slf4j
 @RequiredArgsConstructor
 public class UserActivityListener {
+
+    private static final Logger log = LogManager.getLogger(UserActivityListener.class);
 
     private final CartRepo cartRepo;
     private final UserRepo userRepo;

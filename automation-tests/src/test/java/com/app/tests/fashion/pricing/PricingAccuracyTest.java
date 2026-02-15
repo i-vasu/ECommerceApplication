@@ -1,7 +1,7 @@
 package com.app.tests.fashion.pricing;
 
-import com.app.logistics.shipping.TaxCalculationService;
-import com.app.logistics.shipping.TaxCalculationService.TaxCalculation;
+import com.app.finance.tax.TaxCalculationService;
+import com.app.finance.tax.TaxCalculationService.TaxCalculation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -21,19 +21,28 @@ public class PricingAccuracyTest {
     static class FakeTaxService implements TaxCalculationService {
         @Override
         public TaxCalculation calculateGST(java.math.BigDecimal subtotal, String state) {
-            java.util.List<com.app.logistics.shipping.TaxCalculationService.TaxComponent> components = new java.util.ArrayList<>();
+            java.util.List<com.app.finance.tax.TaxCalculationService.TaxComponent> components = new java.util.ArrayList<>();
             java.math.BigDecimal rate = java.math.BigDecimal.valueOf(0.18);
             java.math.BigDecimal taxAmount = subtotal.multiply(rate).setScale(2, java.math.RoundingMode.HALF_UP);
             
             if ("Maharashtra".equalsIgnoreCase(state)) {
                 java.math.BigDecimal halfRate = rate.divide(java.math.BigDecimal.valueOf(2), 2, java.math.RoundingMode.HALF_UP);
                 java.math.BigDecimal halfTax = taxAmount.divide(java.math.BigDecimal.valueOf(2), 2, java.math.RoundingMode.HALF_UP);
-                components.add(new com.app.logistics.shipping.TaxCalculationService.TaxComponent("CGST", halfRate, halfTax));
-                components.add(new com.app.logistics.shipping.TaxCalculationService.TaxComponent("SGST", halfRate, halfTax));
+                components.add(new com.app.finance.tax.TaxCalculationService.TaxComponent("CGST", halfRate, halfTax));
+                components.add(new com.app.finance.tax.TaxCalculationService.TaxComponent("SGST", halfRate, halfTax));
             } else {
-                components.add(new com.app.logistics.shipping.TaxCalculationService.TaxComponent("IGST", rate, taxAmount));
+                components.add(new com.app.finance.tax.TaxCalculationService.TaxComponent("IGST", rate, taxAmount));
             }
             return new TaxCalculation(taxAmount, components);
+        }
+
+        @Override
+        public TaxCalculation calculateTax(java.util.List<com.app.finance.pricing.contracts.OrderTotalInput.ItemInput> items, String state) {
+            // Dummy implementation for testing purposes
+            java.math.BigDecimal subtotal = items.stream()
+                .map(item -> item.getPrice().multiply(java.math.BigDecimal.valueOf(item.getQuantity().longValue())))
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            return calculateGST(subtotal, state);
         }
     }
 

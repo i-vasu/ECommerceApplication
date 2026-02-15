@@ -3,13 +3,15 @@ package com.app.cart.domain.services;
 import com.app.core.APIException;
 import com.app.finance.promo.services.CouponService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Service
 @RequiredArgsConstructor
-@Log4j2
 public class CartCouponService {
+
+    private static final Logger log = LogManager.getLogger(CartCouponService.class);
 
     private final CouponService couponService;
 

@@ -18,14 +18,14 @@ public interface CategoryApi {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Category created successfully", content = @Content(schema = @Schema(implementation = CategoryDTO.class))),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid category details")
         })
-        ResponseEntity<ApiResponse<CategoryDTO>> createCategory(Category category);
+        ResponseEntity<ApiResponse<CategoryDTO>> createCategory(CategoryDTO categoryDTO);
 
         @Operation(summary = "Get All Categories", description = "Retrieves a paginated list of all categories")
         ResponseEntity<ApiResponse<CategoryResponse>> getCategories(Integer pageNumber, Integer pageSize, String sortBy,
                         String sortOrder);
 
         @Operation(summary = "Update Category", description = "Updates an existing category")
-        ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(Category category, Long categoryId);
+        ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(CategoryDTO categoryDTO, Long categoryId);
 
         @Operation(summary = "Delete Category", description = "Deletes a category by ID")
         ResponseEntity<ApiResponse<String>> deleteCategory(Long categoryId);

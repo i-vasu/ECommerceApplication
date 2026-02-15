@@ -8,7 +8,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Map;
 
-public interface DiscoveryJdbcRepo extends Repository<Object, Long> {
+@org.springframework.stereotype.Repository
+public interface DiscoveryJdbcRepo extends Repository<com.app.core.domain.JdbcPlaceholder, Long> {
 
     @Query("SELECT product_id, product_name, item_code, price, image, description " +
             "FROM products " +

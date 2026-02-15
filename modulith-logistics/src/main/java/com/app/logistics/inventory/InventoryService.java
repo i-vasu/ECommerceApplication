@@ -5,17 +5,21 @@ import com.app.logistics.inventory.payloads.InventoryRequest;
 import java.util.List;
 
 public interface InventoryService {
-    InventoryLock lockInventory(String itemCode, int quantity);
+    InventoryLock lockInventory(Long warehouseId, Long binId, String itemCode, int quantity);
 
     InventoryLock lockFlashInventory(Long productId, int quantity);
 
     InventoryLock lockStock(List<InventoryRequest> requests);
 
-    boolean checkAvailability(String itemCode, int quantity);
+    boolean checkAvailability(Long warehouseId, Long binId, String itemCode, int quantity);
+    
+    boolean checkAggregateAvailability(String itemCode, int quantity);
 
-    void confirmStock(String itemCode, int quantity, String lockId);
+    void confirmStock(Long warehouseId, Long binId, String itemCode, int quantity, String lockId);
 
-    void releaseStock(String itemCode, int quantity);
+    void confirmFlashStock(Long productId, int quantity, String lockId);
+
+    void releaseStock(Long warehouseId, Long binId, String itemCode, int quantity);
 
     public record InventoryLock(boolean locked, String lockId) {
     }

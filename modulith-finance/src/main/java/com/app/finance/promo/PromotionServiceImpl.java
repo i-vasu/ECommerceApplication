@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
 @Service
-@org.springframework.context.annotation.Primary
 @RequiredArgsConstructor
 public class PromotionServiceImpl implements PromotionService {
 

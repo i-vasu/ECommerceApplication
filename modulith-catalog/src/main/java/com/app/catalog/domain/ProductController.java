@@ -20,20 +20,22 @@ import java.math.BigDecimal;
 @RequestMapping("/api")
 @ApiVersion(1)
 @SecurityRequirement(name = "E-Commerce Application")
-public class ProductController {
+public class ProductController implements ProductApi {
 
     @Autowired
     private ProductService productService;
 
     @PostMapping("/admin/categories/{categoryId}/product")
-    public ResponseEntity<ApiResponse<ProductDTO>> createProduct(@Valid @RequestBody Product product,
+    @Override
+    public ResponseEntity<ApiResponse<ProductDTO>> createProduct(@Valid @RequestBody ProductDTO productDTO,
             @PathVariable Long categoryId) {
-        ProductDTO savedProductDTO = productService.addProduct(categoryId, product);
+        ProductDTO savedProductDTO = productService.addProduct(categoryId, productDTO);
         return new ResponseEntity<>(ApiResponse.success(savedProductDTO, "Product created successfully"),
                 HttpStatus.CREATED);
     }
 
     @GetMapping("/public/products")
+    @Override
     public ResponseEntity<ApiResponse<ProductResponse>> getProducts(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -44,6 +46,7 @@ public class ProductController {
     }
 
     @GetMapping("/public/categories/{categoryId}/products")
+    @Override
     public ResponseEntity<ApiResponse<ProductResponse>> getProductsByCategory(@PathVariable Long categoryId,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -55,6 +58,7 @@ public class ProductController {
     }
 
     @GetMapping("/public/products/keyword/{keyword}")
+    @Override
     public ResponseEntity<ApiResponse<ProductResponse>> getProductsByKeyword(@PathVariable String keyword,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -69,6 +73,7 @@ public class ProductController {
     }
 
     @GetMapping("/public/products/search")
+    @Override
     public ResponseEntity<ApiResponse<ProductResponse>> facetedSearch(
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "minPrice", required = false) BigDecimal minPrice,
@@ -84,6 +89,7 @@ public class ProductController {
     }
 
     @GetMapping("/public/products/{productId}")
+    @Override
     public ResponseEntity<ApiResponse<ProductDTO>> getProductById(@PathVariable String productId) {
         // Storefront might send handle/itemCode as productId.
         try {
@@ -98,13 +104,15 @@ public class ProductController {
     }
 
     @PutMapping("/admin/products/{productId}")
-    public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(@Valid @RequestBody Product product,
+    @Override
+    public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(@Valid @RequestBody ProductDTO productDTO,
             @PathVariable Long productId) {
-        ProductDTO updatedProductDTO = productService.updateProduct(productId, product);
+        ProductDTO updatedProductDTO = productService.updateProduct(productId, productDTO);
         return ResponseEntity.ok(ApiResponse.success(updatedProductDTO, "Product updated successfully"));
     }
 
     @DeleteMapping("/admin/products/{productId}")
+    @Override
     public ResponseEntity<ApiResponse<String>> deleteProduct(@PathVariable Long productId) {
         String status = productService.deleteProduct(productId);
         return ResponseEntity.ok(ApiResponse.success(status, "Product deleted successfully"));

@@ -7,7 +7,8 @@ import org.springframework.data.repository.Repository;
 import java.util.List;
 import java.util.Map;
 
-public interface MonitoringJdbcRepo extends Repository<Object, Long> {
+@org.springframework.stereotype.Repository
+public interface MonitoringJdbcRepo extends Repository<com.app.core.domain.JdbcPlaceholder, Long> {
 
     @Query("SELECT * FROM monitoring_alert_rules")
     List<Map<String, Object>> getAlertRules();

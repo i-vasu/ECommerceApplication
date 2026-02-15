@@ -16,6 +16,7 @@ public record ShipmentRequestedEvent(
     ) {}
 
     public record ShipmentItem(
-        String productName, String sku, int quantity, BigDecimal price, double weight
+        String productName, String sku, int quantity, BigDecimal price, double weight,
+        double length, double width, double height
     ) {}
 }

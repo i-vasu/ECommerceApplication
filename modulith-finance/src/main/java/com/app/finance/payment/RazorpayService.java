@@ -288,6 +288,137 @@ public class RazorpayService {
     }
 
     /**
+     * Create QR Code for UPI payments
+     * Useful for offline payments, in-store checkout, or quick mobile payments
+     * 
+     * @param amount Amount in paise
+     * @param description Description for the payment
+     * @param customerId Optional customer ID
+     * @return QR code details including image URL
+     */
+    public Map<String, Object> createQrCode(long amount, String description, String customerId) {
+        try {
+            JSONObject qrRequest = new JSONObject();
+            qrRequest.put("type", "upi_qr");
+            qrRequest.put("name", "Vaabhi Fashion Store");
+            qrRequest.put("usage", "single_use");
+            qrRequest.put("fixed_amount", true);
+            qrRequest.put("payment_amount", amount);
+            qrRequest.put("description", description);
+            qrRequest.put("currency", defaultCurrency);
+            
+            if (customerId != null && !customerId.isEmpty()) {
+                qrRequest.put("customer_id", customerId);
+            }
+            
+            // Add notes
+            JSONObject notes = new JSONObject();
+            notes.put("purpose", description);
+            qrRequest.put("notes", notes);
+            
+            log.info("Creating QR code: amount={}, description={}", amount, description);
+            
+            // Note: Razorpay SDK doesn't have direct QR code support in older versions
+            // This would need to use the REST API directly
+            QrCode qrCode = getClient().qrCode.create(qrRequest);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("qr_code_id", qrCode.get("id"));
+            response.put("image_url", qrCode.get("image_url"));
+            response.put("payment_amount", qrCode.get("payment_amount"));
+            response.put("status", qrCode.get("status"));
+            response.put("description", qrCode.get("description"));
+            
+            log.info("QR code created: id={}", String.valueOf(qrCode.get("id")));
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Failed to create QR code", e);
+            throw new RuntimeException("QR code creation failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Create dynamic QR code (reusable for multiple payments)
+     * 
+     * @param description Description for the QR code
+     * @return QR code details
+     */
+    public Map<String, Object> createDynamicQrCode(String description) {
+        try {
+            JSONObject qrRequest = new JSONObject();
+            qrRequest.put("type", "upi_qr");
+            qrRequest.put("name", "Vaabhi Fashion Store");
+            qrRequest.put("usage", "multiple_use");
+            qrRequest.put("fixed_amount", false);
+            qrRequest.put("description", description);
+            
+            log.info("Creating dynamic QR code: description={}", description);
+            
+            QrCode qrCode = getClient().qrCode.create(qrRequest);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("qr_code_id", qrCode.get("id"));
+            response.put("image_url", qrCode.get("image_url"));
+            response.put("status", qrCode.get("status"));
+            response.put("description", qrCode.get("description"));
+            
+            log.info("Dynamic QR code created: id={}", String.valueOf(qrCode.get("id")));
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Failed to create dynamic QR code", e);
+            throw new RuntimeException("Dynamic QR code creation failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Fetch QR code details
+     */
+    public Map<String, Object> getQrCodeDetails(String qrCodeId) {
+        try {
+            QrCode qrCode = getClient().qrCode.fetch(qrCodeId);
+            
+            Map<String, Object> details = new HashMap<>();
+            details.put("id", qrCode.get("id"));
+            details.put("image_url", qrCode.get("image_url"));
+            details.put("payment_amount", qrCode.get("payment_amount"));
+            details.put("status", qrCode.get("status"));
+            details.put("payments_amount_received", qrCode.get("payments_amount_received"));
+            details.put("payments_count_received", qrCode.get("payments_count_received"));
+            
+            return details;
+            
+        } catch (Exception e) {
+            log.error("Failed to fetch QR code details: {}", qrCodeId, e);
+            throw new RuntimeException("Failed to fetch QR code: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Close a QR code (stop accepting payments)
+     */
+    public Map<String, Object> closeQrCode(String qrCodeId) {
+        try {
+            log.info("Closing QR code: {}", qrCodeId);
+            
+            QrCode qrCode = getClient().qrCode.close(qrCodeId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", qrCode.get("id"));
+            response.put("status", qrCode.get("status"));
+            response.put("close_reason", qrCode.get("close_reason"));
+            
+            log.info("QR code closed: {}", qrCodeId);
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Failed to close QR code: {}", qrCodeId, e);
+            throw new RuntimeException("Failed to close QR code: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Get the public key ID (for frontend)
      */
     public String getKeyId() {

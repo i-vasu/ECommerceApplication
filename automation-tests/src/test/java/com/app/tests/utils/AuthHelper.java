@@ -13,7 +13,7 @@ import static io.restassured.RestAssured.given;
  */
 public class AuthHelper {
 
-    private static final String ORDER_SERVICE_URL = System.getProperty("order.service.url", "http://localhost:8081");
+    private static final String ORDER_SERVICE_URL = System.getProperty("order.service.url", "http://localhost:8080");
     private static String cachedToken;
 
     /**

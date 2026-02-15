@@ -22,5 +22,9 @@ public interface ShipmentService {
     Shipment markAsPicked(Long orderId);
     Shipment markAsPacked(Long orderId);
     String generateManifest(Long orderId); // Returns URL to manifest PDF
+    String getLabelUrl(Long orderId); // Returns URL to shipping label
     Shipment getShipmentByOrderId(Long orderId);
+    
+    // Reverse Logistics
+    Shipment initiateReversePickup(com.app.core.events.ReturnPickupInitiatedEvent event);
 }

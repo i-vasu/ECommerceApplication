@@ -16,45 +16,49 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public InventoryLock lockInventory(String itemCode, int quantity) {
-        boolean reserved = reservationService.reserveStock(itemCode, quantity);
+    public InventoryLock lockInventory(Long warehouseId, Long binId, String itemCode, int quantity) {
+        boolean reserved = reservationService.reserveStock(warehouseId, binId, itemCode, quantity);
         return new InventoryLock(reserved, reserved ? UUID.randomUUID().toString() : null);
     }
 
     @Override
     public InventoryLock lockFlashInventory(Long productId, int quantity) {
-        // Implementation for flash inventory
-        return new InventoryLock(true, UUID.randomUUID().toString()); // Mock for now
+        String lockId = java.util.UUID.randomUUID().toString();
+        boolean reserved = reservationService.reserveFlash(productId, quantity, lockId);
+        return new InventoryLock(reserved, reserved ? lockId : null);
     }
 
     @Override
     public InventoryLock lockStock(List<InventoryRequest> requests) {
-        // Multi-item stock locking
-        boolean allReserved = true;
-        String batchId = UUID.randomUUID().toString();
-        for (InventoryRequest request : requests) {
-            // Updated to use consistent method signature or logic if needed.
-            // Assuming reserveStock supports batchId or similar multi-item logic.
-            if (!reservationService.reserveStock(request.itemCode(), request.quantity())) {
-                allReserved = false;
-                break;
-            }
-        }
-        return new InventoryLock(allReserved, allReserved ? batchId : null);
+        String lockId = java.util.UUID.randomUUID().toString();
+        boolean allReserved = reservationService.reserveBatch(requests, lockId);
+        return new InventoryLock(allReserved, allReserved ? lockId : null);
     }
 
     @Override
-    public void confirmStock(String itemCode, int quantity, String lockId) {
-        reservationService.confirmStock(itemCode, quantity, lockId);
+    public void confirmStock(Long warehouseId, Long binId, String itemCode, int quantity, String lockId) {
+        reservationService.confirmStock(warehouseId, binId, itemCode, quantity, lockId);
     }
 
     @Override
-    public boolean checkAvailability(String itemCode, int quantity) {
-        return reservationService.checkStock(itemCode, quantity);
+    public void confirmFlashStock(Long productId, int quantity, String lockId) {
+        reservationService.confirmFlash(productId, quantity, lockId);
     }
 
     @Override
-    public void releaseStock(String itemCode, int quantity) {
-        reservationService.releaseStock(itemCode, quantity);
+    public boolean checkAvailability(Long warehouseId, Long binId, String itemCode, int quantity) {
+        return reservationService.checkStock(warehouseId, binId, itemCode, quantity);
+    }
+
+    @Override
+    public boolean checkAggregateAvailability(String itemCode, int quantity) {
+        return reservationService.getAggregateStock(itemCode) >= quantity;
+    }
+
+    @Override
+    public void releaseStock(Long warehouseId, Long binId, String itemCode, int quantity) {
+        // Stock release is currently global in Redis for simple restock, 
+        // but we'll stick to location-specific restock logic in ReservationService
+        reservationService.restock(warehouseId, binId, itemCode, quantity, "Reservation Release");
     }
 }

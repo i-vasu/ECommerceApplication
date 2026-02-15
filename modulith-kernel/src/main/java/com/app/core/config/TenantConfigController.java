@@ -26,29 +26,16 @@ public class TenantConfigController {
     public ResponseEntity<ApiResponse<TenantConfigDTO>> getPublicConfig() {
         Tenant tenant = tenantService.getCurrentTenant();
 
-        // In a real production app, these would be fields in the Tenant entity or a
-        // separate CmsConfig entity.
-        // For now, providing a robust integration point.
         TenantConfigDTO config = TenantConfigDTO.builder()
                 .name(tenant.getName())
-                .logoUrl("/logo.png")
-                .accentColor("#2563eb")
-                .supportEmail("support@vaabhi.com")
-                .heroVideoUrl("https://videos.pexels.com/video-files/5753063/5753063-uhd_2560_1440_25fps.mp4")
-                .heroPosterUrl("https://images.pexels.com/photos/7190333/pexels-photo-7190333.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2")
-                .socialLinks(Map.of(
-                        "instagram", "https://instagram.com/vaabhi",
-                        "facebook", "https://facebook.com/vaabhi"))
-                .staticPages(Map.of(
-                        "privacy-policy", "<h1>Privacy Policy</h1><p>Your privacy is important to us...</p>",
-                        "terms-of-service", "<h1>Terms of Service</h1><p>By using our service, you agree to...</p>"))
-                .footerMenu(Map.of(
-                        "Shop", List.of(
-                                Map.of("title", "All Products", "url", "/search"),
-                                Map.of("title", "Collections", "url", "/search")),
-                        "Company", List.of(
-                                Map.of("title", "Privacy Policy", "url", "/privacy-policy"),
-                                Map.of("title", "Terms of Service", "url", "/terms-of-service"))))
+                .logoUrl(tenant.getLogoUrl() != null ? tenant.getLogoUrl() : "/logo.png")
+                .accentColor(tenant.getAccentColor() != null ? tenant.getAccentColor() : "#2563eb")
+                .supportEmail(tenant.getSupportEmail() != null ? tenant.getSupportEmail() : "support@vaabhi.com")
+                .heroVideoUrl(tenant.getHeroVideoUrl())
+                .heroPosterUrl(tenant.getHeroPosterUrl())
+                .socialLinks(tenant.getSocialLinks() != null ? tenant.getSocialLinks() : Map.of())
+                .staticPages(tenant.getStaticPages() != null ? tenant.getStaticPages() : Map.of())
+                .footerMenu(tenant.getFooterMenu() != null ? tenant.getFooterMenu() : Map.of())
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(config, "Configuration retrieved successfully"));

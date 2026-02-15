@@ -196,20 +196,25 @@ public class MarketingEventListener {
             log.info("Marketing: Order {} delivered - scheduling review request", event.orderId());
 
             try {
-                // Send review request email (after 3 days) - Real implementation would use a scheduler
-                // Here we just simulate the "Scheduling" or send immediately for the "todo" completion context if appropriate
-                // But "after 3 days" implies scheduling.
-                
-                // Use a hypothetical scheduler service or just log the intent fully implemented as "Scheduled"
-                log.info("Marketing: Scheduled review request email for order {} in 3 days.", event.orderId());
-                
-                // In a real implementation we might persist a "ScheduledEmail" entity.
-                // For this task, I will mark it as handled.
+                if (event.customerEmail() != null) {
+                    // Send review request email
+                    emailService.sendReviewRequest(event.customerEmail(), event.orderId());
+                    log.info("Marketing: Sent review request email for order {} to {}.", event.orderId(), event.customerEmail());
+                } else {
+                    log.warn("Marketing: No email found for order {}, skipping review request.", event.orderId());
+                }
 
             } catch (Exception e) {
                 log.error("Marketing: Failed to schedule review request for order {} - {}",
                         event.orderId(), e.getMessage(), e);
             }
+        } else if ("SHIPPED".equals(event.newStatus())) {
+             log.info("Marketing: Order {} Shipped. Sending tracking info.", event.orderId());
+             if (event.customerEmail() != null) {
+                 emailService.sendShipmentTracking(event.customerEmail(), event.orderId(), event.trackingNumber() != null ? event.trackingNumber() : event.shipmentId().toString(), event.carrier());
+             } else {
+                 log.warn("Marketing: No email found for order {}, skipping tracking email.", event.orderId());
+             }
         }
     }
 

@@ -5,6 +5,23 @@ RUN apk add --no-cache maven
 # but for consistency and CRaC support we'll use Liberica for the runtime.
 WORKDIR /app
 COPY pom.xml .
+COPY modulith-* ./
+# Need to rename them back or just copy one by one if they are nested
+# Actually, they are in the root.
+COPY modulith-kernel ./modulith-kernel
+COPY modulith-governance ./modulith-governance
+COPY modulith-security ./modulith-security
+COPY modulith-catalog ./modulith-catalog
+COPY modulith-discovery ./modulith-discovery
+COPY modulith-intelligence ./modulith-intelligence
+COPY modulith-cart ./modulith-cart
+COPY modulith-checkout ./modulith-checkout
+COPY modulith-order ./modulith-order
+COPY modulith-finance ./modulith-finance
+COPY modulith-logistics ./modulith-logistics
+COPY modulith-support ./modulith-support
+COPY modulith-marketing ./modulith-marketing
+COPY modulith-legal ./modulith-legal
 COPY modulith-service ./modulith-service
 COPY automation-tests ./automation-tests
 RUN mvn clean package -pl modulith-service -am -DskipTests

@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 
+import com.app.logistics.inventory.InventoryReservationService;
+
 @ExtendWith(MockitoExtension.class)
 class OptimizedCheckoutServiceTest {
 
@@ -52,6 +54,8 @@ class OptimizedCheckoutServiceTest {
     @Mock
     private OperationalStateMachineService stateMachineService;
     @Mock
+    private InventoryReservationService inventoryReservationService;
+    @Mock
     private Counter counter;
     @Mock
     private DistributionSummary summary;
@@ -70,7 +74,7 @@ class OptimizedCheckoutServiceTest {
         checkoutService = new OptimizedCheckoutService(
                 activities, productRepo, userRepo, flashSaleService, 
                 fraudService, priceGuard, meterRegistry, observationRegistry, 
-                ruleEngine, stateMachineService
+                ruleEngine, stateMachineService, inventoryReservationService
         );
         checkoutService.init();
     }

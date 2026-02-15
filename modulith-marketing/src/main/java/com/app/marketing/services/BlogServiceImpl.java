@@ -2,6 +2,7 @@ package com.app.marketing.services;
 
 import com.app.marketing.entities.Blog;
 import com.app.marketing.repositories.BlogRepo;
+import com.app.marketing.payloads.BlogDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
@@ -24,18 +25,22 @@ public class BlogServiceImpl implements BlogService {
 
     private final BlogRepo blogRepo;
     private final StringRedisTemplate redisTemplate;
+    private final com.app.marketing.mappers.BlogMapper blogMapper;
 
     @Override
-    public Blog createBlog(Blog blog) {
+    public BlogDTO createBlog(BlogDTO blogDTO) {
+        Blog blog = blogMapper.blogDTOToBlog(blogDTO);
         if (blog.getCreatedAt() == null)
             blog.setCreatedAt(LocalDateTime.now());
         if (blog.getStatus() == null)
             blog.setStatus("DRAFT");
-        return blogRepo.save(blog);
+        
+        Blog savedBlog = blogRepo.save(blog);
+        return blogMapper.blogToBlogDTO(savedBlog);
     }
 
     @Override
-    public Blog publishBlog(Long blogId) {
+    public BlogDTO publishBlog(Long blogId) {
         var blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new RuntimeException("Blog not found"));
         blog.setStatus("PUBLISHED");
@@ -44,7 +49,7 @@ public class BlogServiceImpl implements BlogService {
         // Trigger Async Mailing
         broadcastBlog(saved);
 
-        return saved;
+        return blogMapper.blogToBlogDTO(saved);
     }
 
     @Async
@@ -71,13 +76,15 @@ public class BlogServiceImpl implements BlogService {
     }
 
     @Override
-    public List<Blog> getAllPublishedBlogs() {
-        return blogRepo.findByStatusOrderByCreatedAtDesc("PUBLISHED");
+    public List<BlogDTO> getAllPublishedBlogs() {
+        List<Blog> blogs = blogRepo.findByStatusOrderByCreatedAtDesc("PUBLISHED");
+        return blogs.stream().map(blogMapper::blogToBlogDTO).toList();
     }
 
     @Override
-    public Blog getBlogById(Long blogId) {
-        return blogRepo.findById(blogId)
+    public BlogDTO getBlogById(Long blogId) {
+        Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new RuntimeException("Blog not found"));
+        return blogMapper.blogToBlogDTO(blog);
     }
 }

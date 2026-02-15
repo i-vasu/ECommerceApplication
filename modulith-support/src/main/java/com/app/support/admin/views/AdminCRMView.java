@@ -21,9 +21,9 @@ import jakarta.annotation.security.RolesAllowed;
 import java.util.HashMap;
 import java.util.Map;
 
-@Route(value = "admin/crm", layout = AdminMainLayout.class)
+@Route(value = "admin/crm-native", layout = AdminMainLayout.class)
 @PageTitle("CRM & Loyalty | Vasu Admin")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "SUPPORT"})
 public class AdminCRMView extends VerticalLayout {
 
     private final CRMService crmService;

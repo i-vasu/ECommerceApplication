@@ -61,4 +61,23 @@ public class LogisticsEventListener {
                     e.getMessage());
         }
     }
+
+    @ApplicationModuleListener
+    public void onReturnPickupInitiated(com.app.core.events.ReturnPickupInitiatedEvent event) {
+        String eventId = "RETURN-PICKUP-" + event.requestId();
+        if (idempotencyService.isEventProcessed(eventId, "LOGISTICS_MODULE", "ReturnPickupInitiatedEvent")) {
+            return;
+        }
+
+        log.info("Logistics: Received ReturnPickupInitiatedEvent for Request ID: {}. Initiating reverse pickup.",
+                event.requestId());
+        try {
+            shipmentService.initiateReversePickup(event);
+            log.info("Logistics: Reverse pickup initiated for Request ID: {}", event.requestId());
+            idempotencyService.markEventAsProcessed(eventId, "LOGISTICS_MODULE", "ReturnPickupInitiatedEvent");
+        } catch (Exception e) {
+            log.error("Logistics: Failed to initiate reverse pickup for Request ID: {}. Error: {}", event.requestId(),
+                    e.getMessage());
+        }
+    }
 }

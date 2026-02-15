@@ -37,7 +37,7 @@ public class AddressController implements AddressApi {
 	@Override
 	public ResponseEntity<AddressDTO> getAddress(@PathVariable Long addressId) {
 		var addressDTO = addressService.getAddress(addressId);
-		return new ResponseEntity<>(addressDTO, HttpStatus.FOUND);
+		return new ResponseEntity<>(addressDTO, HttpStatus.OK);
 	}
 
 	@PutMapping("/addresses/{addressId}")

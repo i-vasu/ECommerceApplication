@@ -39,8 +39,9 @@ public class AdminMarketingView extends VerticalLayout {
 
         Tabs tabs = new Tabs();
         Tab campaignsTab = new Tab("Campaign Settings");
+        Tab socialTab = new Tab("Social Commerce");
         Tab roiTab = new Tab("Performance & ROI");
-        tabs.add(campaignsTab, roiTab);
+        tabs.add(campaignsTab, socialTab, roiTab);
         add(tabs);
 
         Div contentArea = new Div();
@@ -53,10 +54,34 @@ public class AdminMarketingView extends VerticalLayout {
             contentArea.removeAll();
             if (event.getSelectedTab().equals(campaignsTab)) {
                 showCampaignSettings(contentArea);
+            } else if (event.getSelectedTab().equals(socialTab)) {
+                showSocialCommerce(contentArea);
             } else if (event.getSelectedTab().equals(roiTab)) {
                 showROIAnalytics(contentArea);
             }
         });
+    }
+
+    private void showSocialCommerce(Div container) {
+        VerticalLayout layout = new VerticalLayout();
+        layout.add(new H2("Meta & WhatsApp Integration"));
+
+        TextField catalogUrl = new TextField("Meta Product Feed URL");
+        catalogUrl.setValue("https://vaabhi.com/api/v1/social/meta-catalog.xml");
+        catalogUrl.setReadOnly(true);
+        catalogUrl.setWidthFull();
+
+        Button copyBtn = new Button("Open Catalog", e -> {
+            getUI().ifPresent(ui -> ui.getPage().open(catalogUrl.getValue(), "_blank"));
+        });
+
+        layout.add(new com.vaadin.flow.component.html.Span("Use this URL in Meta Business Suite to sync products with Instagram and WhatsApp."));
+        layout.add(catalogUrl, copyBtn);
+        
+        layout.add(new H2("WhatsApp Mini-Store"));
+        layout.add(new com.vaadin.flow.component.html.Span("Status: ACTIVE (Direct Chat Buy Enabled)"));
+        
+        container.add(layout);
     }
 
     private void showCampaignSettings(Div container) {

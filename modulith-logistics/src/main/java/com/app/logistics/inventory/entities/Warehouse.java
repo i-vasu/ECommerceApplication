@@ -1,9 +1,11 @@
 package com.app.logistics.inventory.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.envers.Audited;
 
 @Entity
 @Table(name = "warehouses")
+@Audited
 public class Warehouse {
 
     @Id

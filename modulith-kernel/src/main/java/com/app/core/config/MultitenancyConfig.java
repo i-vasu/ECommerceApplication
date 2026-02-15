@@ -4,6 +4,7 @@ import com.app.core.multitenancy.SchemaMultiTenantConnectionProvider;
 import com.app.core.multitenancy.TenantIdentifierResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 public class MultitenancyConfig {
 
     @Bean
+    @Primary
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             DataSource dataSource,
             SchemaMultiTenantConnectionProvider connectionProvider,
@@ -22,7 +24,18 @@ public class MultitenancyConfig {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("com.app", "org.springframework.statemachine.data.jpa");
+        em.setPackagesToScan(
+            "com.app",
+            "com.app.catalog.entities",
+            "com.app.logistics.entities",
+            "com.app.logistics.inventory.entities",
+            "com.app.finance.entities",
+            "com.app.order.entities",
+            "com.app.security.entities",
+            "com.app.support.entities",
+            "org.springframework.statemachine.data.jpa",
+            "org.springframework.modulith.events.jpa"
+        );
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
 
         Map<String, Object> properties = new HashMap<>();

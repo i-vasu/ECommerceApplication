@@ -19,7 +19,7 @@ import jakarta.annotation.security.RolesAllowed;
  */
 @Route(value = "admin/orders-native", layout = AdminMainLayout.class)
 @PageTitle("Order Management | Vasu Admin")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "OPERATOR", "SUPPORT"})
 public class AdminOrderListView extends VerticalLayout {
 
     private final OrderService orderService;

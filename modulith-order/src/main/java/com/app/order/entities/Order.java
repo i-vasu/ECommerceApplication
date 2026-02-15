@@ -60,6 +60,7 @@ public class Order {
 
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    private String inventoryLockId;
 
 
     // Address Snapshot (Ubiquitous Language: Shipping Destination)
@@ -178,7 +179,34 @@ public class Order {
     public void setOrderItems(List<OrderItem> items) {
         this.orderItems = items;
         if (items != null) {
-            items.forEach(i -> i.setOrder(this));
+            items.stream().filter(i -> i != null).forEach(i -> i.setOrder(this));
         }
     }
+
+    public Long getOrderId() { return orderId; }
+    public String getEmail() { return email; }
+    public Long getUserId() { return userId; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public String getShippingReceiverPhone() { return shippingReceiverPhone; }
+    
+    public String getShippingStreet() { return shippingStreet; }
+    public String getShippingCity() { return shippingCity; }
+    public String getShippingState() { return shippingState; }
+    public String getShippingPincode() { return shippingPincode; }
+    public String getShippingCountry() { return shippingCountry; }
+
+    public String getInventoryLockId() { return inventoryLockId; }
+    public void setInventoryLockId(String inventoryLockId) { this.inventoryLockId = inventoryLockId; }
+    
+    public OrderStatus getOrderStatus() { return orderStatus; }
+    public List<OrderItem> getOrderItems() { return orderItems; }
+    public String getCouponCode() { return couponCode; }
+    public Long getPaymentId() { return paymentId; }
+    public Long getShipmentId() { return shipmentId; }
+    public LocalDateTime getDeliveredDate() { return deliveredDate; }
+    public LocalDate getOrderDate() { return orderDate; }
+    public BigDecimal getSubTotal() { return subTotal; }
+    public BigDecimal getTotalTax() { return totalTax; }
+    public BigDecimal getShippingCost() { return shippingCost; }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
 }

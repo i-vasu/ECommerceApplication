@@ -2,6 +2,7 @@ package com.app.security;
 
 import com.app.core.APIException;
 import com.app.core.ResourceNotFoundException;
+import com.app.core.multitenancy.UserContext;
 import com.app.security.entities.Address;
 import com.app.security.entities.User;
 import com.app.security.mappers.IdentityMapper;
@@ -55,7 +56,12 @@ public class AddressServiceImpl implements AddressService {
 	@Transactional(readOnly = true)
 	@Override
 	public Page<AddressDTO> getAddresses(Pageable pageable) {
-		var addresses = addressRepo.findAll(pageable);
+		Long currentUserId = UserContext.getCurrentUserId();
+		if (currentUserId == null) {
+			return Page.empty();
+		}
+		
+		var addresses = addressRepo.findByUserId(currentUserId, pageable);
 		return addresses.map(identityMapper::addressToAddressDTO);
 	}
 
@@ -65,6 +71,7 @@ public class AddressServiceImpl implements AddressService {
 		var address = addressRepo.findById(addressId)
 				.orElseThrow(() -> new ResourceNotFoundException("Address", "addressId", addressId));
 
+		validateAddressOwnership(addressId);
 		return identityMapper.addressToAddressDTO(address);
 	}
 
@@ -80,6 +87,8 @@ public class AddressServiceImpl implements AddressService {
 		if (addressFromDB == null) {
 			addressFromDB = addressRepo.findById(addressId)
 					.orElseThrow(() -> new ResourceNotFoundException("Address", "addressId", addressId));
+
+			validateAddressOwnership(addressId);
 
 			addressFromDB.setCountry(address.getCountry());
 			addressFromDB.setState(address.getState());
@@ -113,6 +122,8 @@ public class AddressServiceImpl implements AddressService {
 		var addressFromDB = addressRepo.findById(addressId)
 				.orElseThrow(() -> new ResourceNotFoundException("Address", "addressId", addressId));
 
+		validateAddressOwnership(addressId);
+
 		List<User> users = userRepo.findByAddress(addressId);
 
 		users.forEach(user -> {
@@ -137,6 +148,18 @@ public class AddressServiceImpl implements AddressService {
 		    if (!phone.matches("^[6-9]\\d{9}$")) {
 		        throw new APIException("Invalid Phone Number. Must be a valid 10-digit mobile number.");
 		    }
+		}
+	}
+
+	private void validateAddressOwnership(Long addressId) {
+		Long currentUserId = UserContext.getCurrentUserId();
+		if (currentUserId == null) return; // Allow internal/unauthenticated if needed, but risky
+
+		List<User> owners = userRepo.findByAddress(addressId);
+		boolean isOwner = owners.stream().anyMatch(u -> u.getUserId().equals(currentUserId));
+		
+		if (!isOwner) {
+			throw new APIException("Unauthorized: You do not own this address.");
 		}
 	}
 }

@@ -42,6 +42,21 @@ public class Product extends ExtensibleEntity {
 	@jakarta.persistence.Column(name = "hsn_code")
 	private String hsnCode;
 
+    @jakarta.persistence.Column(name = "tax_rate_id")
+    private Long taxRateId;
+
+	@jakarta.persistence.Column(name = "kg_weight")
+	private Double kgWeight = 0.5; // Default to 0.5kg
+
+	@jakarta.persistence.Column(name = "length_cm")
+	private Double lengthCm = 10.0;
+
+	@jakarta.persistence.Column(name = "width_cm")
+	private Double widthCm = 10.0;
+
+	@jakarta.persistence.Column(name = "height_cm")
+	private Double heightCm = 10.0;
+
 	    @jakarta.persistence.ElementCollection
     @jakarta.persistence.CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
     @jakarta.persistence.Column(name = "tag")
@@ -274,4 +289,44 @@ public class Product extends ExtensibleEntity {
 	public void setVersion(Long version) {
 		this.version = version;
 	}
+
+	public Double getKgWeight() {
+		return kgWeight;
+	}
+
+	public void setKgWeight(Double kgWeight) {
+		this.kgWeight = kgWeight;
+	}
+
+	public Double getLengthCm() {
+		return lengthCm;
+	}
+
+	public void setLengthCm(Double lengthCm) {
+		this.lengthCm = lengthCm;
+	}
+
+	public Double getWidthCm() {
+		return widthCm;
+	}
+
+	public void setWidthCm(Double widthCm) {
+		this.widthCm = widthCm;
+	}
+
+	public Double getHeightCm() {
+		return heightCm;
+	}
+
+	public void setHeightCm(Double heightCm) {
+		this.heightCm = heightCm;
+	}
+
+    public Long getTaxRateId() {
+        return taxRateId;
+    }
+
+    public void setTaxRateId(Long taxRateId) {
+        this.taxRateId = taxRateId;
+    }
 }

@@ -119,4 +119,11 @@ public class AuthController implements AuthApi {
 		userService.resetPassword(token, newPassword);
 		return ResponseEntity.ok("Password reset successfully");
 	}
+
+	@PostMapping("/logout")
+	@Override
+	public ResponseEntity<Map<String, String>> logout(@RequestParam Long userId) {
+		refreshTokenService.deleteByUserId(userId);
+		return ResponseEntity.ok(Map.of("message", "Logged out successfully. All refresh tokens invalidated."));
+	}
 }

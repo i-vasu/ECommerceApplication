@@ -66,6 +66,11 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
 
         shipment.setOrderId(event.orderId());
+        
+        if (event.email() != null) {
+            shipment.setCustomerEmail(event.email());
+        }
+        
         return shipmentRepo.save(shipment);
     }
 
@@ -95,6 +100,10 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
 
         shipment.setStatus("CREATED");
+        if (event.email() != null) {
+            shipment.setCustomerEmail(event.email());
+        }
+
         shipment = shipmentRepo.save(shipment);
 
         stateMachineService.triggerShipmentEvent(shipment.getShipmentId(),
@@ -215,6 +224,7 @@ public class ShipmentServiceImpl implements ShipmentService {
                                 ShipmentStatusUpdatedEvent event = new ShipmentStatusUpdatedEvent(
                                         shipment.getShipmentId(),
                                         shipment.getOrderId(),
+                                        shipment.getCustomerEmail(),
                                         shipment.getStatus(),
                                         status,
                                         shipment.getAwbNumber(),
@@ -281,17 +291,48 @@ public class ShipmentServiceImpl implements ShipmentService {
         if(shipment == null) throw new ResourceNotFoundException("Shipment", "orderId", orderId);
         
         // Only allow manifest generation if packed or further
-        // We can verify this via state machine if we want, but for now we'll check status
         if (!"PACKED".equals(shipment.getStatus()) && !"READY_FOR_PICKUP".equals(shipment.getStatus())) {
-            // log.warn("Generating manifest before packing for order {}", orderId);
+            log.warn("Generating manifest before packing for order {}", orderId);
         }
 
-        String manifestUrl = "/api/v1/shipments/" + shipment.getShipmentId() + "/manifest.pdf";
-        
-        shipment.setManifestUrl(manifestUrl);
-        shipmentRepo.save(shipment);
-        
-        return manifestUrl;
+        // Check if external shipment ID exists
+        if (shipment.getExternalShipmentId() == null || shipment.getExternalShipmentId().isEmpty()) {
+            throw new RuntimeException("Shipment not yet created with Shiprocket for order " + orderId);
+        }
+
+        try {
+            // Call Shiprocket API to generate manifest PDF
+            List<String> shipmentIds = List.of(shipment.getExternalShipmentId());
+            Map<String, Object> response = shiprocketService.generateManifest(shipmentIds);
+            
+            if (response != null && response.containsKey("manifest_url")) {
+                String manifestUrl = (String) response.get("manifest_url");
+                shipment.setManifestUrl(manifestUrl);
+                shipmentRepo.save(shipment);
+                
+                log.info("Generated manifest for Order ID: {}, URL: {}", orderId, manifestUrl);
+                return manifestUrl;
+            } else if (response != null && response.containsKey("status") && "success".equals(response.get("status"))) {
+                // Some API versions return status with manifest_link
+                if (response.containsKey("manifest_link")) {
+                    String manifestUrl = (String) response.get("manifest_link");
+                    shipment.setManifestUrl(manifestUrl);
+                    shipmentRepo.save(shipment);
+                    return manifestUrl;
+                }
+            }
+            
+            // Fallback: return placeholder if API doesn't return URL
+            log.warn("Manifest URL not found in response for order {}, using fallback", orderId);
+            String fallbackUrl = "/api/v1/shipments/" + shipment.getShipmentId() + "/manifest.pdf";
+            shipment.setManifestUrl(fallbackUrl);
+            shipmentRepo.save(shipment);
+            return fallbackUrl;
+            
+        } catch (Exception e) {
+            log.error("Failed to generate manifest for Order ID: {}", orderId, e);
+            throw new RuntimeException("Failed to generate manifest: " + e.getMessage());
+        }
     }
 
     @Override
@@ -299,6 +340,70 @@ public class ShipmentServiceImpl implements ShipmentService {
         Shipment shipment = shipmentRepo.findByOrderId(orderId);
         if (shipment == null) throw new ResourceNotFoundException("Shipment", "orderId", orderId);
         return shipment;
+    }
+
+    @Override
+    public String getLabelUrl(Long orderId) {
+        Shipment shipment = shipmentRepo.findByOrderId(orderId);
+        if (shipment == null) throw new ResourceNotFoundException("Shipment", "orderId", orderId);
+        
+        if (shipment.getExternalShipmentId() == null) {
+             throw new RuntimeException("Shipment not yet created with carrier.");
+        }
+        
+        try {
+            // Call Shiprocket API to generate shipping label PDF
+            Map<String, Object> response = shiprocketService.generateLabel(shipment.getExternalShipmentId());
+            
+            if (response != null && response.containsKey("label_url")) {
+                String labelUrl = (String) response.get("label_url");
+                log.info("Generated shipping label for Order ID: {}, URL: {}", orderId, labelUrl);
+                return labelUrl;
+            } else if (response != null && response.containsKey("label_created")) {
+                // Some API versions return label_created = 1 with label in response
+                Object labelCreated = response.get("label_created");
+                if ("1".equals(String.valueOf(labelCreated))) {
+                    // Label might be in 'response' or 'data' field
+                    if (response.containsKey("response")) {
+                        Map<String, Object> data = (Map<String, Object>) response.get("response");
+                        if (data.containsKey("label_url")) {
+                            return (String) data.get("label_url");
+                        }
+                    }
+                }
+            }
+            
+            // Fallback: return tracking page URL if label URL not available
+            log.warn("Label URL not found in response, returning tracking page for AWB: {}", shipment.getAwbNumber());
+            return "https://shiprocket.co/tracking/" + shipment.getAwbNumber();
+            
+        } catch (Exception e) {
+            log.error("Failed to generate shipping label for Order ID: {}", orderId, e);
+            throw new RuntimeException("Failed to fetch label: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public Shipment initiateReversePickup(com.app.core.events.ReturnPickupInitiatedEvent event) {
+        log.info("Logistics: Initiating reverse pickup for Return Request #{}", event.requestId());
+        
+        Map<String, Object> response = shiprocketService.createReverseShipment(event);
+        
+        Shipment shipment = new Shipment();
+        shipment.setOrderId(event.orderId());
+        shipment.setCarrier("Shiprocket");
+        shipment.setStatus("RETURN_PICKUP_INITIATED");
+        shipment.setCustomerEmail(event.userEmail());
+        
+        if (response.containsKey("order_id")) {
+            shipment.setExternalOrderId(String.valueOf(response.get("order_id")));
+        }
+        if (response.containsKey("shipment_id")) {
+            shipment.setExternalShipmentId(String.valueOf(response.get("shipment_id")));
+        }
+        
+        return shipmentRepo.save(shipment);
     }
 }
             

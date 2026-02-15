@@ -12,5 +12,8 @@ echo "Starting Modulith Service..."
 echo "Using Java: $(java --version | head -n 1)"
 echo "Using Maven: $(mvn -version | head -n 1)"
 
-# Run the application
-mvn spring-boot:run -pl modulith-service -DskipTests
+# Build all modules
+mvn clean install -DskipTests -am -pl modulith-service
+
+# Run the backend
+mvn spring-boot:run -pl modulith-service -Dmaven.test.skip=true

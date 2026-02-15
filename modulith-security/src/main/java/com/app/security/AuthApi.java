@@ -29,4 +29,7 @@ public interface AuthApi {
 
     @Operation(summary = "Reset Password", description = "Resets user password using a token")
     ResponseEntity<String> resetPassword(String token, String newPassword);
+
+    @Operation(summary = "Logout", description = "Invalidates refresh tokens for the current user")
+    ResponseEntity<Map<String, String>> logout(Long userId);
 }

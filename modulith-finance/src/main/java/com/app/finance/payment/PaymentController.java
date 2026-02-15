@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -35,13 +36,8 @@ public class PaymentController implements PaymentApi {
     @PostMapping("/create/{orderId}")
     @Override
     public ResponseEntity<APIResponse> createOrder(@PathVariable Long orderId) {
-        try {
-            String razorpayOrderId = paymentService.createInternalOrder(orderId);
-            return new ResponseEntity<>(new APIResponse(razorpayOrderId, true), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new APIResponse("Failed to create payment: " + e.getMessage(), false),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        String razorpayOrderId = paymentService.createInternalOrder(orderId);
+        return new ResponseEntity<>(new APIResponse(razorpayOrderId, true), HttpStatus.OK);
     }
 
     /**
@@ -64,13 +60,8 @@ public class PaymentController implements PaymentApi {
     @GetMapping("/{paymentId}")
     @Override
     public ResponseEntity<Map<String, Object>> getPaymentDetails(@PathVariable String paymentId) {
-        try {
-            Map<String, Object> details = paymentService.getPaymentDetails(paymentId);
-            return ResponseEntity.ok(details);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
-        }
+        Map<String, Object> details = paymentService.getPaymentDetails(paymentId);
+        return ResponseEntity.ok(details);
     }
 
     /**
@@ -78,20 +69,15 @@ public class PaymentController implements PaymentApi {
      */
     @PostMapping("/refund/{paymentId}")
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> initiateRefund(
             @PathVariable String paymentId,
             @RequestBody(required = false) RefundRequest refundRequest) {
-        try {
-            Long amount = refundRequest != null ? refundRequest.getAmount() : null;
-            String notes = refundRequest != null ? refundRequest.getNotes() : "Customer requested refund";
+        Long amount = refundRequest != null ? refundRequest.getAmount() : null;
+        String notes = refundRequest != null ? refundRequest.getNotes() : "Customer requested refund";
 
-            Map<String, Object> refund = paymentService.initiateRefund(paymentId, amount, notes);
-            return ResponseEntity.ok(refund);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
-        }
+        Map<String, Object> refund = paymentService.initiateRefund(paymentId, amount, notes);
+        return ResponseEntity.ok(refund);
     }
 
     // ==================== Request DTO ====================
@@ -117,3 +103,4 @@ public class PaymentController implements PaymentApi {
         }
     }
 }
+

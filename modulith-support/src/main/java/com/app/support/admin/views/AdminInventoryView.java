@@ -22,7 +22,7 @@ import jakarta.annotation.security.RolesAllowed;
  */
 @Route(value = "admin/inventory-native", layout = AdminMainLayout.class)
 @PageTitle("Inventory Management | Vasu Admin")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "OPERATOR"})
 public class AdminInventoryView extends VerticalLayout {
 
     private final InventoryRepository inventoryRepository;
@@ -71,10 +71,24 @@ public class AdminInventoryView extends VerticalLayout {
         IntegerField qtyField = new IntegerField("New Quantity");
         qtyField.setValue(inv.getQuantity());
         qtyField.setWidthFull();
+        
+        com.vaadin.flow.component.textfield.TextField batchField = new com.vaadin.flow.component.textfield.TextField("Batch / Lot Number (Optional)");
+        batchField.setWidthFull();
+        
+        com.vaadin.flow.component.textfield.TextField reasonField = new com.vaadin.flow.component.textfield.TextField("Reason / Notes");
+        reasonField.setValue("Admin Manual Adjustment");
+        reasonField.setWidthFull();
 
         Button saveBtn = new Button("Update", e -> {
             try {
-                inventoryReservationService.updateInventoryStock(inv.getItemCode(), qtyField.getValue());
+                // Use new adjustStock method which supports batch/expiry logging
+                inventoryReservationService.adjustStock(
+                    inv.getItemCode(), 
+                    qtyField.getValue(), 
+                    batchField.getValue(), 
+                    null, // Expiry not relevant for fashion
+                    reasonField.getValue()
+                );
                 updateList();
                 dialog.close();
                 com.vaadin.flow.component.notification.Notification.show("Stock updated for " + inv.getItemCode());
@@ -87,7 +101,7 @@ public class AdminInventoryView extends VerticalLayout {
         Button cancelBtn = new Button("Cancel", e -> dialog.close());
 
         dialog.getFooter().add(cancelBtn, saveBtn);
-        VerticalLayout dialogLayout = new VerticalLayout(qtyField);
+        VerticalLayout dialogLayout = new VerticalLayout(qtyField, batchField, reasonField);
         dialog.add(dialogLayout);
         dialog.open();
     }

@@ -166,4 +166,34 @@ public class SupportService {
     public boolean hasOpenTicketForOrder(Long orderId) {
         return ticketRepo.existsByRelatedOrderIdAndStatusNot(orderId, "CLOSED");
     }
+
+    @Transactional(readOnly = true)
+    public SupportTicket getTicketForUser(Long id, String email) {
+        SupportTicket ticket = ticketRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+        if (!ticket.getUserEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized access to ticket");
+        }
+        return ticket;
+    }
+
+    @Transactional
+    public SupportTicket replyToTicketByUser(Long ticketId, TicketMessage message, String email) {
+        SupportTicket ticket = getTicketForUser(ticketId, email); // Validates ownership
+
+        message.setTicket(ticket);
+        message.setMessage(sanitizer.sanitize(message.getMessage()));
+        message.setTimestamp(LocalDateTime.now());
+        message.setSenderType("USER");
+        message.setSenderId(email);
+
+        ticket.getMessages().add(message);
+        
+        if (!"CLOSED".equals(ticket.getStatus()) 
+                && !"IN_PROGRESS".equals(ticket.getStatus())) {
+             ticket.setStatus("IN_PROGRESS");
+        }
+        
+        return ticketRepo.save(ticket);
+    }
 }

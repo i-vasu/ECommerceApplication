@@ -77,7 +77,7 @@ class ProductServiceImplTest {
         when(productRepo.save(any(Product.class))).thenReturn(testProduct);
         when(productMapper.productToProductDTO(testProduct)).thenReturn(testProductDTO);
 
-        ProductDTO saved = productService.addProduct(1L, testProduct);
+        ProductDTO saved = productService.addProduct(1L, testProductDTO);
 
         assertNotNull(saved);
         assertEquals("Silk Saree", saved.productName());
@@ -108,7 +108,7 @@ class ProductServiceImplTest {
         when(productRepo.save(any(Product.class))).thenReturn(testProduct);
         when(productMapper.productToProductDTO(any(Product.class))).thenReturn(testProductDTO);
 
-        ProductDTO updated = productService.updateProduct(1L, testProduct);
+        ProductDTO updated = productService.updateProduct(1L, testProductDTO);
 
         assertNotNull(updated);
         verify(productRepo).save(any());

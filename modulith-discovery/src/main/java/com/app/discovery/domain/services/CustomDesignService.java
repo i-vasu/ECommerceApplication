@@ -54,23 +54,29 @@ public class CustomDesignService {
             category = categoryRepo.save(category);
         }
 
-        Product product = new Product();
         String name = "AI Custom Design: " + (design.getPrompt().length() > 30
                 ? design.getPrompt().substring(0, 30) + "..."
                 : design.getPrompt());
 
-        product.setProductName(name);
-        product.setItemCode("AI-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        product.setDescription(
-                "An exclusive artisanal creation designed via AI interaction. Prompt: " + design.getPrompt());
-        product.setImage(design.getImageUrl());
-        product.setPrice(BigDecimal.valueOf(14999.00));
-        product.setDiscount(BigDecimal.ZERO);
-        product.setQuantity(1);
-        product.setCustomizable(true);
-        product.setTags(List.of("AI", "Custom", "Exclusive"));
+        String itemCode = "AI-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String description = "An exclusive artisanal creation designed via AI interaction. Prompt: " + design.getPrompt();
+
+        com.app.catalog.payloads.ProductDTO productDTO = new com.app.catalog.payloads.ProductDTO(
+                null,
+                name,
+                itemCode,
+                design.getImageUrl(),
+                description,
+                1,
+                java.math.BigDecimal.valueOf(14999.00),
+                java.math.BigDecimal.ZERO,
+                java.math.BigDecimal.valueOf(14999.00),
+                null,
+                null,
+                null,
+                0.0);
 
         // Persist via catalog service to ensure all events and business logic run
-        return productService.addProduct(category.getCategoryId(), product);
+        return productService.addProduct(category.getCategoryId(), productDTO);
     }
 }

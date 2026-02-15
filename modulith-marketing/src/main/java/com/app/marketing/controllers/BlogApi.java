@@ -1,6 +1,7 @@
 package com.app.marketing.controllers;
 
 import com.app.marketing.entities.Blog;
+import com.app.marketing.payloads.BlogDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,20 +21,20 @@ public interface BlogApi {
     @Operation(summary = "Create Draft Blog", description = "Creates a new blog draft (Admin only)")
     @ApiResponse(responseCode = "200", description = "Draft created")
     @PostMapping("/admin")
-    ResponseEntity<Blog> createDraft(@RequestBody Blog blog);
+    ResponseEntity<BlogDTO> createDraft(@RequestBody BlogDTO blogDTO);
 
     @Operation(summary = "Publish Blog", description = "Publishes a blog draft (Admin only)")
     @ApiResponse(responseCode = "200", description = "Blog published")
     @PostMapping("/admin/{blogId}/publish")
-    ResponseEntity<Blog> publish(@PathVariable Long blogId);
+    ResponseEntity<BlogDTO> publish(@PathVariable Long blogId);
 
     @Operation(summary = "Get Published Blogs", description = "Retrieves all published blogs")
     @ApiResponse(responseCode = "200", description = "Blogs retrieved")
     @GetMapping("/public")
-    ResponseEntity<List<Blog>> getBlogs();
+    ResponseEntity<List<BlogDTO>> getBlogs();
 
     @Operation(summary = "Get Blog Details", description = "Retrieves a specific blog by ID")
     @ApiResponse(responseCode = "200", description = "Blog found")
     @GetMapping("/public/{blogId}")
-    ResponseEntity<Blog> getBlog(@PathVariable Long blogId);
+    ResponseEntity<BlogDTO> getBlog(@PathVariable Long blogId);
 }

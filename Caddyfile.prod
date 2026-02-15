@@ -1,0 +1,42 @@
+{
+    # Global options
+    email alwaysvasu@gmail.com
+}
+
+# vaabhi.com Production Configuration
+vaabhi.com, www.vaabhi.com {
+    # Logging
+    log {
+        output file /var/log/caddy/access.log
+    }
+
+    # Route API Gateway calls to the Java Modulith
+    handle /api/* {
+        reverse_proxy modulith-service:8080
+    }
+
+    # Route Vaadin Admin Interface
+    handle /vaadinServlet/* {
+        reverse_proxy modulith-service:8080
+    }
+    
+    # Handle Vaadin static assets
+    handle /VAADIN/* {
+        reverse_proxy modulith-service:8080
+    }
+
+    # Default: Route to Next.js Storefront
+    handle /* {
+        reverse_proxy vaabhi-storefront:3000
+    }
+
+    # Performance headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Security headers
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer-when-downgrade
+    }
+}

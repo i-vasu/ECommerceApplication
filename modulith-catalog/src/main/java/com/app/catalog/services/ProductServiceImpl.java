@@ -57,11 +57,13 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	@CacheEvict(value = "products", allEntries = true)
 	@AuditTrail(action = "ADD_PRODUCT")
-	public ProductDTO addProduct(Long categoryId, Product product) {
+	public ProductDTO addProduct(Long categoryId, ProductDTO productDTO) {
 
 		var category = categoryRepo.findById(categoryId)
 				.orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
 
+		Product product = productMapper.productDTOToProduct(productDTO);
+		
 		var isProductNotPresent = true;
 		var products = category.getProducts();
 
@@ -240,9 +242,11 @@ public class ProductServiceImpl implements ProductService {
 			@CacheEvict(value = "product", key = "#productId")
 	})
 	@AuditTrail(action = "UPDATE_PRODUCT")
-	public ProductDTO updateProduct(Long productId, Product product) {
+	public ProductDTO updateProduct(Long productId, ProductDTO productDTO) {
 		var productFromDB = productRepo.findById(productId)
 				.orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+
+		Product product = productMapper.productDTOToProduct(productDTO);
 
 		var oldPrice = productFromDB.getSpecialPrice();
 		var oldQty = productFromDB.getQuantity();

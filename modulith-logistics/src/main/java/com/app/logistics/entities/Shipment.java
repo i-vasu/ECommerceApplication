@@ -23,6 +23,9 @@ public class Shipment {
     private String courierName; // Assigned courier name (e.g., "Delhivery", "Blue Dart")
     
     private String manifestUrl; // Generated Manifest PDF URL
+    
+    @Column(name = "customer_email")
+    private String customerEmail;
 
     public Shipment() {
     }
@@ -118,5 +121,13 @@ public class Shipment {
 
     public void setManifestUrl(String manifestUrl) {
         this.manifestUrl = manifestUrl;
+    }
+
+    public String getCustomerEmail() {
+        return customerEmail;
+    }
+
+    public void setCustomerEmail(String customerEmail) {
+        this.customerEmail = customerEmail;
     }
 }

@@ -162,4 +162,31 @@ public class CouponServiceImpl implements CouponService, CouponValidationService
         coupon.setUsedCount(coupon.getUsedCount() + 1);
         couponRepo.save(coupon);
     }
+
+    @Override
+    @Transactional
+    public CouponDTO updateCoupon(String code, CouponDTO couponDTO) {
+        Coupon coupon = couponRepo.findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", "code", code));
+
+        // Update mutable fields
+        if (couponDTO.discountType() != null) coupon.setDiscountType(couponDTO.discountType());
+        if (couponDTO.discountValue() != null) coupon.setDiscountValue(couponDTO.discountValue());
+        if (couponDTO.minOrderAmount() != null) coupon.setMinOrderAmount(couponDTO.minOrderAmount());
+        if (couponDTO.maxDiscountAmount() != null) coupon.setMaxDiscountAmount(couponDTO.maxDiscountAmount());
+        if (couponDTO.usageLimit() != null) coupon.setUsageLimit(couponDTO.usageLimit());
+        if (couponDTO.validFrom() != null) coupon.setValidFrom(couponDTO.validFrom());
+        if (couponDTO.validTo() != null) coupon.setValidTo(couponDTO.validTo());
+        coupon.setActive(couponDTO.active());
+
+        return couponMapper.toDTO(couponRepo.save(coupon));
+    }
+
+    @Override
+    @Transactional
+    public void deleteCoupon(String code) {
+        Coupon coupon = couponRepo.findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", "code", code));
+        couponRepo.delete(coupon);
+    }
 }

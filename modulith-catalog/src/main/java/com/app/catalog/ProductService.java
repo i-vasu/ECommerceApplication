@@ -13,7 +13,7 @@ import java.util.List;
 
 public interface ProductService {
 
-	ProductDTO addProduct(Long categoryId, Product product);
+	ProductDTO addProduct(Long categoryId, ProductDTO productDTO);
 
 	ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
 
@@ -21,7 +21,7 @@ public interface ProductService {
 			String sortOrder);
 
 	// Product Maintenance
-	ProductDTO updateProduct(Long productId, Product product);
+	ProductDTO updateProduct(Long productId, ProductDTO productDTO);
 
 	String deleteProduct(Long productId);
 

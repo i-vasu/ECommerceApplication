@@ -10,6 +10,8 @@ public interface CartService {
 	CartDTO addProductToCart(Long cartId, Long productId, String itemCode, Integer quantity);
 
 	Page<CartDTO> getAllCarts(Pageable pageable);
+	
+	CartDTO getCartById(Long cartId);
 
 	CartDTO getCart(Long userId, Long cartId);
 
@@ -26,4 +28,6 @@ public interface CartService {
 	CartDTO mergeCarts(Long guestCartId, Long userId);
 	
 	CartDTO updateCartAddress(Long cartId, Long addressId);
+
+	void clearCart(Long cartId);
 }

@@ -91,8 +91,8 @@ public class OpenApiConfig {
         public org.springdoc.core.models.GroupedOpenApi engagementApi() {
                 return org.springdoc.core.models.GroupedOpenApi.builder()
                                 .group("Customer Engagement")
-                                .packagesToScan("com.app.marketing", "com.app.notification", "com.app.review",
-                                                "com.app.discount", "com.app.customer_service")
+                                .packagesToScan("com.app.marketing", "com.app.catalog.review",
+                                                "com.app.finance.promo", "com.app.support.domain")
                                 .build();
         }
 }

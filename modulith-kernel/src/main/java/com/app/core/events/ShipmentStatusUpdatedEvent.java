@@ -20,13 +20,19 @@ import java.time.LocalDateTime;
 public record ShipmentStatusUpdatedEvent(
         Long shipmentId,
         Long orderId,
+        String customerEmail,
         String oldStatus,
         String newStatus,
         String trackingNumber,
         String carrier,
         LocalDateTime updatedAt) {
+    public ShipmentStatusUpdatedEvent(Long shipmentId, Long orderId, String customerEmail, String oldStatus, String newStatus,
+            String trackingNumber, String carrier) {
+        this(shipmentId, orderId, customerEmail, oldStatus, newStatus, trackingNumber, carrier, LocalDateTime.now());
+    }
+
     public ShipmentStatusUpdatedEvent(Long shipmentId, Long orderId, String oldStatus, String newStatus,
             String trackingNumber, String carrier) {
-        this(shipmentId, orderId, oldStatus, newStatus, trackingNumber, carrier, LocalDateTime.now());
+        this(shipmentId, orderId, null, oldStatus, newStatus, trackingNumber, carrier, LocalDateTime.now());
     }
 }

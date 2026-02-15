@@ -12,9 +12,10 @@ import com.app.governance.states.OperationalStateMachineService;
 import com.app.governance.states.OrderEvent;
 import com.app.logistics.inventory.InventoryService.InventoryLock;
 import com.app.logistics.shipping.ShippingCalculationService.ShippingCost;
-import com.app.logistics.shipping.TaxCalculationService.TaxCalculation;
+import com.app.finance.tax.TaxCalculationService.TaxCalculation;
 import com.app.security.AddressValidationService.AddressValidation;
 import com.app.security.entities.Address;
+import com.app.logistics.inventory.InventoryReservationService;
 import io.micrometer.context.ContextExecutorService;
 import io.micrometer.context.ContextSnapshot;
 import io.micrometer.core.instrument.Counter;
@@ -51,6 +52,7 @@ public class OptimizedCheckoutService {
     private final ObservationRegistry observationRegistry;
     private final RuleEngineService ruleEngine;
     private final OperationalStateMachineService stateMachineService;
+    private final InventoryReservationService inventoryReservationService;
 
     private ExecutorService tracingExecutor;
     private Counter checkoutAttempts;
@@ -66,7 +68,8 @@ public class OptimizedCheckoutService {
             MeterRegistry meterRegistry,
             ObservationRegistry observationRegistry,
             RuleEngineService ruleEngine,
-            OperationalStateMachineService stateMachineService) {
+            OperationalStateMachineService stateMachineService,
+            InventoryReservationService inventoryReservationService) {
         this.activities = activities;
         this.productRepo = productRepo;
         this.userRepo = userRepo;
@@ -77,6 +80,7 @@ public class OptimizedCheckoutService {
         this.observationRegistry = observationRegistry;
         this.ruleEngine = ruleEngine;
         this.stateMachineService = stateMachineService;
+        this.inventoryReservationService = inventoryReservationService;
     }
 
     @PostConstruct
@@ -87,6 +91,41 @@ public class OptimizedCheckoutService {
 
         this.checkoutAttempts = meterRegistry.counter("checkout.attempts");
         this.checkoutRevenue = meterRegistry.summary("checkout.revenue");
+    }
+
+    /**
+     * Non-committing checkout summary.
+     * Skips inventory locking and state machine transitions.
+     */
+    public CheckoutResult getSummary(CartContract cart, Address address) {
+        log.info("Generating checkout summary for cart: {}", cart.cartId());
+        
+        // 1. Parallel Step Execution (Filtering out inventory-lock)
+        Map<String, CompletableFuture<?>> futures = activities.stream()
+                .filter(a -> !a.getName().equals("inventory-lock"))
+                .collect(Collectors.toMap(
+                        activity -> activity.getName(),
+                        activity -> CompletableFuture.supplyAsync(() -> activity.execute(cart, address), (java.util.concurrent.Executor) tracingExecutor)));
+
+        try {
+            CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0]))
+                    .get(5, TimeUnit.SECONDS);
+
+            return new CheckoutResult(
+                    null, // No lock for summary
+                    (AddressValidation) futures.get("address-validation").get(),
+                    (TaxCalculation) futures.get("tax-calculation").get(),
+                    (ShippingCost) futures.get("shipping-calculation").get(),
+                    (java.math.BigDecimal) futures.get("promotion-evaluation").get(),
+                    calculateFinalAmount(cart, (TaxCalculation) futures.get("tax-calculation").get(),
+                            (ShippingCost) futures.get("shipping-calculation").get(),
+                            (java.math.BigDecimal) futures.get("promotion-evaluation").get()),
+                    List.of()); // No price guard check for summary
+
+        } catch (Exception e) {
+            log.error("Checkout summary generation failed: {}", e.getMessage());
+            throw new RuntimeException("Failed to generate checkout summary", e);
+        }
     }
 
     @Observed(name = "checkout.process", contextualName = "optimized-checkout-pipeline")
@@ -123,15 +162,21 @@ public class OptimizedCheckoutService {
         checkoutAttempts.increment();
 
         try {
+            // 2. Parallel Step Execution
             Map<String, CompletableFuture<?>> futures = activities.stream()
                     .collect(Collectors.toMap(
                             activity -> activity.getName(),
                             activity -> CompletableFuture.supplyAsync(() -> activity.execute(cart, address), (java.util.concurrent.Executor) tracingExecutor)));
 
+            // 2.5 Batch Fetch Products for Price Guard & Validation Efficiency
+            List<Long> productIds = cart.items().stream().map(CartContract.CartItemContract::productId).toList();
+            Map<Long, Product> productMap = productRepo.findAllById(productIds).stream()
+                    .collect(Collectors.toMap(Product::getProductId, p -> p));
+
             CompletableFuture<List<String>> priceCheckFuture = CompletableFuture.supplyAsync(() -> {
                 List<String> discrepancies = new ArrayList<>();
                 for (CartContract.CartItemContract item : cart.items()) {
-                    Product p = productRepo.findById(item.productId()).orElse(null);
+                    Product p = productMap.get(item.productId());
                     if (p != null) {
                         var flashProduct = flashSaleService.getActiveFlashProduct(item.productId());
                         java.util.Optional<com.app.finance.promo.entities.FlashSaleProduct> fpOpt = flashProduct;
@@ -147,29 +192,59 @@ public class OptimizedCheckoutService {
                 return discrepancies;
             }, tracingExecutor);
 
-            CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0]))
-                    .thenCombine(priceCheckFuture, (v, d) -> null)
-                    .get(10, TimeUnit.SECONDS);
+            InventoryLock lock = null;
+            try {
+                CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0]))
+                        .thenCombine(priceCheckFuture, (v, d) -> null)
+                        .get(10, TimeUnit.SECONDS);
 
-            CheckoutResult result = new CheckoutResult(
-                    (InventoryLock) futures.get("inventory-lock").get(),
-                    (AddressValidation) futures.get("address-validation").get(),
-                    (TaxCalculation) futures.get("tax-calculation").get(),
-                    (ShippingCost) futures.get("shipping-calculation").get(),
-                    (java.math.BigDecimal) futures.get("promotion-evaluation").get(),
-                    calculateFinalAmount(cart, (TaxCalculation) futures.get("tax-calculation").get(),
-                            (ShippingCost) futures.get("shipping-calculation").get(),
-                            (java.math.BigDecimal) futures.get("promotion-evaluation").get()),
-                    priceCheckFuture.get());
+                lock = (InventoryLock) futures.get("inventory-lock").get();
 
-            // 3. Last-Mile Price Guard (Margin Protection)
-            if (!priceGuard.isPriceSafe(cart.items())) {
-                throw new APIException(
-                        "Financial Safeguard: An item in your cart has an invalid price configuration. Please try again later.");
+                CheckoutResult result = new CheckoutResult(
+                        lock,
+                        (AddressValidation) futures.get("address-validation").get(),
+                        (TaxCalculation) futures.get("tax-calculation").get(),
+                        (ShippingCost) futures.get("shipping-calculation").get(),
+                        (java.math.BigDecimal) futures.get("promotion-evaluation").get(),
+                        calculateFinalAmount(cart, (TaxCalculation) futures.get("tax-calculation").get(),
+                                (ShippingCost) futures.get("shipping-calculation").get(),
+                                (java.math.BigDecimal) futures.get("promotion-evaluation").get()),
+                        priceCheckFuture.get());
+
+                // 3. Last-Mile Price Guard (Margin Protection)
+                if (!priceGuard.isPriceSafe(cart.items())) {
+                    throw new APIException(
+                            "Financial Safeguard: An item in your cart has an invalid price configuration. Please try again later.");
+                }
+
+                checkoutRevenue.record(result.finalAmount().doubleValue());
+                return result;
+
+            } catch (Exception e) {
+                log.error("Checkout execution pipeline failed. Releasing inventory if locked.");
+                // Release stock if it was successfully locked before the pipeline failed
+                if (lock == null) {
+                    try {
+                        var lockFuture = futures.get("inventory-lock");
+                        if (lockFuture != null && lockFuture.isDone() && !lockFuture.isCompletedExceptionally()) {
+                            lock = (InventoryLock) lockFuture.get();
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                if (lock != null && lock.locked()) {
+                   log.warn("Releasing stale inventory reservation {} due to pipeline failure: {}", lock.lockId(), e.getMessage());
+                   cart.items().forEach(item -> {
+                       try {
+                           // Default to W1/B1 as per Activity logic
+                           inventoryReservationService.releaseStock(item.itemCode(), item.quantity());
+                       } catch (Exception ex) {
+                           log.error("Failed to release item {} after checkout failure", item.itemCode());
+                       }
+                   });
+                }
+                throw e;
             }
-
-            checkoutRevenue.record(result.finalAmount().doubleValue());
-            return result;
 
         } catch (Exception e) {
             log.error("Checkout execution failed: {}", e.getMessage());

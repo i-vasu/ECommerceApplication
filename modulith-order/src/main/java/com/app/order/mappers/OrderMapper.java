@@ -12,6 +12,7 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OrderMapper {
 
+    @org.mapstruct.Mapping(target = "shippingReceiverPhone", source = "shippingReceiverPhone")
     OrderDTO orderToOrderDTO(Order order);
 
     Order orderDTOToOrder(OrderDTO orderDTO);

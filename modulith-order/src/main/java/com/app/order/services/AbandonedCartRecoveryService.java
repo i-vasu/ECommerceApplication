@@ -7,7 +7,8 @@ import com.app.governance.rules.RuleEngineService;
 import com.app.governance.states.CartState;
 import com.app.security.repositories.UserRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -24,9 +25,10 @@ import java.util.Map;
  * rules.
  */
 @Service
-@Log4j2
 @RequiredArgsConstructor
 public class AbandonedCartRecoveryService {
+
+    private static final Logger log = LogManager.getLogger(AbandonedCartRecoveryService.class);
 
     private final CartRepo cartRepo;
     private final UserRepo userRepo;

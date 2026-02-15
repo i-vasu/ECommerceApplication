@@ -44,7 +44,7 @@ public class InventoryConcurrencyTest {
             executor.submit(() -> {
                 try {
                     latch.await();
-                    List<InventoryRequest> requests = List.of(new InventoryRequest(itemCode, 1));
+                    List<InventoryRequest> requests = List.of(new InventoryRequest(itemCode, 1, 1L, 1L));
                     InventoryLock result = inventoryService.lockStock(requests);
 
                     if (result.locked()) {

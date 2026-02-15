@@ -79,7 +79,6 @@ public class UserConsumer implements StreamListener<String, ObjectRecord<String,
         if ("USER_REGISTERED".equals(eventType) || eventType == null) {
             userRepo.findById(userId).ifPresent(user -> {
                 log.info("User registered: {}", user.getEmail());
-                // ERPNext Sync removed
             });
         }
     }

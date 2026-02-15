@@ -10,15 +10,16 @@ public record OrderCreatedEvent(
         Long orderId,
         Long userId,
         String email,
+        String phone,
         BigDecimal totalAmount,
         List<OrderItemData> items,
         java.time.LocalDateTime createdAt) {
 
-    public record OrderItemData(String itemCode, Integer quantity, BigDecimal price) {
+    public record OrderItemData(String itemCode, String productName, Integer quantity, BigDecimal price) {
     }
 
-    public OrderCreatedEvent(Long orderId, Long userId, String email, BigDecimal totalAmount,
+    public OrderCreatedEvent(Long orderId, Long userId, String email, String phone, BigDecimal totalAmount,
             List<OrderItemData> items) {
-        this(orderId, userId, email, totalAmount, items, java.time.LocalDateTime.now());
+        this(orderId, userId, email, phone, totalAmount, items, java.time.LocalDateTime.now());
     }
 }

@@ -26,7 +26,8 @@ public class OrderController implements OrderApi {
 	@PostMapping("/public/users/{emailId}/carts/{cartId}/payments/{paymentMethod}/order")
 	@Override
 	public ResponseEntity<ApiResponse<OrderDTO>> orderProducts(@PathVariable String emailId, @PathVariable Long cartId,
-			@PathVariable String paymentMethod, @RequestBody(required = false) OrderRequest request) {
+			@PathVariable String paymentMethod, @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+			@RequestBody(required = false) OrderRequest request) {
 		OrderDTO order = orderService.placeOrder(emailId, cartId, paymentMethod, request);
 
 		return new ResponseEntity<>(ApiResponse.success(order, "Order placed successfully"), HttpStatus.CREATED);
@@ -45,7 +46,7 @@ public class OrderController implements OrderApi {
 		return ResponseEntity.ok(ApiResponse.success(orderResponse, "Orders retrieved successfully"));
 	}
 
-	@GetMapping("public/users/{emailId}/orders")
+	@GetMapping("/public/users/{emailId}/orders")
 	@Override
 	public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersByUser(@PathVariable String emailId) {
 		List<OrderDTO> orders = orderService.getOrdersByUser(emailId);
@@ -53,7 +54,7 @@ public class OrderController implements OrderApi {
 		return ResponseEntity.ok(ApiResponse.success(orders, "User orders retrieved successfully"));
 	}
 
-	@GetMapping("public/users/{emailId}/orders/{orderId}")
+	@GetMapping("/public/users/{emailId}/orders/{orderId}")
 	@Override
 	public ResponseEntity<ApiResponse<OrderDTO>> getOrderByUser(@PathVariable String emailId,
 			@PathVariable Long orderId) {
@@ -62,7 +63,7 @@ public class OrderController implements OrderApi {
 		return ResponseEntity.ok(ApiResponse.success(order, "Order details retrieved successfully"));
 	}
 
-	@PutMapping("admin/users/{emailId}/orders/{orderId}/orderStatus/{orderStatus}")
+	@PutMapping("/admin/users/{emailId}/orders/{orderId}/orderStatus/{orderStatus}")
 	@Override
 	public ResponseEntity<ApiResponse<OrderDTO>> updateOrderByUser(@PathVariable String emailId,
 			@PathVariable Long orderId,
@@ -72,12 +73,20 @@ public class OrderController implements OrderApi {
 		return ResponseEntity.ok(ApiResponse.success(order, "Order status updated successfully"));
 	}
 
-	@PutMapping("public/users/{emailId}/orders/{orderId}/cancel")
+	@Override
+	@PutMapping("/public/users/{emailId}/orders/{orderId}/cancel")
 	public ResponseEntity<ApiResponse<OrderDTO>> cancelOrder(@PathVariable String emailId,
 			@PathVariable Long orderId) {
-		OrderDTO order = orderService.updateOrder(emailId, orderId, "CANCELLED");
+		OrderDTO order = orderService.cancelOrder(emailId, orderId);
 
 		return ResponseEntity.ok(ApiResponse.success(order, "Order cancelled successfully"));
 	}
 
+	@Override
+	@PostMapping("/public/users/{emailId}/orders/{orderId}/reorder")
+	public ResponseEntity<ApiResponse<com.app.cart.payloads.CartDTO>> reorder(@PathVariable String emailId,
+			@PathVariable Long orderId) {
+		com.app.cart.payloads.CartDTO cart = orderService.reorder(emailId, orderId);
+		return ResponseEntity.ok(ApiResponse.success(cart, "Order items added to a new cart for reordering"));
+	}
 }

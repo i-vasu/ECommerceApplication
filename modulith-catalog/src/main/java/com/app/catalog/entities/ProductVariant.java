@@ -29,7 +29,28 @@ public class ProductVariant {
     private boolean allowsBackOrder = false;
     private java.time.LocalDateTime restockDate;
 
+    /**
+     * Flag to distinguish between physical variations (Trait) and 
+     * value-added variations (Service).
+     */
+    private boolean isService = false;
+
+    /**
+     * Map of GTS properties defining this SKU matrix combo.
+     */
+    @ManyToMany
+    @JoinTable(
+        name = "variant_gts_properties",
+        joinColumns = @JoinColumn(name = "variant_id"),
+        inverseJoinColumns = @JoinColumn(name = "value_id")
+    )
+    private java.util.List<GtsPropertyValue> gtsProperties = new java.util.ArrayList<>();
+
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+
+    public java.util.List<GtsPropertyValue> getGtsProperties() {
+        return gtsProperties;
+    }
 }

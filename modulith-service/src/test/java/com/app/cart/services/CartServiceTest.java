@@ -98,7 +98,7 @@ public class CartServiceTest {
         when(ruleEngine.evaluate(anyString(), anyMap())).thenReturn(true);
         when(productService.getProductById(productId)).thenReturn(testProduct);
         when(cartItemRepo.findCartItemByProductIdAndCartIdAndItemCode(eq(cartId), eq(productId), anyString())).thenReturn(null);
-        when(inventoryReservationService.checkStock(anyString(), anyInt())).thenReturn(true);
+        when(inventoryReservationService.checkAggregateStock(anyString(), anyInt())).thenReturn(true);
         
         OrderSummary orderSummary = new OrderSummary();
         orderSummary.setFinalTotal(BigDecimal.valueOf(180.0));
@@ -144,7 +144,7 @@ public class CartServiceTest {
         when(ruleEngine.evaluate(anyString(), anyMap())).thenReturn(true);
         when(productService.getProductById(productId)).thenReturn(testProduct);
         when(cartItemRepo.findCartItemByProductIdAndCartIdAndItemCode(eq(cartId), eq(productId), anyString())).thenReturn(null);
-        when(inventoryReservationService.checkStock(anyString(), anyInt())).thenReturn(false);
+        when(inventoryReservationService.checkAggregateStock(anyString(), anyInt())).thenReturn(false);
         
         // Act & Assert
         assertThrows(APIException.class, () -> 
@@ -166,7 +166,7 @@ public class CartServiceTest {
         
         when(cartRepo.findById(cartId)).thenReturn(Optional.of(testCart));
         when(cartItemRepo.findCartItemByProductIdAndCartId(cartId, productId)).thenReturn(existingItem);
-        when(inventoryReservationService.checkStock(anyString(), anyInt())).thenReturn(true);
+        when(inventoryReservationService.checkAggregateStock(anyString(), anyInt())).thenReturn(true);
         
         OrderSummary orderSummary = new OrderSummary();
         orderSummary.setFinalTotal(BigDecimal.valueOf(450.0));

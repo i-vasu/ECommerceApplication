@@ -1,10 +1,11 @@
 package com.app.marketing.controllers;
 
+import com.app.core.events.UserUnsubscribedEvent;
 import com.app.marketing.repositories.CampaignLinkRepo;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,29 +21,30 @@ import java.util.UUID;
 public class MarketingController {
 
     private final CampaignLinkRepo linkRepo;
-    private final JdbcTemplate jdbcTemplate;
+    private final ApplicationEventPublisher eventPublisher;
+    private final com.app.marketing.services.CampaignInteractionService interactionService;
 
     @GetMapping("/c/{linkId}")
     public RedirectView trackClick(@PathVariable UUID linkId, HttpServletRequest request) {
         return linkRepo.findById(linkId).map(link -> {
             log.info("Ad-Click tracked for campaign: {} by {}", link.getCampaignName(), link.getUserEmail());
-            
-            // Record interaction
-            jdbcTemplate.update(
-                "INSERT INTO campaign_interactions (link_id, interaction_type, ip_address, user_agent) VALUES (?, ?, ?, ?)",
-                linkId, "CLICK", request.getRemoteAddr(), request.getHeader("User-Agent")
-            );
 
-            // Return redirect with campaign cookie for session attribution
+            // Fixed: Record interaction via dedicated service
+            String ipAddress = request.getRemoteAddr();
+            String userAgent = request.getHeader("User-Agent");
+            interactionService.recordInteraction(link, ipAddress, userAgent);
+
             RedirectView redirectView = new RedirectView(link.getOriginalUrl());
-            // In a real app, we'd set a cookie here for 'attributed_campaign'
             return redirectView;
         }).orElse(new RedirectView("http://localhost:3000"));
     }
 
     @GetMapping("/unsubscribe/{email}")
     public String unsubscribe(@PathVariable String email) {
-        jdbcTemplate.update("UPDATE users SET unsubscribed = TRUE WHERE email = ?", email);
+        // Publish event — security module handles the user update
+        eventPublisher.publishEvent(new UserUnsubscribedEvent(email));
+        log.info("User {} requested unsubscribe", email);
         return "marketing/unsubscribed";
     }
 }
+

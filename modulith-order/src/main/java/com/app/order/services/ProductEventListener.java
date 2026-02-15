@@ -3,16 +3,18 @@ package com.app.order.services;
 import com.app.catalog.payloads.ProductSyncEvent;
 import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
-@Log4j2
 @RequiredArgsConstructor
 @Service
 public class ProductEventListener implements StreamListener<String, MapRecord<String, String, String>> {
+
+    private static final Logger log = LogManager.getLogger(ProductEventListener.class);
 
     private final ObjectMapper objectMapper;
 

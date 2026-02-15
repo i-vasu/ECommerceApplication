@@ -21,7 +21,7 @@ import jakarta.annotation.security.RolesAllowed;
  */
 @Route(value = "admin/products-native", layout = AdminMainLayout.class)
 @PageTitle("Product Management | Vasu Admin")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "OPERATOR"})
 public class AdminProductListView extends VerticalLayout {
 
     private final ProductService productService;

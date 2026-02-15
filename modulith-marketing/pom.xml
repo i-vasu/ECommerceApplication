@@ -12,7 +12,24 @@
 	<name>modulith-marketing</name>
 	<description>Automated Marketing Journeys and CRM</description>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.google.cloud</groupId>
+				<artifactId>libraries-bom</artifactId>
+				<version>26.72.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
+		<dependency>
+			<groupId>com.google.shopping</groupId>
+			<artifactId>google-shopping-merchant-products</artifactId>
+			<version>1.5.0</version>
+		</dependency>
 		<dependency>
 			<groupId>com.app</groupId>
 			<artifactId>modulith-kernel</artifactId>
@@ -60,6 +77,8 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+
 	
 	<build>
 		<plugins>

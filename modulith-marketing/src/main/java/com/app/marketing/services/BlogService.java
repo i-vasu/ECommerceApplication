@@ -2,14 +2,15 @@ package com.app.marketing.services;
 
 import com.app.marketing.entities.Blog;
 
+import com.app.marketing.payloads.BlogDTO;
 import java.util.List;
 
 public interface BlogService {
-    Blog createBlog(Blog blog);
+    BlogDTO createBlog(BlogDTO blogDTO);
 
-    Blog publishBlog(Long blogId);
+    BlogDTO publishBlog(Long blogId);
 
-    List<Blog> getAllPublishedBlogs();
+    List<BlogDTO> getAllPublishedBlogs();
 
-    Blog getBlogById(Long blogId);
+    BlogDTO getBlogById(Long blogId);
 }

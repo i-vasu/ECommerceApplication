@@ -15,12 +15,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/media")
 @SecurityRequirement(name = "E-Commerce Application")
 public class MediaController {
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/webp", "image/gif"
+    );
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
     @Value("${upload.path:uploads/}")
     private String uploadPath;
@@ -32,6 +38,17 @@ public class MediaController {
     public ResponseEntity<ApiResponse<String>> uploadFile(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new APIException("File is empty");
+        }
+
+        // Validate file size
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new APIException("File size exceeds maximum allowed size of 5MB");
+        }
+
+        // Validate content type
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+            throw new APIException("Invalid file type. Allowed types: JPEG, PNG, WebP, GIF");
         }
 
         try {
@@ -51,3 +68,4 @@ public class MediaController {
         }
     }
 }
+

@@ -43,6 +43,16 @@ public class ShiprocketRestClient implements ShiprocketClient {
                 .retrieve()
                 .body(MAP_TYPE);
     }
+    @Override
+    public Map<String, Object> createReverseOrder(String authorization, Map<String, Object> payload) {
+        return restClient.post()
+                .uri("/orders/create/return")
+                .header("Authorization", authorization)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .body(MAP_TYPE);
+    }
 
     @Override
     public Map<String, Object> generateAwb(String authorization, Map<String, Object> payload) {
@@ -143,6 +153,74 @@ public class ShiprocketRestClient implements ShiprocketClient {
                 .header("Authorization", authorization)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(payload)
+                .retrieve()
+                .body(MAP_TYPE);
+    }
+
+    public Map<String, Object> generateManifest(String authorization, Map<String, Object> payload) {
+        return restClient.post()
+                .uri("/manifests/generate")
+                .header("Authorization", authorization)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .body(MAP_TYPE);
+    }
+
+    @Override
+    public Map<String, Object> getNdrList(String authorization, Map<String, Object> filters) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/courier/ndr");
+        filters.forEach((k, v) -> builder.queryParam(k, v));
+        
+        return restClient.get()
+                .uri(builder.toUriString())
+                .header("Authorization", authorization)
+                .retrieve()
+                .body(MAP_TYPE);
+    }
+
+    @Override
+    public Map<String, Object> takeNdrAction(String authorization, Map<String, Object> payload) {
+        return restClient.post()
+                .uri("/courier/ndr/action")
+                .header("Authorization", authorization)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .body(MAP_TYPE);
+    }
+
+    @Override
+    public Map<String, Object> getWeightDiscrepancies(String authorization, Map<String, Object> filters) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/courier/weight-discrepancy");
+        filters.forEach((k, v) -> builder.queryParam(k, v));
+        
+        return restClient.get()
+                .uri(builder.toUriString())
+                .header("Authorization", authorization)
+                .retrieve()
+                .body(MAP_TYPE);
+    }
+
+    @Override
+    public Map<String, Object> raiseWeightDispute(String authorization, Map<String, Object> payload) {
+        return restClient.post()
+                .uri("/courier/weight-discrepancy/raise")
+                .header("Authorization", authorization)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .body(MAP_TYPE);
+    }
+
+    @Override
+    public Map<String, Object> getCodRemittance(String authorization, Map<String, Object> filters) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/courier/cod-remittance");
+        filters.forEach((k, v) -> builder.queryParam(k, v));
+        
+        return restClient.get()
+                .uri(builder.toUriString())
+                .header("Authorization", authorization)
                 .retrieve()
                 .body(MAP_TYPE);
     }
