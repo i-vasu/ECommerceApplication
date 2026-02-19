@@ -2,9 +2,8 @@ package com.app.config;
 
 import com.app.core.security.JWTFilter;
 import com.app.security.security.OAuth2LoginSuccessHandler;
-import com.app.security.security.UserDetailsServiceImpl;
+import com.app.security.security.UserDetailsServiceImplCustom;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -25,11 +24,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-        @Autowired
-        private UserDetailsServiceImpl userDetailsServiceImpl;
+        private final UserDetailsServiceImplCustom userDetailsService;
+        private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
 
-        @Autowired
-        private OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+        public SecurityConfig(UserDetailsServiceImplCustom userDetailsService,
+                              OAuth2LoginSuccessHandler oauth2LoginSuccessHandler) {
+                this.userDetailsService = userDetailsService;
+                this.oauth2LoginSuccessHandler = oauth2LoginSuccessHandler;
+        }
 
         @Bean
         @Order(1)
@@ -97,12 +99,13 @@ public class SecurityConfig {
                 return http.build();
         }
 
-        @Bean
-        public DaoAuthenticationProvider daoAuthenticationProvider() {
-                DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsServiceImpl);
-                provider.setPasswordEncoder(passwordEncoder());
-                return provider;
-        }
+	@Bean
+	public DaoAuthenticationProvider daoAuthenticationProvider() {
+		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+		//provider.setUserDetailsService(userDetailsService);
+		provider.setPasswordEncoder(passwordEncoder());
+		return provider;
+	}
 
         @Bean
         public PasswordEncoder passwordEncoder() {

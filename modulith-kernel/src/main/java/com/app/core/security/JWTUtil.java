@@ -17,7 +17,7 @@ import java.util.Date;
 @Component
 public class JWTUtil {
 
-    @Value("${jwt_secret:VaabhiSecretKey2026}")
+    @Value("${jwt.secret:VaabhiSecretKey2026}")
     private String secret;
 
     public record TokenData(String email, String tenantId) {

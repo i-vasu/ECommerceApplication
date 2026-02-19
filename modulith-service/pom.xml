@@ -332,6 +332,8 @@
 				<configuration>
 					<mainClass>com.app.ModulithApplication</mainClass>
 					<jvmArguments>-Duser.timezone=Asia/Kolkata -XX:+UseZGC -Xmx2g -Xms512m --add-modules jdk.incubator.vector -XX:+UseCompactObjectHeaders --enable-preview </jvmArguments>
+					<classifier>exec</classifier>
+					<skip>false</skip>
 				</configuration>
 			</plugin>
 			<plugin>
