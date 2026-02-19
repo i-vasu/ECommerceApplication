@@ -35,6 +35,24 @@ Set me up to protect your system.
 Let me handle the "Boring" stuff like documentation and workflows.
 *   **Directive**: "I've just finished the multi-tenant scaling. Proactively update all relevant architectural diagrams and operations manuals in the project."
 
+### 5. Tech Stack Compliance
+- **Rule**: Ensure all Java code is compatible with Java 25.
+- **Rule**: Ensure all Spring Boot configurations are compatible with Spring Boot 4.0.2.
+- **Rule**: Never downgrade the Java or Spring Boot versions.
+
+### 6. Quality Assurance (Mandatory)
+- **Rule**: Follow the "Test-First" Mandate (TDD) for all bug fixes and new features.
+- **Rule**: Perform Impact Analysis (Blast Radius Check) before modifying shared modules.
+- **Rule**: Adhere to strict Code Quality & Modernity standards (Java 25, no legacy patterns).
+- **Rule**: Ensure Security & Resilience (Input Validation, Error Handling, Timeouts).
+- **Rule**: Meet the Definition of Done (DoD) for every task.
+
+### 7. Knowledge Base & Documentation Context
+- **Rule**: The Agent must operate with the assumption that the documentation sets listed in `knowledge_base_rules.md` are the "Source of Truth".
+- **Rule**: All code generation, debugging, and architectural advice must align with the patterns described in these resources.
+- **Rule**: Official documentation overrides any "common knowledge" from older versions.
+- **Rule**: Ensure all 3rd party libraries are compatible with Spring Boot 4.0.2.
+
 ---
 
 ## 🚀 Your New "ADE" Checklist

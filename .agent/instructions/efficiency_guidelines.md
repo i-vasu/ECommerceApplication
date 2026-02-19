@@ -24,3 +24,8 @@ To minimize token usage and optimize performance, all agents MUST follow these i
 ## 5. Response Optimization
 - **Be Concise**: Keep explanations brief and technical. Use markdown for clarity.
 - **Summarize Actions**: Instead of listing every minute detail, summarize the outcome of your actions.
+
+## 6. Tech Stack Compliance
+- **Rule**: Ensure all Java code is compatible with Java 25.
+- **Rule**: Ensure all Spring Boot configurations are compatible with Spring Boot 4.0.2.
+- **Rule**: Never downgrade the Java or Spring Boot versions.

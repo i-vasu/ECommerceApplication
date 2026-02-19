@@ -26,3 +26,8 @@ Even though Docker runs in WSL, WSL 2 maps its ports to `localhost` on Windows.
 - **PostgreSQL:** `localhost:5432`
 - **Redis (Dragonfly):** `localhost:6379`
 - **Umami Analytics:** `http://localhost:3300`
+
+### 5. Tech Stack Compliance
+- **Rule**: Ensure all Java code is compatible with Java 25.
+- **Rule**: Ensure all Spring Boot configurations are compatible with Spring Boot 4.0.2.
+- **Rule**: Never downgrade the Java or Spring Boot versions.

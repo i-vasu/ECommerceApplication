@@ -22,15 +22,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+
 public class SecurityConfig {
+
 
         private final UserDetailsServiceImplCustom userDetailsService;
         private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+        private final JWTFilter jwtFilter;
 
         public SecurityConfig(UserDetailsServiceImplCustom userDetailsService,
-                              OAuth2LoginSuccessHandler oauth2LoginSuccessHandler) {
+                              OAuth2LoginSuccessHandler oauth2LoginSuccessHandler,
+                              JWTFilter jwtFilter) {
                 this.userDetailsService = userDetailsService;
                 this.oauth2LoginSuccessHandler = oauth2LoginSuccessHandler;
+                this.jwtFilter = jwtFilter;
         }
 
         @Bean
@@ -65,7 +70,7 @@ public class SecurityConfig {
 
         @Bean
         @Order(2)
-        public SecurityFilterChain apiFilterChain(HttpSecurity http, JWTFilter jwtFilter) throws Exception {
+        public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
                 http
                                 .securityMatcher("/api/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**")
                                 .csrf(csrf -> csrf.disable())
@@ -93,7 +98,7 @@ public class SecurityConfig {
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .oauth2Login(oauth2 -> oauth2.successHandler(oauth2LoginSuccessHandler));
 
-                http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(this.jwtFilter, UsernamePasswordAuthenticationFilter.class);
                 http.authenticationProvider(daoAuthenticationProvider());
 
                 return http.build();
@@ -117,20 +122,5 @@ public class SecurityConfig {
                 return configuration.getAuthenticationManager();
         }
 
-	@Bean
-	@Order(0)
-	public SecurityFilterChain adminServerFilterChain(HttpSecurity http) throws Exception {
-		// Spring Boot Admin Server requires some specific allowances
-		http
-				.securityMatcher("/sba-server/**", "/instances/**", "/assets/**")
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/sba-server/assets/**", "/sba-server/login").permitAll()
-						.anyRequest().hasAuthority("ADMIN"))
-				.formLogin(form -> form.loginPage("/sba-server/login").permitAll())
-				.logout(logout -> logout.logoutUrl("/sba-server/logout").permitAll())
-				.csrf(csrf -> csrf.disable());
-
-		return http.build();
-	}
 }
 

@@ -35,6 +35,11 @@ Maintain integrity between the object model and the database:
 If available, leverage Spring Actuator for live diagnostics:
 - **Rule**: Query `/actuator/beans`, `/actuator/mappings`, and `/actuator/env` to confirm the actual state of the running application.
 
+## 7. Tech Stack Compliance
+- **Rule**: Ensure all Java code is compatible with Java 25.
+- **Rule**: Ensure all Spring Boot configurations are compatible with Spring Boot 4.0.2.
+- **Rule**: Never downgrade the Java or Spring Boot versions.
+
 ---
 
 **By strictly following these rules, Antigravity operates with the semantic depth of a high-end IDE, ensuring typesafety, security, and architectural integrity.**

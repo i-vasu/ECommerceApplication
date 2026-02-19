@@ -15,3 +15,8 @@ To ensure the long-term stability and operability of the system, the agent MUST 
 
 ## 4. Notification
 - When a workflow is updated proactively, mention it in the final `notify_user` call to ensure the user is aware of the documentation change.
+
+## 5. Tech Stack Compliance
+- **Rule**: Ensure all Java code is compatible with Java 25.
+- **Rule**: Ensure all Spring Boot configurations are compatible with Spring Boot 4.0.2.
+- **Rule**: Never downgrade the Java or Spring Boot versions.

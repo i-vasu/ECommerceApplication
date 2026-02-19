@@ -59,6 +59,7 @@ public class JWTFilter extends OncePerRequestFilter {
                 }
             } catch (JWTVerificationException exc) {
                 // Invalid Token
+                logger.error("JWT Login Verification ",exc);
             }
         }
         filterChain.doFilter(request, response);

@@ -1,6 +1,5 @@
 package com.app;
 
-import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
@@ -18,7 +17,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableRetry
 @Modulithic
 @EnableAsync
-@EnableAdminServer
 @EnableJpaRepositories(basePackages = {"com.app", "org.springframework.statemachine.data.jpa", "org.springframework.modulith.events.jpa"}, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.REGEX, pattern = "(com\\.app\\.support\\.repositories\\.jdbc\\..*|com\\.app\\.discovery\\.domain\\.repositories\\.jdbc\\..*)"))
 @org.springframework.data.jdbc.repository.config.EnableJdbcRepositories(basePackages = {"com.app.support.repositories.jdbc", "com.app.discovery.domain.repositories.jdbc"})
 @EntityScan(basePackages = {"com.app", "org.springframework.statemachine.data.jpa", "org.springframework.modulith.events.jpa"})

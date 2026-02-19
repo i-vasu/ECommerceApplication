@@ -12,71 +12,67 @@
 	<name>modulith-service</name>
 	<description>Consolidated Modular Monolith (Spring Modulith) for Fashion E-Commerce</description>
 
+	<properties>
+		<java.version>25</java.version>
+		<spring-boot.version>4.0.2</spring-boot.version>
+		<spring-cloud.version>2024.0.0</spring-cloud.version>
+		<vaadin.version>25.0.3</vaadin.version>
+		<lombok.version>1.18.42</lombok.version>
+		<mapstruct.version>1.6.0</mapstruct.version>
+	</properties>
+
 	<dependencies>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-kernel</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-governance</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-security</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-catalog</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-discovery</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-intelligence</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-cart</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-checkout</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-order</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-finance</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-logistics</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-support</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.app</groupId>
             <artifactId>modulith-marketing</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -103,7 +99,7 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 		</dependency>
-		<!-- SLF4J Binding for Log4j 3 -->
+		<!-- SLF4J Binding for Log4j 2 -->
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j2-impl</artifactId>
@@ -117,10 +113,6 @@
 					<artifactId>spring-boot-starter-logging</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -181,22 +173,20 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-		<!-- Database Migration -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-database-postgresql</artifactId>
-		</dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+            </dependency>
 
         
         <!-- Other Utilities -->
         <dependency>
             <groupId>org.modelmapper</groupId>
             <artifactId>modelmapper</artifactId>
-            <version>${modelmapper.version}</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
@@ -219,14 +209,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>de.codecentric</groupId>
-			<artifactId>spring-boot-admin-starter-server</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>de.codecentric</groupId>
-			<artifactId>spring-boot-admin-starter-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>io.micrometer</groupId>
@@ -266,17 +248,11 @@
 		<dependency>
 			<groupId>com.tngtech.archunit</groupId>
 			<artifactId>archunit-junit5</artifactId>
-			<version>1.3.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -336,11 +312,10 @@
 					<skip>false</skip>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>com.vaadin</groupId>
-				<artifactId>vaadin-maven-plugin</artifactId>
-				<version>${vaadin.version}</version>
-				<executions>
+				<plugin>
+					<groupId>com.vaadin</groupId>
+					<artifactId>vaadin-maven-plugin</artifactId>
+					<executions>
 					<execution>
 						<goals>
 							<goal>prepare-frontend</goal>
