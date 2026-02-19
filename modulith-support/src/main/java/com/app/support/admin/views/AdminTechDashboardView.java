@@ -1,6 +1,10 @@
 package com.app.support.admin.views;
 
 import com.app.core.logging.MemoryAppender;
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -13,9 +17,26 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.FileInputStream;
 
-@Route(value = "admin/tech-monitoring", layout = AdminMainLayout.class)
+@Route(value = "admin/tech-monitoring-native", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminTechDashboardView extends VerticalLayout {
+
+    private Registration pollRegistration;
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        UI ui = attachEvent.getUI();
+        ui.setPollInterval(2000);
+        pollRegistration = ui.addPollListener(e -> refreshData());
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        super.onDetach(detachEvent);
+        if (pollRegistration != null) pollRegistration.remove();
+        detachEvent.getUI().setPollInterval(-1);
+    }
 
     private final MeterRegistry meterRegistry;
     private final com.app.core.logging.JfrProfilingService jfrService;
@@ -86,12 +107,11 @@ public class AdminTechDashboardView extends VerticalLayout {
         refreshData();
     }
 
-    @Scheduled(fixedDelay = 2000)
     public void refreshData() {
-        getUI().ifPresent(ui -> ui.access(() -> {
+        if (getUI().isPresent()) {
             updateMetrics();
             updateLogs();
-        }));
+        }
     }
 
     private void updateMetrics() {

@@ -19,7 +19,7 @@ public class FunnelAnalyticsService {
 
     public Map<String, Object> getConversionFunnel() {
         String sql = "SELECT " +
-                "(SELECT COUNT(*) FROM cart) as total_carts, " +
+                "(SELECT COUNT(*) FROM carts) as total_carts, " +
                 "(SELECT COUNT(*) FROM orders) as total_orders, " +
                 "(SELECT COUNT(*) FROM orders WHERE order_status = 'DELIVERED') as completed_orders";
 

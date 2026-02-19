@@ -12,4 +12,9 @@ public interface OperationalAuditRepo extends JpaRepository<OperationalAudit, Lo
     List<OperationalAudit> findByTimestampAfter(java.time.LocalDateTime timestamp);
 
     List<OperationalAudit> findByEntityId(String entityId);
+
+    long countByType(String type);
+
+    long countByCategory(String category);
 }
+

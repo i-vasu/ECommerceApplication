@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-@Route(value = "admin/analytics-native", layout = AdminMainLayout.class)
+@Route(value = "admin/dashboard-native", layout = AdminMainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminDashboardView extends VerticalLayout {
 

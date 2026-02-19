@@ -36,7 +36,7 @@ public interface AnalyticsJdbcRepo extends Repository<com.app.core.domain.JdbcPl
     @Query("SELECT COALESCE(SUM(total_amount), 0) as grand_total, COUNT(*) as total_count FROM orders WHERE order_status != 'CANCELLED'")
     Map<String, Object> getSalesTotals();
 
-    @Query("SELECT COUNT(*) as user_count FROM users")
+    @Query("SELECT COUNT(*) as user_count FROM app_users")
     Map<String, Object> getUserCount();
 
     @Query("SELECT COUNT(*) as product_count FROM products")

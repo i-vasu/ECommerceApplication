@@ -39,7 +39,7 @@ public class AdminMainLayout extends AppLayout {
 
         Button logout = new Button("Log Out", VaadinIcon.SIGN_OUT.create(), e -> {
             // In a real app, this would use SecurityContextLogoutHandler
-            getUI().ifPresent(ui -> ui.getPage().setLocation("/logout"));
+            getUI().ifPresent(ui -> ui.getPage().setLocation("/admin/logout"));
         });
         logout.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
         logout.getStyle().set("margin-left", "auto");

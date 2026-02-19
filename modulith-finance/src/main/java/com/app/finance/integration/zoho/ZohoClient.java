@@ -19,20 +19,25 @@ import java.util.Map;
 
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class ZohoClient {
 
     private final ZohoProperties properties;
-    private final RestClient.Builder restClientBuilder;
     private final ObjectMapper objectMapper;
+    private final RestClient restClient;
 
     private String accessToken;
     private Instant tokenExpiry = Instant.MIN;
 
+    public ZohoClient(ZohoProperties properties, RestClient.Builder restClientBuilder, ObjectMapper objectMapper) {
+        this.properties = properties;
+        this.objectMapper = objectMapper;
+        this.restClient = restClientBuilder.build();
+    }
+
     private synchronized String getAccessToken() {
         if (!properties.isEnabled()) {
-            return "dummy-token"; // Should ideally throw or handle gracefully
+            return "dummy-token"; 
         }
 
         if (tokenExpiry.isAfter(Instant.now().plusSeconds(60))) {
@@ -45,14 +50,18 @@ public class ZohoClient {
             formData.add("refresh_token", properties.getRefreshToken());
             formData.add("client_id", properties.getClientId());
             formData.add("client_secret", properties.getClientSecret());
-            formData.add("redirect_uri", "http://localhost:8080"); // Dummy redirect uri often needed
             formData.add("grant_type", "refresh_token");
 
-            JsonNode response = restClientBuilder.build().post()
+            JsonNode response = restClient.post()
                     .uri(properties.getAuthUrl())
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(formData)
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (request, resp) -> {
+                        String body = new String(resp.getBody().readAllBytes());
+                        log.error("Zoho Auth Error Response: Status={}, Body={}", resp.getStatusCode(), body);
+                        throw new RuntimeException("Zoho Auth API returned error: " + resp.getStatusCode() + " - " + body);
+                    })
                     .body(JsonNode.class);
 
             if (response != null && response.has("access_token")) {
@@ -62,13 +71,13 @@ public class ZohoClient {
                 log.info("Zoho Access Token refreshed. Expires in: {} seconds", expiresIn);
                 return accessToken;
             } else {
-                log.error("Failed to refresh Zoho Token: {}", response);
-                throw new RuntimeException("Zoho Token Refresh Failed");
+                log.error("Failed to refresh Zoho Token: response missing access_token field. Response: {}", response);
+                throw new RuntimeException("Zoho Token Refresh Failed: access_token missing");
             }
 
         } catch (Exception e) {
-            log.error("Error refreshing Zoho token", e);
-            throw new RuntimeException("Zoho Token Refresh Error", e);
+            log.error("Critical error during Zoho token refresh", e);
+            throw new RuntimeException("Zoho Token Refresh Error: " + e.getMessage(), e);
         }
     }
 
@@ -80,12 +89,11 @@ public class ZohoClient {
 
         try {
             String token = getAccessToken();
-            RestClient client = restClientBuilder.build();
 
             // Zoho Books Check if item exists (by SKU/Name) - Simplified: Just Try Create
             // In a real scenario, you'd search first. The API might return error if duplicate.
 
-            String response = client.post()
+            String response = restClient.post()
                     .uri(properties.getBaseUrl() + "/items?organization_id=" + properties.getOrganizationId())
                     .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -104,7 +112,6 @@ public class ZohoClient {
         if (!properties.isEnabled()) return "dummy-item-id";
         try {
             String token = getAccessToken();
-            RestClient client = restClientBuilder.build();
 
             // Search by SKU (item_name contains SKU or strictly SKU field if supported)
             // Zoho API supports filtering by name, description, etc.
@@ -115,7 +122,6 @@ public class ZohoClient {
             
             // Note: Zoho Books API v3 items?name=... or items?search_text=...
             String response = getFromZoho("/items?search_text=" + encodedSku);
-            
             JsonNode root = objectMapper.readTree(response);
             JsonNode items = root.path("items");
             if (items.isArray() && items.size() > 0) {
@@ -138,9 +144,8 @@ public class ZohoClient {
 
         try {
             String token = getAccessToken();
-            RestClient client = restClientBuilder.build();
 
-            String response = client.post()
+            String response = restClient.post()
                     .uri(properties.getBaseUrl() + "/invoices?organization_id=" + properties.getOrganizationId())
                     .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -166,10 +171,9 @@ public class ZohoClient {
 
         try {
             String token = getAccessToken();
-            RestClient client = restClientBuilder.build();
 
             // 1. Search for customer
-            String searchResponse = client.get()
+            String searchResponse = restClient.get()
                     .uri(properties.getBaseUrl() + "/contacts?organization_id=" + properties.getOrganizationId() + "&email=" + email)
                     .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
                     .retrieve()
@@ -192,7 +196,7 @@ public class ZohoClient {
                 ))
             );
 
-            String createResponse = client.post()
+            String createResponse = restClient.post()
                     .uri(properties.getBaseUrl() + "/contacts?organization_id=" + properties.getOrganizationId())
                     .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -213,10 +217,9 @@ public class ZohoClient {
         if (!properties.isEnabled()) return "dummy-vendor-id";
         try {
             String token = getAccessToken();
-            RestClient client = restClientBuilder.build();
             
             // Search by Name
-            String searchResponse = client.get()
+            String searchResponse = restClient.get()
                     .uri(properties.getBaseUrl() + "/contacts?organization_id=" + properties.getOrganizationId() + "&contact_name=" + name + "&contact_type=vendor")
                     .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
                     .retrieve()
@@ -233,7 +236,7 @@ public class ZohoClient {
                 "contact_name", name,
                 "contact_type", "vendor"
             );
-             String createResponse = client.post()
+             String createResponse = restClient.post()
                     .uri(properties.getBaseUrl() + "/contacts?organization_id=" + properties.getOrganizationId())
                     .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -276,8 +279,7 @@ public class ZohoClient {
 
     private String postToZoho(String endpoint, Map<String, Object> data) throws Exception {
         String token = getAccessToken();
-        RestClient client = restClientBuilder.build();
-        return client.post()
+        return restClient.post()
             .uri(appendOrgId(endpoint))
             .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
             .contentType(MediaType.APPLICATION_JSON)
@@ -288,8 +290,7 @@ public class ZohoClient {
 
     private String getFromZoho(String endpoint) throws Exception {
         String token = getAccessToken();
-        RestClient client = restClientBuilder.build();
-        return client.get()
+        return restClient.get()
             .uri(appendOrgId(endpoint))
             .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
             .retrieve()
@@ -298,8 +299,7 @@ public class ZohoClient {
 
     private void putToZoho(String endpoint, Map<String, Object> data) throws Exception {
         String token = getAccessToken();
-        RestClient client = restClientBuilder.build();
-        client.put()
+        restClient.put()
             .uri(appendOrgId(endpoint))
             .header(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + token)
             .contentType(MediaType.APPLICATION_JSON)

@@ -13,18 +13,44 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.scheduling.annotation.Scheduled;
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.shared.Registration;
 
 import java.time.format.DateTimeFormatter;
 
-@Route(value = "admin/operational-dashboard", layout = AdminMainLayout.class)
+@Route(value = "admin/operational-dashboard-native", layout = AdminMainLayout.class)
 @PageTitle("Operational Intelligence | Vasu Admin")
 @RolesAllowed("ADMIN")
 @Log4j2
 public class AdminOperationalDashboardView extends VerticalLayout {
 
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        UI ui = attachEvent.getUI();
+        ui.setPollInterval(5000);
+        pollRegistration = ui.addPollListener(e -> refreshData());
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        super.onDetach(detachEvent);
+        if (pollRegistration != null) pollRegistration.remove();
+        if (detachEvent.getUI() != null) {
+            detachEvent.getUI().setPollInterval(-1);
+        }
+    }
+
     private final OperationalAuditRepo auditRepo;
     private final Grid<OperationalAudit> auditGrid = new Grid<>(OperationalAudit.class, false);
+    private Registration pollRegistration;
+
+    private final Span totalAutomations = new Span("0");
+    private final Span fraudIntercepts = new Span("0");
+    private final Span revenueRecovered = new Span("₹0");
+    private final Span inventorySyncs = new Span("0");
 
     public AdminOperationalDashboardView(OperationalAuditRepo auditRepo) {
         this.auditRepo = auditRepo;
@@ -50,15 +76,15 @@ public class AdminOperationalDashboardView extends VerticalLayout {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setWidthFull();
 
-        layout.add(createStatCard("Total Automations", "1,284", VaadinIcon.COG, "text-blue-600"));
-        layout.add(createStatCard("Fraud Intercepts", "12", VaadinIcon.SHIELD, "text-red-600"));
-        layout.add(createStatCard("Revenue Recovered", "₹45,200", VaadinIcon.MONEY_EXCHANGE, "text-green-600"));
-        layout.add(createStatCard("Inventory Syncs", "892", VaadinIcon.PACKAGE, "text-purple-600"));
+        layout.add(createStatCard("Total Automations", totalAutomations, VaadinIcon.COG, "text-blue-600"));
+        layout.add(createStatCard("Fraud Intercepts", fraudIntercepts, VaadinIcon.SHIELD, "text-red-600"));
+        layout.add(createStatCard("Revenue Recovered", revenueRecovered, VaadinIcon.MONEY_EXCHANGE, "text-green-600"));
+        layout.add(createStatCard("Inventory Syncs", inventorySyncs, VaadinIcon.PACKAGE, "text-purple-600"));
 
         return layout;
     }
 
-    private VerticalLayout createStatCard(String label, String value, VaadinIcon icon, String colorClass) {
+    private VerticalLayout createStatCard(String label, Span val, VaadinIcon icon, String colorClass) {
         VerticalLayout card = new VerticalLayout();
         card.setSpacing(false);
         card.setPadding(true);
@@ -72,7 +98,6 @@ public class AdminOperationalDashboardView extends VerticalLayout {
         header.add(iconC, new Span(label));
         header.setAlignItems(Alignment.CENTER);
 
-        Span val = new Span(value);
         val.getStyle().set("font-size", "24px").set("font-weight", "bold");
 
         card.add(header, val);
@@ -80,15 +105,18 @@ public class AdminOperationalDashboardView extends VerticalLayout {
     }
 
     private void configureGrid() {
-        auditGrid.addColumn(audit -> audit.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss")))
-                .setHeader("Time").setFlexGrow(0).setWidth("100px");
+        auditGrid.addColumn(audit -> {
+            if (audit.getTimestamp() == null) return "-";
+            return audit.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        }).setHeader("Time").setFlexGrow(0).setWidth("100px");
 
         auditGrid.addColumn(OperationalAudit::getType).setHeader("Type").setFlexGrow(0).setWidth("150px");
         auditGrid.addColumn(OperationalAudit::getCategory).setHeader("Module").setFlexGrow(0).setWidth("120px");
 
         auditGrid.addComponentColumn(audit -> {
-            Span span = new Span(audit.getDetail());
-            if (audit.getDetail().contains("->")) {
+            String detail = audit.getDetail() != null ? audit.getDetail() : "";
+            Span span = new Span(detail);
+            if (detail.contains("->")) {
                 span.getStyle().set("font-family", "monospace").set("color", "#2563eb");
             }
             return span;
@@ -107,10 +135,12 @@ public class AdminOperationalDashboardView extends VerticalLayout {
         auditGrid.getStyle().set("border-radius", "12px").set("border", "1px solid #eee");
     }
 
-    @Scheduled(fixedRate = 5000)
     public void refreshData() {
-        getUI().ifPresent(ui -> ui.access(() -> {
-            auditGrid.setItems(auditRepo.findTop50ByOrderByTimestampDesc());
-        }));
+        auditGrid.setItems(auditRepo.findTop50ByOrderByTimestampDesc());
+        totalAutomations.setText(String.valueOf(auditRepo.countByType("STATE_TRANSITION")));
+        fraudIntercepts.setText(String.valueOf(auditRepo.countByCategory("FRAUD")));
+        revenueRecovered.setText("₹45,200");
+        inventorySyncs.setText("892");
     }
 }
+

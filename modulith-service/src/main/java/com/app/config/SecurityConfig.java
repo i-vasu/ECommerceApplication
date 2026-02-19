@@ -42,11 +42,11 @@ public class SecurityConfig {
                                                 .requestMatchers("/admin/login", "/admin/css/**", "/admin/js/**",
                                                                 "/admin/images/**")
                                                 .permitAll()
-                                                .requestMatchers("/admin/**").hasAuthority("ADMIN"))
+                                                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "OPERATOR", "SUPPORT"))
                                 .formLogin(form -> form
                                                 .loginPage("/admin/login")
                                                 .loginProcessingUrl("/admin/login")
-                                                .defaultSuccessUrl("/admin/analytics-native", true)
+                                                .defaultSuccessUrl("/admin/dashboard-native", false)
                                                 .permitAll())
                                 .logout(logout -> logout
                                                 .logoutUrl("/admin/logout")
@@ -54,7 +54,7 @@ public class SecurityConfig {
                                                 .permitAll())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                                .csrf(csrf -> csrf.disable()); // Simplify for now
+                                .csrf(csrf -> csrf.ignoringRequestMatchers("/VAADIN/**"));
 
                 http.authenticationProvider(daoAuthenticationProvider());
 
@@ -119,14 +119,15 @@ public class SecurityConfig {
 	public SecurityFilterChain adminServerFilterChain(HttpSecurity http) throws Exception {
 		// Spring Boot Admin Server requires some specific allowances
 		http
-				.securityMatcher("/instances/**", "/assets/**", "/login", "/logout")
+				.securityMatcher("/sba-server/**", "/instances/**", "/assets/**")
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/assets/**", "/login").permitAll()
+						.requestMatchers("/sba-server/assets/**", "/sba-server/login").permitAll()
 						.anyRequest().hasAuthority("ADMIN"))
-				.formLogin(form -> form.loginPage("/login").permitAll())
-				.logout(logout -> logout.logoutUrl("/logout").permitAll())
+				.formLogin(form -> form.loginPage("/sba-server/login").permitAll())
+				.logout(logout -> logout.logoutUrl("/sba-server/logout").permitAll())
 				.csrf(csrf -> csrf.disable());
 
 		return http.build();
 	}
 }
+

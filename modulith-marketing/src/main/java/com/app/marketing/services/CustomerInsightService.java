@@ -52,7 +52,7 @@ public class CustomerInsightService {
                 : 999;
 
         // 2. Frequency: Total successful orders (using SQL instead of OrderRepo)
-        String frequencySql = "SELECT COUNT(*) FROM orders WHERE email = ? AND status = 'COMPLETED'";
+        String frequencySql = "SELECT COUNT(*) FROM orders WHERE email = ? AND order_status = 'COMPLETED'";
         Long frequencyResult = jdbcTemplate.queryForObject(frequencySql, Long.class, email);
         long frequency = frequencyResult != null ? frequencyResult : 0;
 

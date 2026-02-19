@@ -35,13 +35,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
         log.error("Resource not found: {}", ex.getMessage());
-        return new ResponseEntity<>(ApiResponse.error(ex.getMessage()), HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(APIException.class)
     public ResponseEntity<ApiResponse<Void>> handleAPIException(APIException ex) {
         log.error("API exception: {}", ex.getMessage());
-        return new ResponseEntity<>(ApiResponse.error(ex.getMessage()), HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -54,12 +58,14 @@ public class GlobalExceptionHandler {
             fieldErrors.put(fieldName, errorMessage);
         });
         log.warn("Validation failed: {}", fieldErrors);
-        return new ResponseEntity<>(ApiResponse.<Map<String, String>>builder()
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.<Map<String, String>>builder()
                 .success(false)
                 .message("Validation failed")
                 .data(fieldErrors)
                 .timestamp(LocalDateTime.now())
-                .build(), HttpStatus.BAD_REQUEST);
+                .build());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -70,30 +76,36 @@ public class GlobalExceptionHandler {
             String message = violation.getMessage();
             res.put(fieldName, message);
         });
-        return new ResponseEntity<>(ApiResponse.<Map<String, String>>builder()
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.<Map<String, String>>builder()
                 .success(false)
                 .message("Constraint violation")
                 .data(res)
                 .timestamp(LocalDateTime.now())
-                .build(), HttpStatus.BAD_REQUEST);
+                .build());
     }
 
     @ExceptionHandler(MissingPathVariableException.class)
     public ResponseEntity<ApiResponse<Void>> handleMissingPathVariable(MissingPathVariableException ex) {
-        return new ResponseEntity<>(ApiResponse.error(ex.getMessage()), HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        return new ResponseEntity<>(
-                ApiResponse.error("Data integrity violation: " + ex.getMostSpecificCause().getMessage()),
-                HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error("Data integrity violation: " + ex.getMostSpecificCause().getMessage()));
     }
 
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     public ResponseEntity<ApiResponse<Void>> handleMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
         log.error("Media type not acceptable: {}", ex.getMessage());
-        return new ResponseEntity<>(ApiResponse.error(ex.getMessage()), HttpStatus.NOT_ACCEPTABLE);
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
