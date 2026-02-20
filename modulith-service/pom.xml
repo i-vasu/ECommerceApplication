@@ -15,9 +15,9 @@
 	<properties>
 		<java.version>25</java.version>
 		<spring-boot.version>4.0.2</spring-boot.version>
-		<spring-cloud.version>2024.0.0</spring-cloud.version>
+		<spring-cloud.version>2025.1.0</spring-cloud.version>
 		<vaadin.version>25.0.3</vaadin.version>
-		<lombok.version>1.18.42</lombok.version>
+		<lombok.version>1.18.40</lombok.version>
 		<mapstruct.version>1.6.0</mapstruct.version>
 	</properties>
 
@@ -257,12 +257,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>junit-jupiter</artifactId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
